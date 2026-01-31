@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-plane.local/schemas/package_manifest.json",
+  "title": "Package Manifest Schema v1.0",
+  "description": "Schema for Control Plane package manifest.json files (FMWK-PKG-001)",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "version",
+    "tier",
+    "artifact_paths",
+    "deps"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Manifest schema version"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$",
+      "description": "Package identifier (e.g., PKG-T0-001)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable package name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:[-+].*)?$",
+      "description": "Semantic version (e.g., 1.0.0)"
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["G0", "T0", "T1", "T2", "T3"],
+      "description": "Package tier level"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "default": "",
+      "description": "Package description"
+    },
+    "artifact_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "description": "Paths to installed artifacts relative to CONTROL_PLANE"
+    },
+    "deps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$"
+      },
+      "default": [],
+      "description": "Package ID dependencies"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$"
+      },
+      "default": [],
+      "description": "Conflicting package IDs"
+    },
+    "platform": {
+      "type": "string",
+      "enum": ["any", "linux", "darwin", "windows"],
+      "default": "any",
+      "description": "Target platform"
+    },
+    "arch": {
+      "type": "string",
+      "enum": ["any", "x86_64", "arm64"],
+      "default": "any",
+      "description": "Target architecture"
+    },
+    "license": {
+      "type": "string",
+      "default": "MIT",
+      "description": "Package license (SPDX identifier)"
+    },
+    "author": {
+      "type": "string",
+      "default": "",
+      "description": "Package author"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 creation timestamp"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^([0-9a-fA-F]{64})?$",
+      "default": "",
+      "description": "HMAC-SHA256 signature (64 hex chars)"
+    },
+    "attestation": {
+      "type": ["object", "null"],
+      "default": null,
+      "properties": {
+        "builder": {
+          "type": "string",
+          "description": "Build system identifier"
+        },
+        "build_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Build timestamp"
+        },
+        "build_env_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "description": "SHA256 hash of build environment"
+        },
+        "source_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{40}$",
+          "description": "Git commit SHA"
+        }
+      },
+      "description": "Build attestation details"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "G0" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "maxItems": 0,
+            "description": "Genesis packages MUST have zero dependencies (I5-GENESIS-ZERO)"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T0" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-G0-[0-9]{3}$"
+            },
+            "description": "T0 packages can only depend on G0"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T1" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-(G0|T0)-[0-9]{3}$"
+            },
+            "description": "T1 packages can only depend on G0 or T0"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T2" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-(G0|T0|T1)-[0-9]{3}$"
+            },
+            "description": "T2 packages can only depend on G0, T0, or T1"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T3" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-(G0|T0|T1|T2)-[0-9]{3}$"
+            },
+            "description": "T3 packages can depend on any lower tier"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "tier_order": {
+      "description": "Tier ordering for dependency validation: G0 < T0 < T1 < T2 < T3",
+      "type": "object",
+      "properties": {
+        "G0": { "const": 0 },
+        "T0": { "const": 1 },
+        "T1": { "const": 2 },
+        "T2": { "const": 3 },
+        "T3": { "const": 4 }
+      }
+    }
+  }
+}

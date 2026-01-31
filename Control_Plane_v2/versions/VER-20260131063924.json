@@ -1,0 +1,58 @@
+{
+  "version_id": "VER-20260131063924",
+  "label": "final-seal-test",
+  "timestamp": "2026-01-31T06:39:24.607896+00:00",
+  "merkle_root": "4ad61b337145a079e12526140f0ea3f243661cee1c446036b183a29ff221578c",
+  "registry_hash": "62137a1295c0026f549535af518b04841935b039f9dca1ac7e6d8b139604254e",
+  "manifest_hash": "55dad7d2d45b84802eb1afdc5be5b4cc0a175128bc16f93ea80658749edddb07",
+  "packages": [
+    {
+      "id": "PKG-FMWK-100",
+      "source": "packages_store/FMWK-100_agent_development_standard.tar.gz",
+      "source_type": "tar",
+      "digest": "23ddc2bc3ca192670f3b7b9c4041e1abe6ffb24acd70ef3e36d0170d06d63086",
+      "version": "1.0.0",
+      "status": "active",
+      "selected": "yes"
+    },
+    {
+      "id": "PKG-FMWK-101",
+      "source": "packages_store/FMWK-101_altitude_depth_standard.tar.gz",
+      "source_type": "tar",
+      "digest": "2e99292be87217103923e41e35a678f3eacdc345f58b2460eb547c59f2626fab",
+      "version": "1.0.0",
+      "status": "active",
+      "selected": "yes"
+    },
+    {
+      "id": "PKG-FMWK-102",
+      "source": "/Users/raymondbruni/AI_ARCH/Control_Plane/Control_Plane_v2/packages_store/FMWK-102_altitude_convention.tar.gz",
+      "source_type": "tar",
+      "digest": "ab81ee05430b7b2b0f9a3114feefa5fbb89fb95680f15e0e095d06e4285580f2",
+      "version": "1.0.0",
+      "status": "active",
+      "selected": "yes"
+    },
+    {
+      "id": "PKG-FMWK-107",
+      "source": "packages_store/FMWK-107_package_management_standard.tar.gz",
+      "source_type": "tar",
+      "digest": "eed899e4cdb7bc13770197337c2e93db984d94677b6d894a61d4e2c2a415a977",
+      "version": "1.0.0",
+      "status": "active",
+      "selected": "yes"
+    },
+    {
+      "id": "PKG-FMWK-200",
+      "source": "/Users/raymondbruni/AI_ARCH/Control_Plane/Control_Plane_v2/packages_store/FMWK-200_ledger_protocol.tar.gz",
+      "source_type": "tar",
+      "digest": "6381993077449c9c4a330391433e97e3139524babb41284ec5d1273760658c91",
+      "version": "1.0.0",
+      "status": "active",
+      "selected": "yes"
+    }
+  ],
+  "registry_snapshot": "versions/VER-20260131063924_registry.csv",
+  "ledger_entry_id": "LED-17a2aba2",
+  "actor": "raymondbruni"
+}

@@ -1,0 +1,30 @@
+{
+  "version": "slsa-0.1-lite",
+  "subject": {
+    "name": "FMWK-100_agent_development_standard.tar.gz",
+    "sha256": "8f2589b3fec3ab42ac918b54b90d1c4c08b28ddbbbc79b13b89bf1b1598fc6fc"
+  },
+  "builder": {
+    "id": "raymondbruni",
+    "tool": "package_pack.py"
+  },
+  "invocation": {
+    "command": [
+      "scripts/package_pack.py",
+      "--src",
+      "frameworks/FMWK-100_agent_development_standard.md",
+      "--id",
+      "PKG-FMWK-100"
+    ],
+    "frameworks_active": [],
+    "session_id": "",
+    "work_order": ""
+  },
+  "materials": [
+    {
+      "path": "/Users/raymondbruni/AI_ARCH/Control_Plane/Control_Plane_v2/frameworks/FMWK-100_agent_development_standard.md",
+      "sha256": "c6eb6e86b4cdfac24f055d30dd7ee4166c80a8fadad79d53c9fe906fd1789ade"
+    }
+  ],
+  "timestamp": "2026-01-31T17:38:10.374511+00:00"
+}

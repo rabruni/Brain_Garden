@@ -1,0 +1,16 @@
+Control Plane Canary v1.0.0
+
+This file verifies the package factory workflow is operational.
+
+If you can read this, the following have succeeded:
+1. Package manifest validated (G1)
+2. Tier dependencies validated (G2)
+3. Deterministic pack verified (G3)
+4. Package signed (G4) or waiver granted
+5. Attestation created (G5) or waiver granted
+6. Registry updated (G6)
+7. Package installed (G7)
+8. Integrity check passed (G8)
+9. Ledger chain verified (G9)
+
+CANARY ALIVE

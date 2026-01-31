@@ -1,0 +1,559 @@
+{
+  "version": "2.0.0-v2",
+  "generated": "2026-01-31T17:57:48.525438+00:00",
+  "generator": "cp_version_rollback",
+  "checksums": {
+    "FMWK-100_agent_development_standard.md": {
+      "sha256": "c6eb6e86b4cdfac24f055d30dd7ee4166c80a8fadad79d53c9fe906fd1789ade",
+      "size": 8713
+    },
+    "FMWK-101_altitude_depth_standard.md": {
+      "sha256": "3fa8ac765ebf5ab3799c14a1413c2a43071a9911325ab4e78f3fcc345d471c35",
+      "size": 11964
+    },
+    "FMWK-102_altitude_convention.md": {
+      "sha256": "317dc34313c7a1f3fd2ea91e44b17ceff2ffabc4571eb377ed892876ac51da5d",
+      "size": 17316
+    },
+    "FMWK-107_package_management_standard.md": {
+      "sha256": "9cbec9540f3f031db58848c92b88eb4fbf36754d08b0a11c5b434b37be23fc60",
+      "size": 3635
+    },
+    "FMWK-200_ledger_protocol.md": {
+      "sha256": "8d8fbb43b0eba9e4e3037a03f9c5ec94592169278bb4068c036e1d6c81583c47",
+      "size": 1175
+    },
+    "MANIFEST.json": {
+      "sha256": "25a43914d413795802f47751630aa7543619a9663658b7dfbc335705d1987ff8",
+      "size": 19879
+    },
+    "README.md": {
+      "sha256": "94c3fa1f1bea3c40405608fef542ba1f82ba7b189f6cffc1f95431327679e6be",
+      "size": 2908
+    },
+    "VERSION": {
+      "sha256": "e87f7d1e22db300d1356860ae26c2462fc12a26e7eb9848e7e6e207372455a9e",
+      "size": 9
+    },
+    "control_plane_v2.md": {
+      "sha256": "4754fc5d209165e4388265da3c6d8a1860988a26b34b9107fc1355f92cef2bd6",
+      "size": 8777
+    },
+    "docs/developer_guide.md": {
+      "sha256": "79e9e8b76e4576dc44f18773976ec62f299d589f5a21fec1c658c2ddecb682dd",
+      "size": 3854
+    },
+    "frameworks/FMWK-100_agent_development_standard.md": {
+      "sha256": "c6eb6e86b4cdfac24f055d30dd7ee4166c80a8fadad79d53c9fe906fd1789ade",
+      "size": 8713
+    },
+    "frameworks/FMWK-101_altitude_depth_standard.md": {
+      "sha256": "3fa8ac765ebf5ab3799c14a1413c2a43071a9911325ab4e78f3fcc345d471c35",
+      "size": 11964
+    },
+    "frameworks/FMWK-102_altitude_convention.md": {
+      "sha256": "317dc34313c7a1f3fd2ea91e44b17ceff2ffabc4571eb377ed892876ac51da5d",
+      "size": 17316
+    },
+    "frameworks/FMWK-107_package_management_standard.md": {
+      "sha256": "0e1f46e060474e4803eac7c2e918930e7468fb71f548cf362175114c8cc8b0f5",
+      "size": 4716
+    },
+    "frameworks/FMWK-200_ledger_protocol.md": {
+      "sha256": "8d8fbb43b0eba9e4e3037a03f9c5ec94592169278bb4068c036e1d6c81583c47",
+      "size": 1175
+    },
+    "ledger/governance-20260131-011918.jsonl": {
+      "sha256": "4515f84b2840f2a03451868e0420ba4f4924cc5ca8b4df30abf779eead26ea78",
+      "size": 768
+    },
+    "ledger/governance-20260131-011921.jsonl": {
+      "sha256": "f80ce334c3a6edb19d43e639996e2348a943127d6bc507bd9be8839593b49546",
+      "size": 597
+    },
+    "ledger/governance-20260131-054500.jsonl": {
+      "sha256": "f16fbf4e67887be18c0a36c2940675161771003adb4288ea2ea00af304dfc9c6",
+      "size": 4635
+    },
+    "ledger/governance-20260131-060643.jsonl": {
+      "sha256": "89163f72a52461c0fa442a63946a9a79eab92392d9175a3ba41b28cd9b0d5730",
+      "size": 785
+    },
+    "ledger/governance-20260131-060700.jsonl": {
+      "sha256": "965f29353c7bfb9a8e844c29056fca0b54bb80b2fbf089091201f34f67bf4864",
+      "size": 657
+    },
+    "ledger/governance-20260131-060710.jsonl": {
+      "sha256": "bfcb0cb1d94973f5331e35e9904438a2f46d1694f7d50ba2652a71790d00f604",
+      "size": 1456
+    },
+    "ledger/governance-20260131-060720.jsonl": {
+      "sha256": "4c9b70f31b58584db5b2ebc4bfb95919f4b0e9f4cbf224b5e439647c558a4ae4",
+      "size": 2347
+    },
+    "ledger/governance-20260131-060817.jsonl": {
+      "sha256": "fc9124db44bb126207e4393a0b010a0bb2a4f28172fe8d04db4cb2170b5932d1",
+      "size": 790
+    },
+    "ledger/governance-20260131-060925.jsonl": {
+      "sha256": "4dd6a9d4c725a243c45d5d6b8b98fcd51e6b8af1aca6230ab71f633b514a2aaa",
+      "size": 597
+    },
+    "ledger/governance-20260131-062431.jsonl": {
+      "sha256": "dc13c5a8bda7837e9b100c9b3e6ea38fbc8d0c44a860c15321f9fd90358d1179",
+      "size": 657
+    },
+    "ledger/governance-20260131-062448.jsonl": {
+      "sha256": "2e4abc6f628d86a51b26146d2d2a90e9c5b551bff32bf27d83e653a3658bc09f",
+      "size": 575
+    },
+    "ledger/governance-20260131-062552.jsonl": {
+      "sha256": "21d6dea243c70a89c336755f7981d3c19326903d7de185475c41528826866e13",
+      "size": 776
+    },
+    "ledger/governance-20260131-062605.jsonl": {
+      "sha256": "4ea25f735c3b717910bf77ee7200ed477805a7a46dacfdaa38259e1c5a35de0e",
+      "size": 597
+    },
+    "ledger/governance-20260131-063618.jsonl": {
+      "sha256": "644d7d194284801513a9534aed0288e39a7867a593e0ef97da652b7d395e0978",
+      "size": 657
+    },
+    "ledger/governance-20260131-063637.jsonl": {
+      "sha256": "2d3e70168e60adc3ad4d444824fe243387715d51c7f14936d54cedb49702b6c5",
+      "size": 1524
+    },
+    "ledger/governance-20260131-063720.jsonl": {
+      "sha256": "95643238d6ce521424edccecdfb266a63562502fe3979287c3f258e3669c7db4",
+      "size": 772
+    },
+    "ledger/governance-20260131-063732.jsonl": {
+      "sha256": "18d4b2a5a9fce914bd9d53271f5b3b8188a18a02b36457dd803a74f98b8340f2",
+      "size": 602
+    },
+    "ledger/governance-20260131-063901.jsonl": {
+      "sha256": "c27e93e8c5b7298570c5c323d52e1b316a5fe8c90776da03085db9217be5de05",
+      "size": 657
+    },
+    "ledger/governance-20260131-063924.jsonl": {
+      "sha256": "3e9940c9105c45511bacff154e12ce96e33b3b43a8c8e8c729945cf26d0576e8",
+      "size": 778
+    },
+    "ledger/governance-20260131-063941.jsonl": {
+      "sha256": "13c9e9ebbc4fdab0a204a70f5b57e30de2e6111f8649d32640abb2f23b78b490",
+      "size": 597
+    },
+    "ledger/governance-20260131-064004.jsonl": {
+      "sha256": "d9d536aaac843887de4d7c51dd9e822cfea13ca41d94caaf8e99eedb99479c0a",
+      "size": 554
+    },
+    "ledger/governance-20260131-173810.jsonl": {
+      "sha256": "8a220908e2e92d481f3ad18037fad479a4ddf2631cdb43e3498cd1c83410df30",
+      "size": 657
+    },
+    "ledger/governance-20260131-175248.jsonl": {
+      "sha256": "784c0637697a54e18605f77e2c732b4478ca32da9795e1b3e00ecd27d7e0a53a",
+      "size": 712
+    },
+    "ledger/governance-20260131-175257.jsonl": {
+      "sha256": "aaa828d12c38d7909f373cdc521b78824e1c552f2883d8efabe4b0215ee6601c",
+      "size": 2108
+    },
+    "ledger/governance-20260131-175343.jsonl": {
+      "sha256": "57fba6c1e718aa93f7b21fc4ccd512113d709a4ec926aa6927834d01c0ee03cb",
+      "size": 2132
+    },
+    "ledger/governance-20260131-175739.jsonl": {
+      "sha256": "0e1a85bc96647a51039b144ad0b3dca4a83d4599d32577f13b14da229dc2b2b5",
+      "size": 774
+    },
+    "ledger/governance.jsonl": {
+      "sha256": "433fb6efbec575987a7c4ccb9c2124e6e946962a01cb127b024ac297c71b2559",
+      "size": 3589
+    },
+    "ledger/idx/governance-20260131-011918.json": {
+      "sha256": "e7998e66fc645ca9a725fcb28ad2e483b83f808aa1bdb975c7f830cb0c70f1dd",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-011921.json": {
+      "sha256": "968da9aa16968efc8e6f504847ba754183d1d8424ebb6c2320c3abe262705752",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-054500.json": {
+      "sha256": "3a789f8d93af51f7a221c75a7ae744cb747ebdc61b187c32d9d1ca949a89d07f",
+      "size": 92
+    },
+    "ledger/idx/governance-20260131-060643.json": {
+      "sha256": "271e9b3c778ae263a056f2ac1f8a038a5a1f1b21a66c813a223446aeca0628c3",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-060700.json": {
+      "sha256": "6fc9bf8b2819856745ea43b288454b4e055aa8ce91c6e252d66597192a0664b9",
+      "size": 28
+    },
+    "ledger/idx/governance-20260131-060710.json": {
+      "sha256": "fa6448dfe847f161af3dddb4cca15ea22a22897773345abd2edd87668b19198e",
+      "size": 59
+    },
+    "ledger/idx/governance-20260131-060720.json": {
+      "sha256": "2346286cfec5f49ea1b77e578d3b168aedd616ef9ab6380f96ff6ddc240c3561",
+      "size": 59
+    },
+    "ledger/idx/governance-20260131-060817.json": {
+      "sha256": "cca93fda8806cc63cc66ee6bee7717845916ddf198521b29f28b7b51f4f559ca",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-060925.json": {
+      "sha256": "a0c56b0545a6fec719d328cb566d22931530b4f8f0e65a61ad291a793920c28c",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-062431.json": {
+      "sha256": "4fa344da288e2ecfbfa3eca7ba3a0742334886df6713a5e6b70aa1ba26f4de68",
+      "size": 28
+    },
+    "ledger/idx/governance-20260131-062448.json": {
+      "sha256": "a8005834ccd25374efc98f9a542c46fa4eba9471c67b0d31e3dfc0f03d479035",
+      "size": 48
+    },
+    "ledger/idx/governance-20260131-062552.json": {
+      "sha256": "17d5b594a47d8b6caf567f8d814433d09d20b97946e922494dd87817e5f4872a",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-062605.json": {
+      "sha256": "3a6b95c129009373c3fe0c7839dcf012fc1d3f7694549f9105bb0463a438466d",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-063618.json": {
+      "sha256": "8905ebe1cf40fd997bf16f9096d76ccf6e03899ddf9bc39c6e1ff1fbcb130b01",
+      "size": 28
+    },
+    "ledger/idx/governance-20260131-063637.json": {
+      "sha256": "0ab92db9517fde831d371c73fe55a5094a9f01229b91e842b52c48178135f1b2",
+      "size": 121
+    },
+    "ledger/idx/governance-20260131-063720.json": {
+      "sha256": "c88b7df53a8dd159fefafc682f2425ff74fe8d7d47b241f4ee90aba4a190b726",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-063732.json": {
+      "sha256": "e7d4746a5c9cf907178eeda22db50aa665652818f23d4d36834efbda1f4a1eab",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-063901.json": {
+      "sha256": "6fc9bf8b2819856745ea43b288454b4e055aa8ce91c6e252d66597192a0664b9",
+      "size": 28
+    },
+    "ledger/idx/governance-20260131-063924.json": {
+      "sha256": "cc84748a1e3608b155e3383e49ff72584ccf5498633fbe13da722e03158e8528",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-063941.json": {
+      "sha256": "e581b3e2dac4d24c1d61cddc561f9b4cb713496824e9cd9090091ac015d07926",
+      "size": 34
+    },
+    "ledger/idx/governance-20260131-064004.json": {
+      "sha256": "42ae6db0d622686519141e73ae43685fb33a7a5871d302b6f01f4e35534b5c91",
+      "size": 41
+    },
+    "ledger/idx/governance-20260131-173810.json": {
+      "sha256": "4fa344da288e2ecfbfa3eca7ba3a0742334886df6713a5e6b70aa1ba26f4de68",
+      "size": 28
+    },
+    "ledger/idx/governance-20260131-175248.json": {
+      "sha256": "da403cdc825c8d419f91eafa495236c4b232a5b692797b7dede8453a5799bbec",
+      "size": 91
+    },
+    "ledger/idx/governance-20260131-175257.json": {
+      "sha256": "fed4c4d3473130d1ed91b133692092719a9a51a67801192733f4adf549701cd9",
+      "size": 103
+    },
+    "ledger/idx/governance-20260131-175343.json": {
+      "sha256": "ea5951ad8bd2e46d9b39b68db683dc10546eb2ba9a30664161c08d4c332ea355",
+      "size": 126
+    },
+    "ledger/idx/governance-20260131-175739.json": {
+      "sha256": "86683377db06c12d475bbb07904129ae11a42567b105c369c3929b6378007af1",
+      "size": 34
+    },
+    "ledger/idx/governance.json": {
+      "sha256": "ac6f8c4a9007a760046ec50358931fc3cecea9b50baf32b5a8982af49d5f71e6",
+      "size": 50
+    },
+    "ledger/index.jsonl": {
+      "sha256": "a4dee0d20d7950468424a896d79e34f976d87335ff7b425dfd8d13f6d2c9771f",
+      "size": 11892
+    },
+    "lib/__pycache__/auth.cpython-314.pyc": {
+      "sha256": "39e16b63116180f4669f8f55fee4e63ec9f28611a0782d5334357b963ead2ee1",
+      "size": 5632
+    },
+    "lib/__pycache__/authz.cpython-314.pyc": {
+      "sha256": "fc901a6b431db0db91464f8f67d2e15cabe65f0ff601952a832432b9ff272772",
+      "size": 2036
+    },
+    "lib/__pycache__/gate_operations.cpython-314.pyc": {
+      "sha256": "7b4d39a93f5f8aa9af2e22bc2d05c95e536dee0a024e3ce36ad05b1ff1e872a0",
+      "size": 29004
+    },
+    "lib/__pycache__/integrity.cpython-314.pyc": {
+      "sha256": "aa5a9dc8b6976a80f8ef5431d28c7551aa95276780c22dc08a9e1678e9510af8",
+      "size": 25627
+    },
+    "lib/__pycache__/ledger_client.cpython-314.pyc": {
+      "sha256": "953b6767f0ff2e5838fd1bebbe1d1cb5c56b16a88716298219676ac4f4a19d5b",
+      "size": 39940
+    },
+    "lib/__pycache__/merkle.cpython-314.pyc": {
+      "sha256": "509207c96fd36054ab69eb98ae4450f6520bcba31282d4cdf0afc634c445b4b0",
+      "size": 5907
+    },
+    "lib/__pycache__/package_audit.cpython-314.pyc": {
+      "sha256": "7109619a1239f9a74a6f3076492abd624d849fef63bc87840e07fa6064a3db90",
+      "size": 2414
+    },
+    "lib/__pycache__/packages.cpython-314.pyc": {
+      "sha256": "c7670a962ca78af3ab3c9069919dec7e5d2fd00acb7b92e1b7504c08bcc0f6b2",
+      "size": 5359
+    },
+    "lib/__pycache__/paths.cpython-314.pyc": {
+      "sha256": "a44c9e975ecdf41b70364a308f206cf8d4375483a5bd27642ccaf85457708693",
+      "size": 2949
+    },
+    "lib/__pycache__/pristine.cpython-314.pyc": {
+      "sha256": "8bac4d1383ec3ac6ad8eb737bb865cb5d5a12454a15b0dbcaa7eef181813b342",
+      "size": 16729
+    },
+    "lib/__pycache__/provenance.cpython-314.pyc": {
+      "sha256": "441540a378cae425b3c8c527d4fb7842718a3f94d75d4bd666c97db058c59039",
+      "size": 7025
+    },
+    "lib/__pycache__/signing.cpython-314.pyc": {
+      "sha256": "b854863dec975a2a590bd0317aa52bbccb91d83462f9e695cd46d4638bdeafc2",
+      "size": 16043
+    },
+    "lib/auth.py": {
+      "sha256": "c2e249ca243fff0270c83a9c59e7345ff2d9f69a10a46981b88702e04050ec26",
+      "size": 2948
+    },
+    "lib/authz.py": {
+      "sha256": "2a872f4a63202d0ae2c4ccc4a2da85b82a7f2dec3d91f534a039195be9db195b",
+      "size": 1157
+    },
+    "lib/gate_operations.py": {
+      "sha256": "fe8774ec68c13154ed1bdd77d719f6e30a618a8aae3be2196497706e83705e5c",
+      "size": 21422
+    },
+    "lib/id_allocator.py": {
+      "sha256": "8b126651bde0ef01817fb8c38bae274574dcde16ea60f02be6b79863eaf374de",
+      "size": 3913
+    },
+    "lib/integrity.py": {
+      "sha256": "6fec3da36761c2a9d51b9562d9088c59dcce304eadad648fc0f5869be385a616",
+      "size": 17902
+    },
+    "lib/ledger_client.py": {
+      "sha256": "1c2dff8c537ec652877c8e92a86ed1efb670f66b05cb855a2b4a70f9013e847d",
+      "size": 25386
+    },
+    "lib/merkle.py": {
+      "sha256": "3dbaaa28cc4c4abab37b9f1adbfe9e7c7625bf54b7b2ab992d050f2bc2b82a63",
+      "size": 3822
+    },
+    "lib/output.py": {
+      "sha256": "8ab6916f7bc06be2fa75328860947e56df71f846eb7bf87cee7f187bf08e6d63",
+      "size": 2009
+    },
+    "lib/package_audit.py": {
+      "sha256": "35515331e9ef09e053170e548d0b12450813413a6980f0e03e06d3b015fa39c6",
+      "size": 1367
+    },
+    "lib/packages.py": {
+      "sha256": "eb0b8e589f41b4bafd33a7e30d34a2a4ac1b180deac34209f85de9264ea5c127",
+      "size": 2576
+    },
+    "lib/paths.py": {
+      "sha256": "73930b79dfd308e5431d72dc7c575eecce8b591295a422a8785d9d3e9f90e108",
+      "size": 1766
+    },
+    "lib/pristine.py": {
+      "sha256": "802ac184498da3b01f618ca564a02fcee49e8d248dac04c6d4173fa8a960a8dd",
+      "size": 11436
+    },
+    "lib/registry.py": {
+      "sha256": "81d0a4b5902d77ecf83b431ff1dfacf50b2feeed7e2d8cb5251cb3450cd20f9a",
+      "size": 5215
+    },
+    "lib/resolve.py": {
+      "sha256": "3ae724262c9e4a5c87d2c721b7839d3f0b114ad53cb5ba1c390f59469e018364",
+      "size": 920
+    },
+    "lib/signing.py": {
+      "sha256": "d248bb777f231434413bfd53b89c22584182567185c864c33e31d300a96316b7",
+      "size": 9506
+    },
+    "modules/hello_module/hello.py": {
+      "sha256": "5face1f2455f2b521cac0c7ae17f0175f3e00a07d0ac92da1cb90676492fc2c1",
+      "size": 178
+    },
+    "packages_store/FMWK-100_agent_development_standard.tar.gz": {
+      "sha256": "8f2589b3fec3ab42ac918b54b90d1c4c08b28ddbbbc79b13b89bf1b1598fc6fc",
+      "size": 3968
+    },
+    "packages_store/FMWK-100_agent_development_standard.tar.gz.provenance.json": {
+      "sha256": "4b067de6527f8722228c12f2d83d4457043fd9fd4012f735cb024ca4751ecdce",
+      "size": 822
+    },
+    "packages_store/FMWK-100_agent_development_standard.tar.gz.sha256": {
+      "sha256": "08918978c2b8c734ed52d908a087932263f0f3137056c9ea8df2b23a55dff40e",
+      "size": 64
+    },
+    "packages_store/FMWK-101_altitude_depth_standard.tar.gz": {
+      "sha256": "2e99292be87217103923e41e35a678f3eacdc345f58b2460eb547c59f2626fab",
+      "size": 4558
+    },
+    "packages_store/FMWK-101_altitude_depth_standard.tar.gz.sha256": {
+      "sha256": "15dbbf8f1ee14c341b3a9c0884aa43a6016da1f8f04f590225d3f1ccec3c5df4",
+      "size": 64
+    },
+    "packages_store/FMWK-102_altitude_convention.tar.gz": {
+      "sha256": "ab81ee05430b7b2b0f9a3114feefa5fbb89fb95680f15e0e095d06e4285580f2",
+      "size": 4944
+    },
+    "packages_store/FMWK-102_altitude_convention.tar.gz.sha256": {
+      "sha256": "4a25a18aae34be8c661de572ce9a209efb90e081c4fad412dfc25ab1b69435c2",
+      "size": 64
+    },
+    "packages_store/FMWK-107_package_management_standard.tar.gz": {
+      "sha256": "eed899e4cdb7bc13770197337c2e93db984d94677b6d894a61d4e2c2a415a977",
+      "size": 2481
+    },
+    "packages_store/FMWK-107_package_management_standard.tar.gz.sha256": {
+      "sha256": "6ed597c55bc0a7cfad523d030c8a6398e29bf60181d9cafc91f0b4180432432b",
+      "size": 64
+    },
+    "packages_store/FMWK-107_package_management_standard.tar.gz.sig": {
+      "sha256": "2a4034a4726e8c71d3cd7844b9a014fbfb8cccb213f751997b3d2faaef9d07ca",
+      "size": 280
+    },
+    "packages_store/FMWK-200_ledger_protocol.tar.gz": {
+      "sha256": "6381993077449c9c4a330391433e97e3139524babb41284ec5d1273760658c91",
+      "size": 921
+    },
+    "packages_store/FMWK-200_ledger_protocol.tar.gz.sha256": {
+      "sha256": "1df9f6d0757295dcf8bcff837ec0f7a282f5db31411ddc0c454ae97c03719eaa",
+      "size": 64
+    },
+    "packages_store/provenance_canary.tar.gz": {
+      "sha256": "86bbaf6151f12db288e0fcdb3b698906cb917418afc94bfd14968e4794721aa1",
+      "size": 238
+    },
+    "packages_store/provenance_canary.tar.gz.sha256": {
+      "sha256": "c98af0a3c4fa816542c0c2afc6fb4cfee57048d60496beb30981ea12ee2fa51e",
+      "size": 64
+    },
+    "registries/compiled/packages.json": {
+      "sha256": "f2463e17cd2297bbdeef8e2116018e43f72a4264a3a1729719d8b9ec1f87ddbf",
+      "size": 4411
+    },
+    "registries/control_plane_registry.csv": {
+      "sha256": "2501d05d4ab9ca91425fae778c7c6ec0addf4a774fc82988da98acf05d910916",
+      "size": 8129
+    },
+    "registries/packages_registry.csv": {
+      "sha256": "cb3d3ad02b341e568d45990c05c127bafbcdf2dd367ed52bb826225773a04e5d",
+      "size": 1898
+    },
+    "scripts/cp_version_checkpoint.py": {
+      "sha256": "7421b63a46ab0a5bf58a76f7eae754d2a1cb51113c65636d9452557173b82006",
+      "size": 4763
+    },
+    "scripts/cp_version_list.py": {
+      "sha256": "b0d3cfede7247236d158f5bd221bc3184f36bc73338ec23d3db1713a10c3bb52",
+      "size": 1440
+    },
+    "scripts/cp_version_rollback.py": {
+      "sha256": "564890fb16d7d5d2b879cf573b4bcbd4faf3db52524feb5114a5c31d84aa2141",
+      "size": 5154
+    },
+    "scripts/integrity_check.py": {
+      "sha256": "fd63b1f803cdb5a2f85eaebf283a560bafb5b15416ce3e0739a322bda34fa175",
+      "size": 20659
+    },
+    "scripts/package_install.py": {
+      "sha256": "f63fafe1067ad022a3da0bf48b3bd7065848b47f7c6d3da58a669fa26ade8b7f",
+      "size": 6691
+    },
+    "scripts/package_pack.py": {
+      "sha256": "c183d38cbfc860de5e8b2000f1b8a22509cf5cbc28187d7d0ef8afba017464dc",
+      "size": 4708
+    },
+    "scripts/package_sync.py": {
+      "sha256": "5fc6b646b8948595d4973a5ee446f03e88cacfe1d20039a1e246979007d16eee",
+      "size": 1985
+    },
+    "scripts/validate_packages.py": {
+      "sha256": "b201b72f1c099a41e9e5d043140fa5e1f60c2fdf880df9e3235568657b751d23",
+      "size": 9549
+    },
+    "tests/test_pristine.py": {
+      "sha256": "ba26d05cc64ee98a4b6d0520241797ba0e481859448f08390e8aba1905167133",
+      "size": 7258
+    },
+    "versions/VER-20260131011918.json": {
+      "sha256": "121fab56393dee3bb3229ef25421e0b402c69ca9e7bc70919d2bddaf51f9d7e7",
+      "size": 2326
+    },
+    "versions/VER-20260131011918_registry.csv": {
+      "sha256": "80861b905429081a291fc5f7df3e3a657550e3c063f52c63e5a0ea55606e0a75",
+      "size": 6326
+    },
+    "versions/VER-20260131060643.json": {
+      "sha256": "947d79776908bfe4804bb0f548667b2f53a2182ac601f8a057af6c07f96f0c5d",
+      "size": 2343
+    },
+    "versions/VER-20260131060643_registry.csv": {
+      "sha256": "07ef0ccebe2d8cbffd19769132b496a16a71115a15841a0e6069182d608f9e17",
+      "size": 7609
+    },
+    "versions/VER-20260131060817.json": {
+      "sha256": "5a6a5205239020c8979d126eb52cc8ee882b07bc21927562ea3de39f5e293eef",
+      "size": 2348
+    },
+    "versions/VER-20260131060817_registry.csv": {
+      "sha256": "ebe5846ece61a802c081ab257c9772e85055a5febefc5db5cea9a1ac7a8a786f",
+      "size": 7609
+    },
+    "versions/VER-20260131062552.json": {
+      "sha256": "a57aaae95e0d7ba70453864aefa8bf02cec44c85aeb9f65b28dba6ed0222b1d5",
+      "size": 2275
+    },
+    "versions/VER-20260131062552_registry.csv": {
+      "sha256": "167e45490d8e30805095d896867dcc2ab1d9b7ac73376dc14acecaa113e64f75",
+      "size": 7609
+    },
+    "versions/VER-20260131063720.json": {
+      "sha256": "a7243951ae81f708b8fd2c0356d72b970139919b6b311032f89db8fd53bfefad",
+      "size": 2212
+    },
+    "versions/VER-20260131063720_registry.csv": {
+      "sha256": "98dfedebc3d147cea792c45a1745f1d9e523e4f00181a78b13d78a380833dfea",
+      "size": 7640
+    },
+    "versions/VER-20260131063924.json": {
+      "sha256": "71b9ea149cd80a39be0734a9fa4107b8e7fd48fce2e63da311216210d89ff737",
+      "size": 2159
+    },
+    "versions/VER-20260131063924_registry.csv": {
+      "sha256": "62137a1295c0026f549535af518b04841935b039f9dca1ac7e6d8b139604254e",
+      "size": 7640
+    },
+    "versions/VER-20260131175739.json": {
+      "sha256": "12892b3e76677b4ddec09d9873b187f4104b14d395c7edfedd10696918fe3274",
+      "size": 2155
+    },
+    "versions/VER-20260131175739_registry.csv": {
+      "sha256": "2501d05d4ab9ca91425fae778c7c6ec0addf4a774fc82988da98acf05d910916",
+      "size": 8129
+    }
+  }
+}
