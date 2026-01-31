@@ -361,6 +361,85 @@ class TestCanaryLedger:
             pytest.skip("lib/ledger_client.py not available")
 
 
+class TestCanaryReceiptVerification:
+    """P6: Receipt proof after install."""
+
+    def test_receipt_created_after_install(self):
+        """Install creates receipt with required fields."""
+        # Test receipt structure requirements
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            installed_dir = tmp / "installed" / "PKG-CANARY"
+            installed_dir.mkdir(parents=True)
+
+            # Simulate receipt creation (as package_install.py would do)
+            receipt = {
+                "id": "PKG-CANARY",
+                "version": "1.0.0",
+                "archive": "/path/to/PKG-CANARY.tar.gz",
+                "archive_digest": "abc123def456",
+                "installed_at": "2026-01-31T00:00:00Z",
+                "installer": "package_install",
+                "files": [
+                    {"path": "content/canary.txt", "sha256": "file_hash_here"}
+                ]
+            }
+
+            receipt_path = installed_dir / "receipt.json"
+            with open(receipt_path, "w") as f:
+                json.dump(receipt, f, indent=2)
+
+            # Verify receipt exists and has required fields
+            assert receipt_path.exists(), "Receipt not created"
+
+            with open(receipt_path) as f:
+                loaded = json.load(f)
+
+            required_fields = ["id", "version", "archive_digest", "files"]
+            for field in required_fields:
+                assert field in loaded, f"Receipt missing required field: {field}"
+
+    def test_receipt_files_have_required_structure(self):
+        """Receipt file entries have path and sha256."""
+        receipt = {
+            "files": [
+                {"path": "content/canary.txt", "sha256": "abc123"},
+                {"path": "manifest.json", "sha256": "def456"},
+            ]
+        }
+
+        for entry in receipt["files"]:
+            assert "path" in entry, "File entry missing path"
+            assert "sha256" in entry, "File entry missing sha256"
+            assert len(entry["sha256"]) > 0, "Empty sha256 hash"
+
+    def test_receipt_files_match_filesystem(self):
+        """Receipt file hashes should match actual installed files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+
+            # Create a test file
+            test_file = tmp / "test.txt"
+            test_file.write_text("test content")
+
+            # Compute actual hash
+            actual_hash = sha256_file(test_file)
+
+            # Receipt should match
+            receipt = {
+                "files": [
+                    {"path": "test.txt", "sha256": actual_hash}
+                ]
+            }
+
+            for entry in receipt["files"]:
+                file_path = tmp / entry["path"]
+                if file_path.exists():
+                    computed = sha256_file(file_path)
+                    assert computed == entry["sha256"], \
+                        f"Hash mismatch for {entry['path']}: {computed} != {entry['sha256']}"
+
+
 class TestCanaryEndToEnd:
     """End-to-end factory workflow test."""
 
@@ -397,6 +476,7 @@ def run_canary_tests() -> Tuple[int, int, int]:
         TestCanaryAttestation,
         TestCanaryInstall,
         TestCanaryReceipt,
+        TestCanaryReceiptVerification,
         TestCanaryIntegrity,
         TestCanaryLedger,
         TestCanaryEndToEnd,

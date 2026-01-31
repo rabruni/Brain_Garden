@@ -68,6 +68,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CP_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$CP_ROOT"
 
+# Strict mode control (P8)
+# Default: strict (no waivers). Use --dev or PRISTINE_DRILL_STRICT=0 for dev mode.
+STRICT_MODE=1
+if [[ "${PRISTINE_DRILL_STRICT:-1}" == "0" ]] || [[ "$*" == *"--dev"* ]]; then
+    STRICT_MODE=0
+    log_warn "DEV MODE: Waivers enabled (ALLOW_UNSIGNED, ALLOW_UNATTESTED)"
+else
+    log_info "STRICT MODE: No waivers (production)"
+fi
+
 log_info "Control Plane: $CP_ROOT"
 log_info "Drill starting..."
 
@@ -217,10 +227,12 @@ fi
 log_phase "PHASE 4: TIERED INSTALL (T0 -> T1 -> T2 -> T3)"
 # =============================================================================
 
-# Allow waivers during drill (dev only)
+# Set install mode; waivers only in dev mode (P8)
 export CONTROL_PLANE_INSTALL_MODE=1
-export CONTROL_PLANE_ALLOW_UNSIGNED=1
-export CONTROL_PLANE_ALLOW_UNATTESTED=1
+if [[ $STRICT_MODE -eq 0 ]]; then
+    export CONTROL_PLANE_ALLOW_UNSIGNED=1
+    export CONTROL_PLANE_ALLOW_UNATTESTED=1
+fi
 
 install_tier() {
     local tier=$1
@@ -281,7 +293,8 @@ install_tier "T2" || true
 log_info "Installing T3 (Agents)..."
 install_tier "T3" || true
 
-unset CONTROL_PLANE_INSTALL_MODE CONTROL_PLANE_ALLOW_UNSIGNED CONTROL_PLANE_ALLOW_UNATTESTED
+unset CONTROL_PLANE_INSTALL_MODE
+[[ $STRICT_MODE -eq 0 ]] && unset CONTROL_PLANE_ALLOW_UNSIGNED CONTROL_PLANE_ALLOW_UNATTESTED
 
 # =============================================================================
 log_phase "PHASE 5: VERIFICATION"
