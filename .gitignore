@@ -1,3 +1,6 @@
+# Exception: Keep Control_Plane_v2/lib/ (it's code, not a virtualenv)
+!Control_Plane_v2/lib/
+
 # WandB
 /wandb/
 # checkpoints
