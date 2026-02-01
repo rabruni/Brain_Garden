@@ -201,11 +201,15 @@ def assert_inside_control_plane(
     if is_inside_control_plane(path, plane=plane):
         return  # OK
 
-    # Check for dev escape hatch
+    # Check for dev escape hatch (blocked in production)
     if os.getenv("CONTROL_PLANE_ALLOW_OUTSIDE") == "1":
+        if os.getenv("CONTROL_PLANE_ENV") == "production":
+            raise OutsideBoundaryViolation(
+                path, "CONTROL_PLANE_ALLOW_OUTSIDE disabled in production"
+            )
         if log_violation:
-            _log_event("OUTSIDE_ALLOWED", path, get_current_mode(), allowed=True, plane=plane)
-        return  # Explicitly allowed
+            _log_event("OUTSIDE_ALLOWED_DEV", path, get_current_mode(), allowed=True, plane=plane)
+        return  # Explicitly allowed (dev only)
 
     # Violation
     if log_violation:
@@ -229,12 +233,23 @@ def classify_path(path: Path, plane: Optional["PlaneContext"] = None) -> PathCla
 
     Returns:
         PathClass indicating the directory's write rules
+
+    Raises:
+        OutsideBoundaryViolation: If path is a symlink escaping plane root
     """
     root = _get_plane_root(plane)
 
     # Normalize to absolute
     if not path.is_absolute():
         path = root / path
+
+    # Check for symlink escaping plane root
+    if path.is_symlink():
+        target = path.resolve()
+        try:
+            target.relative_to(root)
+        except ValueError:
+            raise OutsideBoundaryViolation(path, "Symlink target escapes plane root")
 
     # Check if path is under the plane root
     try:

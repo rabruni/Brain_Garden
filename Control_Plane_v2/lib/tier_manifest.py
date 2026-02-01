@@ -23,20 +23,20 @@ TierType = Literal["HO3", "HO2", "HO1"]
 TierStatus = Literal["active", "archived", "closed"]
 
 # Migration mapping from legacy names to canonical names
-# Note: FIRST_ORDER was middle tier, SECOND_ORDER was lowest tier
+# FIRST -> HO1 (lowest), SECOND -> HO2 (middle), HOT -> HO3 (highest)
 TIER_MIGRATION = {
     "HOT": "HO3",
-    "FIRST": "HO2",
-    "SECOND": "HO1",
-    "FIRST_ORDER": "HO2",
-    "SECOND_ORDER": "HO1",
+    "SECOND": "HO2",    # FIXED: was HO1
+    "FIRST": "HO1",     # FIXED: was HO2
+    "FIRST_ORDER": "HO1",
+    "SECOND_ORDER": "HO2",
 }
 
 # Reverse mapping for backward compatibility output
 TIER_LEGACY_NAMES = {
     "HO3": "HOT",
-    "HO2": "FIRST",
-    "HO1": "SECOND",
+    "HO2": "SECOND",    # FIXED: was FIRST
+    "HO1": "FIRST",     # FIXED: was SECOND
 }
 
 

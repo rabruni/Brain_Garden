@@ -40,11 +40,11 @@ DEFAULT_LEDGER_NAMES = {
 }
 
 # Legacy ledger name mapping for backward compatibility
-# Note: FIRST was middle tier, SECOND was lowest tier
+# FIRST -> HO1 (lowest, worker), SECOND -> HO2 (middle, workorder)
 LEGACY_LEDGER_NAMES = {
     "HOT": "governance.jsonl",
-    "FIRST": "workorder.jsonl",
-    "SECOND": "worker.jsonl",
+    "SECOND": "workorder.jsonl",   # SECOND -> HO2 (middle)
+    "FIRST": "worker.jsonl",       # FIRST -> HO1 (lowest)
 }
 
 

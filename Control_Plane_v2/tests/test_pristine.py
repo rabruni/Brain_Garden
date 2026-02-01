@@ -29,6 +29,7 @@ from lib.pristine import (
     PathClass,
     InstallModeContext,
     BootstrapModeContext,
+    OutsideBoundaryViolation,
 )
 from lib.signing import (
     sign_detached,
@@ -127,6 +128,26 @@ def test_bootstrap_mode_allows_registry_write():
             return False
 
 
+def test_symlink_escape_blocked():
+    """Symlinks pointing outside plane root must be blocked."""
+    with tempfile.TemporaryDirectory() as tmp:
+        plane_root = Path(tmp) / "plane"
+        plane_root.mkdir()
+
+        # Create symlink pointing outside plane root
+        link_path = plane_root / "escape_link"
+        link_path.symlink_to("/tmp")
+
+        try:
+            classify_path(link_path)
+            print("FAIL: test_symlink_escape_blocked - should have raised OutsideBoundaryViolation")
+            return False
+        except OutsideBoundaryViolation as e:
+            assert "symlink" in str(e).lower()
+            print("PASS: test_symlink_escape_blocked")
+            return True
+
+
 def test_signing_and_verification():
     """Test 3-5: Signing and verification."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -194,6 +215,12 @@ def run_all_tests():
     test_write_to_derived_always_allowed()
     test_registries_protected_outside_bootstrap()
     test_bootstrap_mode_allows_registry_write()
+
+    print("-" * 60)
+    print("Boundary Hardening Tests:")
+    print("-" * 60)
+
+    test_symlink_escape_blocked()
 
     print("-" * 60)
     print("Signing Tests:")

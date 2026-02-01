@@ -114,17 +114,17 @@ class TestTierCreation:
     """Test tier creation via LedgerFactory."""
 
     def test_create_first_tier(self):
-        """Create a FIRST tier (HO2 in canonical naming) and verify structure."""
+        """Create a FIRST tier (HO1 in canonical naming) and verify structure."""
         with tempfile.TemporaryDirectory() as tmp:
             manifest, client = LedgerFactory.create_tier(
-                tier="FIRST",  # Legacy name, migrates to HO2
+                tier="FIRST",  # Legacy name, migrates to HO1
                 tier_root=Path(tmp) / "worker-001",
                 session_id="sess-test-001",
                 parent_ledger="../hot/governance.jsonl"
             )
 
-            # Verify manifest (FIRST migrates to HO2)
-            assert manifest.tier == "HO2"
+            # Verify manifest (FIRST migrates to HO1)
+            assert manifest.tier == "HO1"
             assert manifest.session_id == "sess-test-001"
             assert manifest.status == "active"
             assert manifest.parent_ledger == "../hot/governance.jsonl"
@@ -135,18 +135,18 @@ class TestTierCreation:
             assert client.index_dir.exists()
 
     def test_create_second_tier(self):
-        """Create a SECOND tier (HO1 in canonical naming) with work order."""
+        """Create a SECOND tier (HO2 in canonical naming) with work order."""
         with tempfile.TemporaryDirectory() as tmp:
             manifest, client = LedgerFactory.create_tier(
-                tier="SECOND",  # Legacy name, migrates to HO1
+                tier="SECOND",  # Legacy name, migrates to HO2
                 tier_root=Path(tmp) / "WO-2026-001",
                 work_order_id="WO-2026-001"
             )
 
-            # SECOND migrates to HO1
-            assert manifest.tier == "HO1"
+            # SECOND migrates to HO2
+            assert manifest.tier == "HO2"
             assert manifest.work_order_id == "WO-2026-001"
-            assert "worker.jsonl" in str(manifest.ledger_path)  # HO1 uses worker.jsonl
+            assert "workorder.jsonl" in str(manifest.ledger_path)  # HO2 uses workorder.jsonl
 
     def test_duplicate_tier_fails(self):
         """Creating tier in existing location should fail."""
@@ -253,7 +253,7 @@ class TestTierDiscovery:
             tiers = LedgerFactory.list_tiers(Path(tmp))
             assert len(tiers) == 3
 
-            # Legacy names migrate to canonical: HOT->HO3, FIRST->HO2, SECOND->HO1
+            # Legacy names migrate to canonical: HOT->HO3, SECOND->HO2, FIRST->HO1
             tier_types = {t.tier for t in tiers}
             assert tier_types == {"HO3", "HO2", "HO1"}
 
@@ -261,13 +261,13 @@ class TestTierDiscovery:
         """TierManifest.find_for_path should find enclosing tier."""
         with tempfile.TemporaryDirectory() as tmp:
             manifest, client = LedgerFactory.create_tier(
-                tier="FIRST",  # -> HO2
+                tier="FIRST",  # -> HO1
                 tier_root=Path(tmp) / "worker"
             )
 
             found = TierManifest.find_for_path(client.ledger_path)
             assert found is not None
-            assert found.tier == "HO2"  # FIRST migrates to HO2
+            assert found.tier == "HO1"  # FIRST migrates to HO1
 
 
 class TestChainVerification:

@@ -148,12 +148,10 @@ def main() -> int:
     identity = get_provider().authenticate(args.token or os.getenv("CONTROL_PLANE_TOKEN"))
     authz.require(identity, "install")
 
-    # Create installer claims for plane-aware authorization
-    try:
-        claims = InstallerClaims.from_identity(identity, args.env)
-        # Plane permission check will happen after we load the manifest
-    except Exception as e:
-        print(f"WARNING: Could not create installer claims: {e}")
+    # Create installer claims for plane-aware authorization (fail-closed)
+    claims = InstallerClaims.from_identity(identity, args.env)
+    if claims is None or not claims.subject:
+        raise SystemExit("InstallerClaims with valid subject required")
 
     archive = args.archive.resolve()
     if not archive.exists():
@@ -257,18 +255,17 @@ def main() -> int:
                 f"referenced by plane '{plane.name}' (cross-plane direction violation)"
             )
 
-    # Check plane authorization
+    # Check plane authorization (fail-closed: claims required)
     pkg_tier = manifest.get("tier", "")
     try:
-        if 'claims' in dir():
-            require_authorization(
-                action="install",
-                pkg_id=args.id or archive.stem,
-                tier=pkg_tier,
-                env=args.env,
-                claims=claims,
-                plane=plane.name,
-            )
+        require_authorization(
+            action="install",
+            pkg_id=args.id or archive.stem,
+            tier=pkg_tier,
+            env=args.env,
+            claims=claims,
+            plane=plane.name,
+        )
     except PermissionError as e:
         raise SystemExit(f"Authorization failed: {e}")
 
