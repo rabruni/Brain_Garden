@@ -91,6 +91,11 @@ def main() -> int:
     ap.add_argument("--label", help="Human-readable label for this checkpoint")
     ap.add_argument("--token", help="Auth token (else CONTROL_PLANE_TOKEN env)")
     ap.add_argument("--root", type=Path, help="Plane root path (for multi-plane operation)")
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Verify integrity and auth without creating checkpoint"
+    )
     args = ap.parse_args()
 
     # Resolve plane context
@@ -113,6 +118,14 @@ def main() -> int:
         for issue in integrity_result.issues:
             print(f"- {issue.severity}: {issue.check} {issue.message}")
         return 1
+
+    # Handle dry-run mode
+    if args.dry_run:
+        print("DRY-RUN: Integrity verified, auth valid. No checkpoint created.")
+        print(f"  Verified artifacts: {len(integrity_result.artifacts) if hasattr(integrity_result, 'artifacts') else 'N/A'}")
+        print(f"  Merkle root: {integrity_result.computed_merkle_root[:16]}...")
+        print(f"  Actor: {identity.user if identity else 'unknown'}")
+        return 0
 
     version_id = f"VER-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
     versions_dir.mkdir(parents=True, exist_ok=True)

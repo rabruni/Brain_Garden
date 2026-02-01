@@ -11,11 +11,56 @@
 - Libraries: `lib/` (`packages.py`, `auth.py`, `authz.py`, `gate_operations.py`, etc.)
 
 ## Authentication & Authorization
+
+### Authentication Setup (External Secrets)
+
+Control Plane uses HMAC authentication by default (fail-closed). Secrets are stored
+OUTSIDE the plane root to preserve the invariant: "nothing unaccounted-for inside governed roots".
+
+**First-Time Setup:**
+
+1. Initialize external secrets:
+   ```bash
+   python3 scripts/cp_init_auth.py
+   ```
+
+   This creates `~/.control_plane_v2/secrets.env` with:
+   - Randomly generated shared secret
+   - Pre-computed admin and maintainer tokens
+
+2. Configure your environment:
+   ```bash
+   # Option A: Point to secrets file (auth.py loads it automatically)
+   export CONTROL_PLANE_SECRETS_FILE=~/.control_plane_v2/secrets.env
+
+   # Option B: Source secrets directly (exports are built-in)
+   source ~/.control_plane_v2/secrets.env
+   # Now CONTROL_PLANE_TOKEN is set to admin token
+   ```
+
+3. Verify:
+   ```bash
+   python3 scripts/cp_version_checkpoint.py --dry-run --label "test"
+   ```
+
+**Security Notes:**
+- Secrets file is OUTSIDE plane root (preserves pristine boundary)
+- File permissions are 600 (owner only)
+- Secret is NEVER logged to ledger (only the action + path)
+- Tokens are user-specific HMAC signatures
+
+**Rotating Secrets:**
+```bash
+python3 scripts/cp_init_auth.py --force
+```
+
+### Providers and Roles
+
 - Providers (`lib/auth.py`):
-  - `passthrough` (default, dev only)
-  - `hmac` (shared secret): set `CONTROL_PLANE_AUTH_PROVIDER=hmac` and `CONTROL_PLANE_SHARED_SECRET=<secret>`. Tokens: `user:hex_hmac(user)`.
+  - `hmac` (default, production): uses external secrets file or `CONTROL_PLANE_SHARED_SECRET` env
+  - `passthrough` (dev only): requires `CONTROL_PLANE_ALLOW_PASSTHROUGH=1`
 - Roles → actions (`lib/authz.py`):
-  - `admin`: create/install/update/remove/pack/verify/hash_update
+  - `admin`: create/install/update/remove/pack/verify/hash_update/checkpoint
   - `maintainer`: install/update/remove/pack/verify
   - `auditor`, `reader`: verify
 - Pass token via CLI `--token` or env `CONTROL_PLANE_TOKEN`. Missing/invalid token → denied.
