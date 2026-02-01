@@ -447,10 +447,12 @@ class TestCanaryEndToEnd:
         """Full workflow in validate-only mode."""
         try:
             from scripts.package_factory import run_factory
+            from lib.plane import get_current_plane
 
             result = run_factory(
                 pkg_id="PKG-CANARY",
                 src_dir=CANARY_SRC,
+                plane=get_current_plane(),
                 validate_only=True
             )
 

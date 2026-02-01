@@ -32,8 +32,6 @@ from lib.ledger_client import (
     LedgerClient,
     LedgerEntry,
     DEFAULT_LEDGER_PATH,
-    SEGMENT_INDEX_PATH,
-    INDEX_DIR,
     _compute_entry_hash,
 )
 
@@ -167,6 +165,10 @@ def reset_ledger() -> None:
     client = LedgerClient()
     segments = client._list_segments()
 
+    # Get index paths from client instance
+    segment_index_path = client.segment_index_path
+    index_dir = client.index_dir
+
     # Create backup
     backup_ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     backup_dir = DEFAULT_LEDGER_PATH.parent / f"backup-{backup_ts}"
@@ -180,12 +182,12 @@ def reset_ledger() -> None:
             seg.unlink()
 
     # Backup and clear index files
-    if SEGMENT_INDEX_PATH.exists():
-        shutil.copy2(SEGMENT_INDEX_PATH, backup_dir / SEGMENT_INDEX_PATH.name)
-        SEGMENT_INDEX_PATH.write_text("")
+    if segment_index_path.exists():
+        shutil.copy2(segment_index_path, backup_dir / segment_index_path.name)
+        segment_index_path.write_text("")
 
-    if INDEX_DIR.exists():
-        for idx_file in INDEX_DIR.glob("*.json"):
+    if index_dir.exists():
+        for idx_file in index_dir.glob("*.json"):
             shutil.copy2(idx_file, backup_dir / idx_file.name)
             idx_file.unlink()
 

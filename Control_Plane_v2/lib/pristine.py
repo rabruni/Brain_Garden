@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import CONTROL_PLANE
 from lib.ledger_client import LedgerClient, LedgerEntry
+from lib.tier_manifest import TierManifest
 
 
 class WriteMode(str, Enum):
@@ -77,6 +78,40 @@ DERIVED_PATHS: Set[str] = {
 BOOTSTRAP_WRITABLE: Set[str] = {
     "registries/packages_registry.csv",
 }
+
+
+def is_tier_ledger_path(path: Path) -> bool:
+    """Check if a path is a ledger within a registered tier.
+
+    Walks up the directory tree looking for tier.json manifest.
+    If found, checks if the path is within that tier's ledger directory.
+
+    Args:
+        path: Path to check
+
+    Returns:
+        True if path is a ledger within a tier, False otherwise
+    """
+    # Resolve to handle symlinks and /var vs /private/var on macOS
+    path = path.resolve()
+
+    # Walk up looking for tier.json
+    for parent in [path] + list(path.parents):
+        manifest_path = parent / "tier.json"
+        if manifest_path.exists():
+            try:
+                manifest = TierManifest.load(manifest_path)
+                # Check if path is within the tier's ledger directory
+                # Resolve both paths for consistent comparison
+                ledger_dir = (manifest.tier_root / manifest.ledger_path.parent).resolve()
+                try:
+                    path.relative_to(ledger_dir)
+                    return True
+                except ValueError:
+                    pass
+            except Exception:
+                continue
+    return False
 
 
 @dataclass
@@ -164,6 +199,9 @@ def classify_path(path: Path) -> PathClass:
     try:
         rel = path.relative_to(CONTROL_PLANE)
     except ValueError:
+        # Path is outside CONTROL_PLANE - check if it's a tier ledger
+        if is_tier_ledger_path(path):
+            return PathClass.APPEND_ONLY
         return PathClass.EXTERNAL
 
     rel_str = str(rel)

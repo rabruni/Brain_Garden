@@ -44,9 +44,8 @@ from lib.merkle import hash_string, merkle_root
 
 # Default ledger location
 DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "ledger" / "governance.jsonl"
-# Index and segment metadata paths
-INDEX_DIR = DEFAULT_LEDGER_PATH.parent / "idx"
-SEGMENT_INDEX_PATH = DEFAULT_LEDGER_PATH.parent / "index.jsonl"
+# Note: Index paths are now computed per-instance in LedgerClient.__init__
+# to support multi-ledger isolation (tier-agnostic capability)
 
 # Rotation / batching defaults
 DEFAULT_ROTATE_BYTES = 256 * 1024 * 1024  # 256 MB
@@ -164,6 +163,10 @@ class LedgerClient:
         self.batch_interval_sec = batch_interval_sec
         self.enable_index = enable_index
 
+        # Index paths are instance-relative for multi-ledger isolation
+        self.index_dir = self.ledger_path.parent / "idx"
+        self.segment_index_path = self.ledger_path.parent / "index.jsonl"
+
         # Runtime state
         self._buffer: List[LedgerEntry] = []
         self._buffer_bytes: int = 0
@@ -186,8 +189,8 @@ class LedgerClient:
         if not self.ledger_path.exists():
             self.ledger_path.touch()
         if self.enable_index:
-            INDEX_DIR.mkdir(parents=True, exist_ok=True)
-            SEGMENT_INDEX_PATH.touch(exist_ok=True)
+            self.index_dir.mkdir(parents=True, exist_ok=True)
+            self.segment_index_path.touch(exist_ok=True)
 
     # ------------------------------------------------------------------
     # Initialization / segment state
@@ -280,23 +283,23 @@ class LedgerClient:
             last_entry_hash=last_hash,
             merkle_root=merkle,
         )
-        with open(SEGMENT_INDEX_PATH, "a", encoding="utf-8") as f:
+        with open(self.segment_index_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(asdict(meta)) + "\n")
 
     def _write_submission_index(self, filename: str, offsets: DefaultDict[str, List[Tuple[int, int]]]):
         """Persist submission -> offsets index for a segment."""
         if not self.enable_index:
             return
-        path = INDEX_DIR / filename
+        path = self.index_dir / filename
         data = {k: v for k, v in offsets.items()}
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f)
 
     def _segment_meta_exists(self, segment: str) -> bool:
         """Check if metadata already recorded for a segment."""
-        if not SEGMENT_INDEX_PATH.exists():
+        if not self.segment_index_path.exists():
             return False
-        with open(SEGMENT_INDEX_PATH, "r", encoding="utf-8") as f:
+        with open(self.segment_index_path, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
@@ -463,7 +466,7 @@ class LedgerClient:
 
     def _load_submission_index(self, segment_stem: str) -> Optional[Dict[str, List[Tuple[int, int]]]]:
         """Load per-segment submission offset index if present."""
-        path = INDEX_DIR / f"{segment_stem}.json"
+        path = self.index_dir / f"{segment_stem}.json"
         if not path.exists():
             return None
         try:
@@ -668,10 +671,10 @@ class LedgerClient:
 
         Returns empty string if no segment metadata is present.
         """
-        if not SEGMENT_INDEX_PATH.exists():
+        if not self.segment_index_path.exists():
             return ""
         roots = []
-        with open(SEGMENT_INDEX_PATH, "r", encoding="utf-8") as f:
+        with open(self.segment_index_path, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
