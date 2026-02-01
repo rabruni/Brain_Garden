@@ -4,6 +4,7 @@ package_pack.py - Build a single-file tar.gz package.
 
 Usage:
     python3 scripts/package_pack.py --src PATH [--out PATH] [--id PKG-ID] [--sign]
+    python3 scripts/package_pack.py --root /path/to/plane --src PATH [--out PATH]
 
 Behavior:
     - Packs file/dir at --src into a .tar.gz (default: packages_store/<name>.tar.gz)
@@ -11,6 +12,7 @@ Behavior:
     - If CONTROL_PLANE_SIGNING_KEY set or --sign, creates detached signature
     - If --id provided, updates registries/packages_registry.csv for that id
     - Output restricted to packages_store (DERIVED path)
+    - Supports --root for multi-plane operation
 """
 from __future__ import annotations
 
@@ -23,6 +25,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import CONTROL_PLANE
+from lib.plane import get_current_plane, PlaneContext
 from lib.auth import get_provider
 from lib import authz
 from lib.packages import pack, sha256_file
@@ -37,6 +40,16 @@ from lib.provenance import (
 )
 
 
+def get_plane_paths(plane: PlaneContext):
+    """Get plane-specific paths."""
+    return {
+        "root": plane.root,
+        "pkg_reg": plane.root / "registries" / "packages_registry.csv",
+        "store_dir": plane.root / "packages_store",
+    }
+
+
+# Legacy defaults (used when plane not specified)
 PKG_REG = CONTROL_PLANE / "registries" / "packages_registry.csv"
 STORE_DIR = CONTROL_PLANE / "packages_store"
 
@@ -48,15 +61,34 @@ def update_registry(
     attestation_path: Path = None,
     attestation_digest: str = None,
     attestation_sig_path: Path = None,
+    plane: PlaneContext = None,
 ) -> None:
-    rows = list(csv.DictReader(PKG_REG.open()))
+    """Update package registry with archive info.
+
+    Args:
+        pkg_id: Package ID to update
+        archive_path: Path to the archive
+        digest: SHA256 digest
+        attestation_path: Optional attestation file path
+        attestation_digest: Optional attestation digest
+        attestation_sig_path: Optional attestation signature path
+        plane: Optional PlaneContext for plane-scoped operation
+    """
+    paths = get_plane_paths(plane) if plane else {"root": CONTROL_PLANE, "pkg_reg": PKG_REG}
+    root = paths["root"]
+    pkg_reg = paths["pkg_reg"]
+
+    if not pkg_reg.exists():
+        raise SystemExit(f"Package registry not found: {pkg_reg}")
+
+    rows = list(csv.DictReader(pkg_reg.open()))
     headers = rows[0].keys() if rows else []
     updated = False
-    # Store path relative to CONTROL_PLANE for portability
+    # Store path relative to plane root for portability
     try:
-        rel_path = archive_path.relative_to(CONTROL_PLANE)
+        rel_path = archive_path.relative_to(root)
     except ValueError:
-        rel_path = archive_path  # Keep absolute if outside CP (shouldn't happen)
+        rel_path = archive_path  # Keep absolute if outside plane root
     for r in rows:
         if r.get("id") == pkg_id:
             r["source"] = str(rel_path)
@@ -65,7 +97,7 @@ def update_registry(
             # Update attestation fields if provided
             if attestation_path:
                 try:
-                    att_rel = attestation_path.relative_to(CONTROL_PLANE)
+                    att_rel = attestation_path.relative_to(root)
                 except ValueError:
                     att_rel = attestation_path
                 r["attestation_path"] = str(att_rel)
@@ -73,14 +105,14 @@ def update_registry(
                 r["attestation_digest"] = attestation_digest
             if attestation_sig_path:
                 try:
-                    att_sig_rel = attestation_sig_path.relative_to(CONTROL_PLANE)
+                    att_sig_rel = attestation_sig_path.relative_to(root)
                 except ValueError:
                     att_sig_rel = attestation_sig_path
                 r["attestation_signature_path"] = str(att_sig_rel)
             updated = True
     if not updated:
-        raise SystemExit(f"Package id {pkg_id} not found in {PKG_REG}")
-    with PKG_REG.open("w", newline="", encoding="utf-8") as f:
+        raise SystemExit(f"Package id {pkg_id} not found in {pkg_reg}")
+    with pkg_reg.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=headers)
         w.writeheader(); w.writerows(rows)
 
@@ -100,7 +132,15 @@ def main() -> int:
     ap.add_argument("--frameworks-active", dest="frameworks_active", help="Comma list of active frameworks", default="")
     ap.add_argument("--actor", help="Actor/user id for audit", default="")
     ap.add_argument("--token", help="Auth token (optional, else CONTROL_PLANE_TOKEN env)")
+    ap.add_argument("--root", type=Path, help="Plane root path (for multi-plane operation)")
     args = ap.parse_args()
+
+    # Resolve plane context
+    plane_root = args.root.resolve() if args.root else None
+    plane = get_current_plane(plane_root)
+    paths = get_plane_paths(plane)
+    root = paths["root"]
+    store_dir = paths["store_dir"]
 
     src = args.src.resolve()
     if not src.exists():
@@ -112,17 +152,17 @@ def main() -> int:
 
     out = args.out
     if out is None:
-        STORE_DIR.mkdir(parents=True, exist_ok=True)
+        store_dir.mkdir(parents=True, exist_ok=True)
         name = src.stem if src.is_file() else src.name
-        out = STORE_DIR / f"{name}.tar.gz"
+        out = store_dir / f"{name}.tar.gz"
     out = out.resolve()
 
     # Enforce: output must be in DERIVED path (packages_store)
-    assert_write_allowed(out)
+    assert_write_allowed(out, plane=plane)
 
-    digest = pack(src, out, base=CONTROL_PLANE)
+    digest = pack(src, out, base=root)
     sha_path = out.with_suffix(out.suffix + ".sha256")
-    assert_write_allowed(sha_path)
+    assert_write_allowed(sha_path, plane=plane)
     sha_path.write_text(digest, encoding="utf-8")
 
     # Signing: if key available or --sign requested
@@ -172,6 +212,7 @@ def main() -> int:
             attestation_path=attestation_path,
             attestation_digest=attestation_digest,
             attestation_sig_path=attestation_sig_path,
+            plane=plane,
         )
         ctx = PackageContext(
             package_id=args.id,

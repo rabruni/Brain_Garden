@@ -12,6 +12,10 @@ Steps:
 7. Record ledger entry for rollback.
 
 Auth: requires role permitting "rollback" (CONTROL_PLANE_TOKEN or --token).
+
+Usage:
+    python3 scripts/cp_version_rollback.py --version-id VER-...
+    python3 scripts/cp_version_rollback.py --root /path/to/plane --version-id VER-...
 """
 from __future__ import annotations
 
@@ -26,6 +30,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import CONTROL_PLANE
+from lib.plane import get_current_plane, PlaneContext
 from lib.packages import unpack, verify, sha256_file
 from lib.integrity import IntegrityChecker
 from lib.ledger_client import LedgerClient, LedgerEntry
@@ -64,12 +69,18 @@ def main() -> int:
     ap.add_argument("--version-id", required=True, help="Checkpoint version ID (VER-...)")
     ap.add_argument("--token", help="Auth token (else CONTROL_PLANE_TOKEN env)")
     ap.add_argument("--force", action="store_true", help="Overwrite existing files during install")
+    ap.add_argument("--root", type=Path, help="Plane root path (for multi-plane operation)")
     args = ap.parse_args()
+
+    # Resolve plane context
+    plane_root = args.root.resolve() if args.root else None
+    plane = get_current_plane(plane_root)
+    root = plane.root
 
     identity = get_provider().authenticate(args.token or None)
     authz.require(identity, "rollback")
 
-    versions_dir = CONTROL_PLANE / "versions"
+    versions_dir = root / "versions"
     meta_path = versions_dir / f"{args.version_id}.json"
     if not meta_path.exists():
         raise SystemExit(f"Version metadata not found: {meta_path}")
@@ -78,7 +89,7 @@ def main() -> int:
     registry_snapshot_rel = metadata.get("registry_snapshot")
     if not registry_snapshot_rel:
         raise SystemExit("Metadata missing registry_snapshot")
-    registry_snapshot = CONTROL_PLANE / registry_snapshot_rel
+    registry_snapshot = root / registry_snapshot_rel
     if not registry_snapshot.exists():
         raise SystemExit(f"Registry snapshot missing: {registry_snapshot}")
 
@@ -91,7 +102,7 @@ def main() -> int:
             raise SystemExit(f"Package {pkg.get('id')} missing source path")
         archive = Path(source)
         if not archive.is_absolute():
-            archive = CONTROL_PLANE / source.lstrip("/")
+            archive = root / source.lstrip("/")
         if not archive.exists():
             raise SystemExit(f"Archive missing: {archive}")
         if digest:
@@ -102,21 +113,21 @@ def main() -> int:
     # Enter install mode for all pristine writes
     with InstallModeContext():
         # Restore registry
-        target_registry = CONTROL_PLANE / "registries" / "control_plane_registry.csv"
+        target_registry = root / "registries" / "control_plane_registry.csv"
         target_registry.write_bytes(registry_snapshot.read_bytes())
 
         # Reinstall packages
         for pkg in packages:
             archive = Path(pkg["source"])
             if not archive.is_absolute():
-                archive = CONTROL_PLANE / archive.as_posix().lstrip("/")
-            unpack(archive, CONTROL_PLANE)
+                archive = root / archive.as_posix().lstrip("/")
+            unpack(archive, root)
 
         # Regenerate manifest
-        regenerate_manifest(CONTROL_PLANE)
+        regenerate_manifest(root)
 
     # Integrity check
-    checker = IntegrityChecker(CONTROL_PLANE)
+    checker = IntegrityChecker(root)
     integrity = checker.validate()
     if not integrity.passed:
         print("ERROR: integrity check failed after rollback.")
@@ -126,8 +137,9 @@ def main() -> int:
     else:
         success = True
 
-    # Ledger entry
-    ledger = LedgerClient()
+    # Ledger entry - use plane-scoped ledger
+    ledger_path = plane.ledger_dir / "governance.jsonl"
+    ledger = LedgerClient(ledger_path=ledger_path)
     decision = "ROLLED_BACK" if success else "ROLLBACK_FAILED"
     entry = LedgerEntry(
         event_type="version_rollback",
@@ -135,9 +147,10 @@ def main() -> int:
         decision=decision,
         reason=f"Rollback to {args.version_id}",
         metadata={
-            "target_registry": str(target_registry.relative_to(CONTROL_PLANE)),
+            "target_registry": str(target_registry.relative_to(root)),
             "packages": [p.get("id") for p in packages],
             "integrity_passed": success,
+            "plane": plane.name,
         },
     )
     ledger_id = ledger.write(entry)

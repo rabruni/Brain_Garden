@@ -12,7 +12,7 @@ Usage:
     python3 scripts/integrity_check.py --update-hashes
     python3 scripts/integrity_check.py --orphans
     python3 scripts/integrity_check.py --json
-    python3 scripts/integrity_check.py --generate-manifest
+    python3 scripts/integrity_check.py --root /path/to/plane
 
 Exit codes:
     0 = All verified, no issues
@@ -27,13 +27,32 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 # Add parent to path for lib imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import CONTROL_PLANE, REGISTRIES_DIR
+from lib.plane import get_current_plane, PlaneContext
 from lib.merkle import hash_file, merkle_root
+
+
+# Module-level state for plane-aware operation
+_plane: Optional[PlaneContext] = None
+_plane_root: Path = CONTROL_PLANE
+_registries_dir: Path = REGISTRIES_DIR
+
+
+def set_plane_context(plane: Optional[PlaneContext]) -> None:
+    """Set the plane context for all operations."""
+    global _plane, _plane_root, _registries_dir
+    _plane = plane
+    if plane is not None:
+        _plane_root = plane.root
+        _registries_dir = plane.root / "registries"
+    else:
+        _plane_root = CONTROL_PLANE
+        _registries_dir = REGISTRIES_DIR
 
 # =============================================================================
 # Configuration
@@ -96,7 +115,7 @@ class IntegrityResult:
 
 def read_control_plane_registry() -> Tuple[List[Dict[str, str]], List[str]]:
     """Read control_plane_registry.csv and return rows + fieldnames."""
-    registry_path = REGISTRIES_DIR / "control_plane_registry.csv"
+    registry_path = _registries_dir / "control_plane_registry.csv"
     if not registry_path.exists():
         return [], []
 
@@ -110,7 +129,7 @@ def read_control_plane_registry() -> Tuple[List[Dict[str, str]], List[str]]:
 
 def write_control_plane_registry(rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
     """Write control_plane_registry.csv with updated content."""
-    registry_path = REGISTRIES_DIR / "control_plane_registry.csv"
+    registry_path = _registries_dir / "control_plane_registry.csv"
 
     with open(registry_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -137,7 +156,7 @@ def get_registered_paths() -> Set[str]:
         etype = row.get("entity_type", "").strip().lower()
         art = row.get("artifact_path", "").strip().lstrip("/")
         if etype in {"pack", "registry"} and art.endswith("registry.csv"):
-            child_path = CONTROL_PLANE / art
+            child_path = _plane_root / art
             if child_path.is_file():
                 try:
                     with child_path.open(newline="", encoding="utf-8") as f:
@@ -151,7 +170,7 @@ def get_registered_paths() -> Set[str]:
 
 def read_specs_registry() -> List[Dict[str, str]]:
     """Read specs_registry.csv and return rows."""
-    specs_path = REGISTRIES_DIR / "specs_registry.csv"
+    specs_path = _registries_dir / "specs_registry.csv"
     if not specs_path.exists():
         return []
 
@@ -184,7 +203,7 @@ def verify_registry_hashes() -> IntegrityResult:
             continue
 
         # Resolve full path
-        full_path = CONTROL_PLANE / artifact_path.lstrip("/")
+        full_path = _plane_root / artifact_path.lstrip("/")
 
         # Check if file exists
         if not full_path.exists():
@@ -240,13 +259,13 @@ def find_orphans() -> List[str]:
     Pass 2: Scan artifact directories for files not in any registry.
 
     Returns:
-        List of orphaned file paths (relative to Control Plane)
+        List of orphaned file paths (relative to plane root)
     """
     registered_paths = get_registered_paths()
     orphans = []
 
     for dir_name in ARTIFACT_DIRS:
-        dir_path = CONTROL_PLANE / dir_name
+        dir_path = _plane_root / dir_name
         if not dir_path.exists():
             continue
 
@@ -264,7 +283,7 @@ def find_orphans() -> List[str]:
                 continue
 
             # Check if registered
-            rel_path = str(file_path.relative_to(CONTROL_PLANE))
+            rel_path = str(file_path.relative_to(_plane_root))
             if rel_path not in registered_paths and f"/{rel_path}" not in registered_paths:
                 orphans.append(rel_path)
 
@@ -310,7 +329,7 @@ def verify_chain_links() -> List[Tuple[str, str, str]]:
             else:
                 # Check spec path exists on disk
                 spec = specs_by_id[source_spec]
-                spec_path = CONTROL_PLANE / spec.get('artifact_path', '').lstrip('/')
+                spec_path = _plane_root / spec.get('artifact_path', '').lstrip('/')
                 if not spec_path.exists():
                     errors.append((item_id, 'source_spec_path', str(spec_path)))
 
@@ -329,7 +348,7 @@ def verify_chain_links() -> List[Tuple[str, str, str]]:
                     else:
                         # Check framework path exists on disk
                         fmwk = artifacts_by_id[fmwk_id]
-                        fmwk_path = CONTROL_PLANE / fmwk.get('artifact_path', '').lstrip('/')
+                        fmwk_path = _plane_root / fmwk.get('artifact_path', '').lstrip('/')
                         if not fmwk_path.exists():
                             errors.append((spec_id, 'framework_path', str(fmwk_path)))
 
@@ -390,7 +409,7 @@ def update_registry_hashes() -> int:
             row["content_hash"] = ""
             continue
 
-        full_path = CONTROL_PLANE / artifact_path.lstrip("/")
+        full_path = _plane_root / artifact_path.lstrip("/")
 
         if not full_path.exists():
             row["content_hash"] = ""
@@ -546,8 +565,18 @@ def main():
         action="store_true",
         help="Only output summary line"
     )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        help="Plane root path (for multi-plane operation)"
+    )
 
     args = parser.parse_args()
+
+    # Set plane context
+    plane_root = args.root.resolve() if args.root else None
+    plane = get_current_plane(plane_root)
+    set_plane_context(plane)
 
     # Default to --verify if no action specified
     if not any([args.verify, args.orphans, args.chain, args.update_hashes]):

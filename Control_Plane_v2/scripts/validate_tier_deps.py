@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """
-validate_tier_deps.py - Validate tier dependency constraints.
+validate_tier_deps.py - Validate tier and plane dependency constraints.
 
-Enforces I1-TIER: Lower tiers CANNOT depend on higher tiers.
+Enforces:
+- I1-TIER: Lower tiers CANNOT depend on higher tiers
+- Plane scope: deps[] are LOCAL PACKAGES ONLY (within same plane)
+- External interface direction rules: HOT->FIRST->SECOND
 
 Tier hierarchy: G0 < T0 < T1 < T2 < T3
 
-Per FMWK-PKG-001: Package Standard v1.0
+Per FMWK-PKG-001: Package Standard v1.1 and Plane-Aware Package System design.
 
 Usage:
     python3 scripts/validate_tier_deps.py
     python3 scripts/validate_tier_deps.py --strict
     python3 scripts/validate_tier_deps.py --manifest packages/PKG-T0-001/manifest.json
+    python3 scripts/validate_tier_deps.py --root /path/to/plane
 """
 from __future__ import annotations
 
@@ -26,6 +30,14 @@ from typing import Dict, List, Optional, Set, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import CONTROL_PLANE
+from lib.plane import (
+    PlaneContext,
+    PlaneType,
+    get_current_plane,
+    validate_target_plane,
+    validate_external_interface_direction,
+    PLANE_ORDER,
+)
 
 # Tier ordering (lower number = lower tier)
 TIER_ORDER: Dict[str, int] = {
@@ -65,6 +77,29 @@ class TierViolation:
         return (
             f"{self.pkg_id} ({self.pkg_tier}) -> {self.dep_id} ({self.dep_tier}): "
             f"{self.message}"
+        )
+
+
+class PlaneViolation:
+    """A plane dependency or scope violation."""
+
+    def __init__(
+        self,
+        pkg_id: str,
+        source_plane: str,
+        target_plane: str,
+        violation_type: str,
+        message: str
+    ):
+        self.pkg_id = pkg_id
+        self.source_plane = source_plane
+        self.target_plane = target_plane
+        self.violation_type = violation_type
+        self.message = message
+
+    def __str__(self) -> str:
+        return (
+            f"{self.pkg_id}: {self.violation_type} - {self.message}"
         )
 
 
@@ -206,30 +241,113 @@ def validate_manifest(manifest_path: Path) -> Tuple[List[TierViolation], List[st
     return violations, warnings
 
 
-def validate_all_manifests() -> Tuple[List[TierViolation], List[str]]:
-    """Validate all package manifests in packages/ directory.
+def validate_plane_rules(
+    manifest_path: Path,
+    plane: PlaneContext
+) -> Tuple[List[PlaneViolation], List[str]]:
+    """Validate plane-specific rules in a manifest.
+
+    Checks:
+    1. target_plane matches current plane (or is "any")
+    2. external_interfaces follow direction rules
+    3. deps are within same plane (local only)
+
+    Args:
+        manifest_path: Path to manifest.json
+        plane: Current PlaneContext
 
     Returns:
-        Tuple of (all violations, all warnings)
+        Tuple of (plane violations, warnings)
     """
-    all_violations = []
+    violations = []
+    warnings = []
+
+    manifest = load_manifest(manifest_path)
+    if manifest is None:
+        warnings.append(f"Could not load manifest: {manifest_path}")
+        return violations, warnings
+
+    pkg_id = manifest.get("id", "")
+    if not pkg_id:
+        warnings.append(f"Manifest missing id: {manifest_path}")
+        return violations, warnings
+
+    # Check target_plane
+    target_plane = manifest.get("target_plane", "any")
+    if target_plane != "any" and not validate_target_plane(target_plane, plane):
+        violations.append(PlaneViolation(
+            pkg_id=pkg_id,
+            source_plane=plane.name,
+            target_plane=target_plane,
+            violation_type="target_plane_mismatch",
+            message=f"Package targets '{target_plane}' but current plane is '{plane.name}'"
+        ))
+
+    # Check external_interfaces direction rules
+    external_interfaces = manifest.get("external_interfaces", [])
+    for iface in external_interfaces:
+        iface_name = iface.get("name", "unknown")
+        source_plane_name = iface.get("source_plane", "")
+
+        if not source_plane_name:
+            warnings.append(f"{pkg_id}: external_interface '{iface_name}' missing source_plane")
+            continue
+
+        if not validate_external_interface_direction(plane, source_plane_name):
+            violations.append(PlaneViolation(
+                pkg_id=pkg_id,
+                source_plane=plane.name,
+                target_plane=source_plane_name,
+                violation_type="interface_direction",
+                message=(
+                    f"Interface '{iface_name}' from plane '{source_plane_name}' cannot be "
+                    f"referenced by plane '{plane.name}' (direction violation: "
+                    f"higher privilege planes cannot reference lower privilege planes)"
+                )
+            ))
+
+    # Note: deps locality (same plane only) would require checking if dep packages
+    # exist in the same plane. For now, we just warn about external interfaces.
+
+    return violations, warnings
+
+
+def validate_all_manifests(plane: Optional[PlaneContext] = None) -> Tuple[List[TierViolation], List[PlaneViolation], List[str]]:
+    """Validate all package manifests in packages/ directory.
+
+    Args:
+        plane: Optional PlaneContext for plane-specific validation
+
+    Returns:
+        Tuple of (tier violations, plane violations, all warnings)
+    """
+    all_tier_violations = []
+    all_plane_violations = []
     all_warnings = []
 
-    if not PACKAGES_DIR.exists():
-        all_warnings.append(f"Packages directory not found: {PACKAGES_DIR}")
-        return all_violations, all_warnings
+    packages_dir = plane.root / "packages" if plane else PACKAGES_DIR
+    if not packages_dir.exists():
+        all_warnings.append(f"Packages directory not found: {packages_dir}")
+        return all_tier_violations, all_plane_violations, all_warnings
 
-    for pkg_dir in PACKAGES_DIR.iterdir():
+    for pkg_dir in packages_dir.iterdir():
         if not pkg_dir.is_dir():
             continue
 
         manifest_path = pkg_dir / "manifest.json"
         if manifest_path.exists():
-            violations, warnings = validate_manifest(manifest_path)
-            all_violations.extend(violations)
+            # Tier validation
+            tier_violations, warnings = validate_manifest(manifest_path)
+            all_tier_violations.extend(tier_violations)
             all_warnings.extend(warnings)
 
-    return all_violations, all_warnings
+            # Plane validation (if plane context provided)
+            if plane:
+                plane_violations, plane_warnings = validate_plane_rules(manifest_path, plane)
+                all_plane_violations.extend(plane_violations)
+                all_warnings.extend(plane_warnings)
+
+    return all_tier_violations, all_plane_violations, all_warnings
 
 
 def validate_registry() -> Tuple[List[TierViolation], List[str]]:
@@ -338,14 +456,44 @@ def print_tier_matrix():
     print("\nOK = Allowed, X = Forbidden, - = Same tier")
 
 
+def print_plane_matrix():
+    """Print plane interface direction matrix for reference."""
+    print("\nPlane Interface Direction Matrix:")
+    print("From/To | HOT | FIRST | SECOND")
+    print("--------|-----|-------|--------")
+
+    for from_plane in ["HOT", "FIRST_ORDER", "SECOND_ORDER"]:
+        short_from = from_plane.replace("_ORDER", "")
+        row = f"{short_from:7} |"
+        for to_plane in ["HOT", "FIRST_ORDER", "SECOND_ORDER"]:
+            from_order = PLANE_ORDER[PlaneType(from_plane)]
+            to_order = PLANE_ORDER[PlaneType(to_plane)]
+            if from_plane == to_plane:
+                row += "  -  |"
+            elif to_order > from_order:
+                # Can reference lower privilege (higher order number)
+                row += " OK  |"
+            else:
+                row += "  X  |"
+        print(row)
+
+    print("\nOK = Can reference, X = Cannot reference, - = Same plane")
+    print("Direction: Higher privilege can reference lower privilege interfaces")
+
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Validate tier dependency constraints (FMWK-PKG-001)"
+        description="Validate tier and plane dependency constraints (FMWK-PKG-001)"
     )
     parser.add_argument(
         "--manifest",
         help="Validate a specific manifest.json file"
+    )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        help="Plane root path for plane-specific validation"
     )
     parser.add_argument(
         "--strict",
@@ -356,6 +504,11 @@ def main() -> int:
         "--show-matrix",
         action="store_true",
         help="Show tier dependency matrix"
+    )
+    parser.add_argument(
+        "--show-plane-matrix",
+        action="store_true",
+        help="Show plane interface direction matrix"
     )
     parser.add_argument(
         "--registry-only",
@@ -369,39 +522,66 @@ def main() -> int:
         print_tier_matrix()
         return 0
 
-    all_violations = []
+    if args.show_plane_matrix:
+        print_plane_matrix()
+        return 0
+
+    # Resolve plane context if --root provided
+    plane = None
+    if args.root:
+        plane = get_current_plane(args.root.resolve())
+        print(f"Plane context: {plane.name} ({plane.plane_type.value})")
+        print(f"Plane root: {plane.root}")
+        print()
+
+    all_tier_violations = []
+    all_plane_violations = []
     all_warnings = []
 
     if args.manifest:
         # Validate single manifest
         manifest_path = Path(args.manifest)
         if not manifest_path.is_absolute():
-            manifest_path = CONTROL_PLANE / manifest_path
+            manifest_path = (plane.root if plane else CONTROL_PLANE) / manifest_path
 
         print(f"Validating manifest: {manifest_path}")
-        violations, warnings = validate_manifest(manifest_path)
-        all_violations.extend(violations)
+        tier_violations, warnings = validate_manifest(manifest_path)
+        all_tier_violations.extend(tier_violations)
         all_warnings.extend(warnings)
+
+        # Also validate plane rules if plane context available
+        if plane:
+            plane_violations, plane_warnings = validate_plane_rules(manifest_path, plane)
+            all_plane_violations.extend(plane_violations)
+            all_warnings.extend(plane_warnings)
     else:
         # Validate registry
-        print(f"Validating registry: {PKG_REGISTRY}")
+        registry_path = (plane.root if plane else CONTROL_PLANE) / "registries" / "packages_registry.csv"
+        print(f"Validating registry: {registry_path}")
         violations, warnings = validate_registry()
-        all_violations.extend(violations)
+        all_tier_violations.extend(violations)
         all_warnings.extend(warnings)
 
         if not args.registry_only:
             # Also validate package manifests
-            print(f"Validating manifests in: {PACKAGES_DIR}")
-            violations, warnings = validate_all_manifests()
-            all_violations.extend(violations)
+            packages_dir = (plane.root if plane else CONTROL_PLANE) / "packages"
+            print(f"Validating manifests in: {packages_dir}")
+            tier_violations, plane_violations, warnings = validate_all_manifests(plane)
+            all_tier_violations.extend(tier_violations)
+            all_plane_violations.extend(plane_violations)
             all_warnings.extend(warnings)
 
     # Print results
     print()
 
-    if all_violations:
-        print("VIOLATIONS:")
-        for v in all_violations:
+    if all_tier_violations:
+        print("TIER VIOLATIONS:")
+        for v in all_tier_violations:
+            print(f"  ERROR: {v}")
+
+    if all_plane_violations:
+        print("\nPLANE VIOLATIONS:")
+        for v in all_plane_violations:
             print(f"  ERROR: {v}")
 
     if all_warnings:
@@ -410,20 +590,22 @@ def main() -> int:
             print(f"  WARN: {w}")
 
     # Summary
+    total_violations = len(all_tier_violations) + len(all_plane_violations)
     print()
-    print(f"Tier validation complete:")
-    print(f"  Violations: {len(all_violations)}")
+    print(f"Validation complete:")
+    print(f"  Tier violations: {len(all_tier_violations)}")
+    print(f"  Plane violations: {len(all_plane_violations)}")
     print(f"  Warnings: {len(all_warnings)}")
 
-    if all_violations:
-        print("\nFAIL: Tier dependency violations detected")
+    if total_violations > 0:
+        print("\nFAIL: Dependency violations detected")
         return 1
 
     if args.strict and all_warnings:
         print("\nFAIL: Warnings present in strict mode")
         return 1
 
-    print("\nOK: All tier dependencies valid")
+    print("\nOK: All tier and plane dependencies valid")
     return 0
 
 

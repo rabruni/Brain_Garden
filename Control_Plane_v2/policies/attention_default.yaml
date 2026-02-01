@@ -1,0 +1,145 @@
+# Attention Policy Default Configuration
+# Per Plane-Aware Package System design
+#
+# This policy defines default attention routing and handling rules
+# for cross-cutting concerns in the control plane chain.
+
+schema_version: "1.0"
+policy_id: POL-ATTENTION-DEFAULT
+policy_type: attention
+name: Default Attention Policy
+description: Default rules for attention envelope routing and handling across planes
+version: "1.0.0"
+effective_date: "2026-01-01T00:00:00Z"
+
+applies_to:
+  planes:
+    - all
+  environments:
+    - all
+
+rules:
+  # R001: Critical priority requires immediate handling
+  - rule_id: R001
+    description: Critical priority envelopes require immediate acknowledgment
+    condition:
+      priority: critical
+    effect: allow
+    requirements:
+      - audit_log
+    priority: 1000
+    routing:
+      delivery_mode: immediate
+      acknowledge_required: true
+      max_retries: 5
+      backoff_seconds: 30
+
+  # R002: Policy updates from HOT plane are authoritative
+  - rule_id: R002
+    description: Policy updates from HOT plane must be processed
+    condition:
+      attention_type: policy_update
+      source_plane: hot
+    effect: allow
+    requirements:
+      - audit_log
+    priority: 900
+    routing:
+      delivery_mode: immediate
+      acknowledge_required: true
+
+  # R003: Escalations must reference parent
+  - rule_id: R003
+    description: Escalations must have valid parent envelope reference
+    condition:
+      attention_type: escalation
+    effect: require_approval
+    requirements:
+      - audit_log
+    priority: 800
+
+  # R004: Compliance checks require integrity verification
+  - rule_id: R004
+    description: Compliance check envelopes trigger integrity verification
+    condition:
+      attention_type: compliance_check
+    effect: allow
+    requirements:
+      - integrity_check
+      - audit_log
+    priority: 700
+
+  # R005: Audit requests are always logged
+  - rule_id: R005
+    description: All audit request envelopes are logged
+    condition:
+      attention_type: audit_request
+    effect: allow
+    requirements:
+      - audit_log
+    priority: 600
+
+  # R006: Notifications are low priority by default
+  - rule_id: R006
+    description: Notification envelopes can be batched
+    condition:
+      attention_type: notification
+    effect: allow
+    priority: 100
+    routing:
+      delivery_mode: batched
+      acknowledge_required: false
+
+  # R007: Directives from higher planes must be honored
+  - rule_id: R007
+    description: Directive envelopes from higher privilege planes
+    condition:
+      attention_type: directive
+    effect: allow
+    requirements:
+      - audit_log
+    priority: 850
+
+# Plane-specific routing rules
+plane_routing:
+  hot:
+    # HOT plane receives all critical envelopes
+    receive_priorities:
+      - critical
+      - high
+    forward_to: []  # HOT doesn't forward up
+
+  first:
+    # FIRST_ORDER receives most envelopes
+    receive_priorities:
+      - critical
+      - high
+      - medium
+    forward_to:
+      - hot  # Can escalate to HOT
+
+  second:
+    # SECOND_ORDER receives all priorities
+    receive_priorities:
+      - critical
+      - high
+      - medium
+      - low
+    forward_to:
+      - first  # Can escalate to FIRST_ORDER
+      - hot    # Can escalate directly to HOT for critical
+
+# Retention settings
+retention:
+  default_ttl_days: 90
+  critical_ttl_days: 365
+  audit_ttl_days: 2555  # ~7 years for compliance
+
+metadata:
+  author: system
+  approved_at: "2026-01-01T00:00:00Z"
+  review_date: "2027-01-01"
+  tags:
+    - attention
+    - routing
+    - default

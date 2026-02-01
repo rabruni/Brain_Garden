@@ -2,7 +2,7 @@
 """
 pristine.py - Write boundary enforcement for Control Plane v2.
 
-Enforces that the Control Plane directory remains pristine:
+Enforces that each plane's directory remains pristine:
 - No byte may enter governed paths unless via verified, auditable transition.
 - Only package_install (in INSTALL mode) may write to PRISTINE paths.
 - Ledger is append-only.
@@ -17,6 +17,11 @@ Modes:
     normal: Only DERIVED paths writable
     install: PRISTINE paths writable (package_install only)
     bootstrap: packages_registry.csv writable (one-time setup)
+
+Plane-Aware:
+    All functions accept an optional `plane` parameter (PlaneContext).
+    When provided, operations are scoped to that plane's root instead of
+    the global CONTROL_PLANE singleton.
 """
 from __future__ import annotations
 
@@ -24,7 +29,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Set, Optional
+from typing import Set, Optional, TYPE_CHECKING
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -32,6 +37,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib.paths import CONTROL_PLANE
 from lib.ledger_client import LedgerClient, LedgerEntry
 from lib.tier_manifest import TierManifest
+
+if TYPE_CHECKING:
+    from lib.plane import PlaneContext
 
 
 class WriteMode(str, Enum):
@@ -135,71 +143,104 @@ class OutsideBoundaryViolation(Exception):
         super().__init__(self.message)
 
 
-def is_inside_control_plane(path: Path) -> bool:
-    """Check if a path is inside CONTROL_PLANE."""
+def _get_plane_root(plane: Optional["PlaneContext"] = None) -> Path:
+    """Get the root path for a plane, or CONTROL_PLANE as fallback.
+
+    Args:
+        plane: Optional PlaneContext to use
+
+    Returns:
+        The plane's root path, or CONTROL_PLANE if not provided
+    """
+    if plane is not None:
+        return plane.root
+    return CONTROL_PLANE
+
+
+def is_inside_control_plane(path: Path, plane: Optional["PlaneContext"] = None) -> bool:
+    """Check if a path is inside the control plane root.
+
+    Args:
+        path: Path to check
+        plane: Optional PlaneContext to scope the check (uses plane.root)
+
+    Returns:
+        True if path is inside the plane's root (or CONTROL_PLANE if no plane)
+    """
+    root = _get_plane_root(plane)
     if not path.is_absolute():
         path = Path.cwd() / path
     path = path.resolve()
     try:
-        path.relative_to(CONTROL_PLANE)
+        path.relative_to(root)
         return True
     except ValueError:
         return False
 
 
-def assert_inside_control_plane(path: Path, log_violation: bool = True) -> None:
+def assert_inside_control_plane(
+    path: Path,
+    log_violation: bool = True,
+    plane: Optional["PlaneContext"] = None,
+) -> None:
     """
-    Assert that a path is inside CONTROL_PLANE.
+    Assert that a path is inside the control plane root.
 
     Raises OutsideBoundaryViolation unless CONTROL_PLANE_ALLOW_OUTSIDE=1.
 
     Args:
         path: Path to check
         log_violation: If True, log violations to ledger
+        plane: Optional PlaneContext to scope the check (uses plane.root)
     """
+    root = _get_plane_root(plane)
     if not path.is_absolute():
         path = Path.cwd() / path
     path = path.resolve()
 
-    if is_inside_control_plane(path):
+    if is_inside_control_plane(path, plane=plane):
         return  # OK
 
     # Check for dev escape hatch
     if os.getenv("CONTROL_PLANE_ALLOW_OUTSIDE") == "1":
         if log_violation:
-            _log_event("OUTSIDE_ALLOWED", path, get_current_mode(), allowed=True)
+            _log_event("OUTSIDE_ALLOWED", path, get_current_mode(), allowed=True, plane=plane)
         return  # Explicitly allowed
 
     # Violation
     if log_violation:
-        _log_event("OUTSIDE_DENIED", path, get_current_mode(), allowed=False)
+        _log_event("OUTSIDE_DENIED", path, get_current_mode(), allowed=False, plane=plane)
 
+    plane_name = plane.name if plane else "CONTROL_PLANE"
     raise OutsideBoundaryViolation(
         path,
-        f"Write outside CONTROL_PLANE denied: {path}. "
+        f"Write outside {plane_name} denied: {path}. "
         f"Set CONTROL_PLANE_ALLOW_OUTSIDE=1 to allow (dev only)."
     )
 
 
-def classify_path(path: Path) -> PathClass:
+def classify_path(path: Path, plane: Optional["PlaneContext"] = None) -> PathClass:
     """
     Classify a path into its directory class.
 
     Args:
         path: Absolute or relative path to classify
+        plane: Optional PlaneContext to scope the classification (uses plane.root)
 
     Returns:
         PathClass indicating the directory's write rules
     """
+    root = _get_plane_root(plane)
+
     # Normalize to absolute
     if not path.is_absolute():
-        path = CONTROL_PLANE / path
+        path = root / path
 
-    # Check if path is under CONTROL_PLANE
+    # Check if path is under the plane root
     try:
-        rel = path.relative_to(CONTROL_PLANE)
+        rel = path.relative_to(root)
     except ValueError:
-        # Path is outside CONTROL_PLANE - check if it's a tier ledger
+        # Path is outside plane root - check if it's a tier ledger
         if is_tier_ledger_path(path):
             return PathClass.APPEND_ONLY
         return PathClass.EXTERNAL
@@ -210,18 +251,27 @@ def classify_path(path: Path) -> PathClass:
     if not parts:
         return PathClass.PRISTINE  # Root is pristine
 
+    # Use plane-specific directory lists if available, else defaults
+    derived_paths = set(plane.derived_roots) if plane else DERIVED_PATHS
+    append_only_paths = set(plane.append_only_roots) if plane else APPEND_ONLY_PATHS
+    pristine_paths = set(plane.pristine_roots) if plane else PRISTINE_PATHS
+
     # Check derived first (more specific paths)
-    for derived in DERIVED_PATHS:
+    for derived in derived_paths:
         if rel_str == derived or rel_str.startswith(derived + "/"):
             return PathClass.DERIVED
 
     # Check append-only
-    for append_only in APPEND_ONLY_PATHS:
+    for append_only in append_only_paths:
         if rel_str == append_only or rel_str.startswith(append_only + "/"):
             return PathClass.APPEND_ONLY
 
+    # Check if this is a ledger within a nested tier (work_orders/sessions instances)
+    if is_tier_ledger_path(path):
+        return PathClass.APPEND_ONLY
+
     # Check pristine
-    for pristine in PRISTINE_PATHS:
+    for pristine in pristine_paths:
         if rel_str == pristine or rel_str.startswith(pristine + "/"):
             return PathClass.PRISTINE
 
@@ -229,10 +279,19 @@ def classify_path(path: Path) -> PathClass:
     return PathClass.DERIVED
 
 
-def is_bootstrap_writable(path: Path) -> bool:
-    """Check if path is writable during bootstrap mode."""
+def is_bootstrap_writable(path: Path, plane: Optional["PlaneContext"] = None) -> bool:
+    """Check if path is writable during bootstrap mode.
+
+    Args:
+        path: Path to check
+        plane: Optional PlaneContext to scope the check (uses plane.root)
+
+    Returns:
+        True if the path is writable during bootstrap mode
+    """
+    root = _get_plane_root(plane)
     try:
-        rel = path.relative_to(CONTROL_PLANE)
+        rel = path.relative_to(root)
         return str(rel) in BOOTSTRAP_WRITABLE
     except ValueError:
         return False
@@ -258,6 +317,7 @@ def assert_write_allowed(
     path: Path,
     mode: Optional[WriteMode] = None,
     log_violation: bool = True,
+    plane: Optional["PlaneContext"] = None,
 ) -> None:
     """
     Assert that a write operation is allowed.
@@ -266,6 +326,7 @@ def assert_write_allowed(
         path: Path being written to
         mode: Write mode (defaults to environment-based detection)
         log_violation: If True, log violations to ledger
+        plane: Optional PlaneContext to scope the check (uses plane.root)
 
     Raises:
         WriteViolation: If write is not allowed
@@ -273,11 +334,11 @@ def assert_write_allowed(
     if mode is None:
         mode = get_current_mode()
 
-    # First: check if path is inside CONTROL_PLANE (fail-closed boundary)
+    # First: check if path is inside the plane root (fail-closed boundary)
     # This raises OutsideBoundaryViolation unless CONTROL_PLANE_ALLOW_OUTSIDE=1
-    assert_inside_control_plane(path, log_violation=log_violation)
+    assert_inside_control_plane(path, log_violation=log_violation, plane=plane)
 
-    path_class = classify_path(path)
+    path_class = classify_path(path, plane=plane)
 
     # External paths should not reach here (caught by assert_inside_control_plane)
     # But if CONTROL_PLANE_ALLOW_OUTSIDE=1, external writes are explicitly allowed
@@ -298,13 +359,13 @@ def assert_write_allowed(
     # PRISTINE paths require special handling
     if path_class == PathClass.PRISTINE:
         # Check bootstrap exception
-        if mode == WriteMode.BOOTSTRAP and is_bootstrap_writable(path):
-            _log_event("BOOTSTRAP_WRITE", path, mode, allowed=True)
+        if mode == WriteMode.BOOTSTRAP and is_bootstrap_writable(path, plane=plane):
+            _log_event("BOOTSTRAP_WRITE", path, mode, allowed=True, plane=plane)
             return
 
         # Check install mode
         if mode == WriteMode.INSTALL:
-            _log_event("INSTALL_WRITE", path, mode, allowed=True)
+            _log_event("INSTALL_WRITE", path, mode, allowed=True, plane=plane)
             return
 
         # Violation
@@ -316,7 +377,7 @@ def assert_write_allowed(
         )
 
         if log_violation:
-            _log_event("PRISTINE_VIOLATION", path, mode, allowed=False)
+            _log_event("PRISTINE_VIOLATION", path, mode, allowed=False, plane=plane)
 
         raise violation
 
@@ -326,10 +387,23 @@ def _log_event(
     path: Path,
     mode: WriteMode,
     allowed: bool,
+    plane: Optional["PlaneContext"] = None,
 ) -> None:
-    """Log a pristine boundary event to the ledger."""
+    """Log a pristine boundary event to the ledger.
+
+    Args:
+        event_type: Type of event (e.g., "BOOTSTRAP_WRITE", "PRISTINE_VIOLATION")
+        path: Path involved in the event
+        mode: Current write mode
+        allowed: Whether the operation was allowed
+        plane: Optional PlaneContext for plane-scoped logging
+    """
     try:
-        ledger = LedgerClient()
+        # Use plane-scoped ledger if available
+        if plane is not None:
+            ledger = LedgerClient(ledger_path=plane.ledger_dir / "governance.jsonl")
+        else:
+            ledger = LedgerClient()
         entry = LedgerEntry(
             event_type=f"pristine_{event_type.lower()}",
             submission_id=str(path),
@@ -338,8 +412,9 @@ def _log_event(
             metadata={
                 "path": str(path),
                 "mode": mode.value,
-                "path_class": classify_path(path).value,
+                "path_class": classify_path(path, plane=plane).value,
                 "allowed": allowed,
+                "plane": plane.name if plane else "default",
             },
         )
         ledger.write(entry)
@@ -348,13 +423,17 @@ def _log_event(
         pass
 
 
-def assert_append_only(path: Path) -> None:
+def assert_append_only(path: Path, plane: Optional["PlaneContext"] = None) -> None:
     """
     Assert that a path is in an append-only directory.
 
     Used to verify ledger operations are append-only.
+
+    Args:
+        path: Path to check
+        plane: Optional PlaneContext to scope the check (uses plane.root)
     """
-    path_class = classify_path(path)
+    path_class = classify_path(path, plane=plane)
     if path_class != PathClass.APPEND_ONLY:
         raise WriteViolation(
             path=path,

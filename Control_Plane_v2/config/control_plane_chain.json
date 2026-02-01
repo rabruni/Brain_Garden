@@ -1,0 +1,24 @@
+{
+  "$schema": "../schemas/control_plane_chain.json",
+  "description": "Control Plane chain configuration - defines the 3-plane topology",
+  "planes": [
+    {
+      "name": "ho3",
+      "type": "HO3",
+      "root": "/Users/raymondbruni/Brain_Garden/playground/Control_Plane_v2",
+      "comment": "Highest privilege plane (HO3) - cannot be modified by lower planes"
+    },
+    {
+      "name": "ho2",
+      "type": "HO2",
+      "root": "/Users/raymondbruni/Brain_Garden/playground/Control_Plane_v2/planes/ho2",
+      "comment": "Middle tier (HO2) - can reference HO3 interfaces (read-only)"
+    },
+    {
+      "name": "ho1",
+      "type": "HO1",
+      "root": "/Users/raymondbruni/Brain_Garden/playground/Control_Plane_v2/planes/ho1",
+      "comment": "Lowest tier (HO1) - can reference HO2 and HO3 interfaces (read-only)"
+    }
+  ]
+}

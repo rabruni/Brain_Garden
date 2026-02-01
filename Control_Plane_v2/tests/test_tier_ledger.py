@@ -114,17 +114,17 @@ class TestTierCreation:
     """Test tier creation via LedgerFactory."""
 
     def test_create_first_tier(self):
-        """Create a FIRST tier and verify structure."""
+        """Create a FIRST tier (HO2 in canonical naming) and verify structure."""
         with tempfile.TemporaryDirectory() as tmp:
             manifest, client = LedgerFactory.create_tier(
-                tier="FIRST",
+                tier="FIRST",  # Legacy name, migrates to HO2
                 tier_root=Path(tmp) / "worker-001",
                 session_id="sess-test-001",
                 parent_ledger="../hot/governance.jsonl"
             )
 
-            # Verify manifest
-            assert manifest.tier == "FIRST"
+            # Verify manifest (FIRST migrates to HO2)
+            assert manifest.tier == "HO2"
             assert manifest.session_id == "sess-test-001"
             assert manifest.status == "active"
             assert manifest.parent_ledger == "../hot/governance.jsonl"
@@ -135,17 +135,18 @@ class TestTierCreation:
             assert client.index_dir.exists()
 
     def test_create_second_tier(self):
-        """Create a SECOND tier with work order."""
+        """Create a SECOND tier (HO1 in canonical naming) with work order."""
         with tempfile.TemporaryDirectory() as tmp:
             manifest, client = LedgerFactory.create_tier(
-                tier="SECOND",
+                tier="SECOND",  # Legacy name, migrates to HO1
                 tier_root=Path(tmp) / "WO-2026-001",
                 work_order_id="WO-2026-001"
             )
 
-            assert manifest.tier == "SECOND"
+            # SECOND migrates to HO1
+            assert manifest.tier == "HO1"
             assert manifest.work_order_id == "WO-2026-001"
-            assert "workorder.jsonl" in str(manifest.ledger_path)
+            assert "worker.jsonl" in str(manifest.ledger_path)  # HO1 uses worker.jsonl
 
     def test_duplicate_tier_fails(self):
         """Creating tier in existing location should fail."""
@@ -233,18 +234,18 @@ class TestTierDiscovery:
     def test_list_tiers(self):
         """list_tiers should find all tier manifests."""
         with tempfile.TemporaryDirectory() as tmp:
-            # Create multiple tiers
+            # Create multiple tiers using legacy names (they get migrated)
             LedgerFactory.create_tier(
-                tier="HOT",
+                tier="HOT",  # -> HO3
                 tier_root=Path(tmp) / "hot"
             )
             LedgerFactory.create_tier(
-                tier="SECOND",
+                tier="SECOND",  # -> HO1 (lowest)
                 tier_root=Path(tmp) / "meta" / "WO-001",
                 work_order_id="WO-001"
             )
             LedgerFactory.create_tier(
-                tier="FIRST",
+                tier="FIRST",  # -> HO2 (middle)
                 tier_root=Path(tmp) / "exec" / "worker-001",
                 session_id="sess-001"
             )
@@ -252,20 +253,21 @@ class TestTierDiscovery:
             tiers = LedgerFactory.list_tiers(Path(tmp))
             assert len(tiers) == 3
 
+            # Legacy names migrate to canonical: HOT->HO3, FIRST->HO2, SECOND->HO1
             tier_types = {t.tier for t in tiers}
-            assert tier_types == {"HOT", "SECOND", "FIRST"}
+            assert tier_types == {"HO3", "HO2", "HO1"}
 
     def test_find_for_path(self):
         """TierManifest.find_for_path should find enclosing tier."""
         with tempfile.TemporaryDirectory() as tmp:
             manifest, client = LedgerFactory.create_tier(
-                tier="FIRST",
+                tier="FIRST",  # -> HO2
                 tier_root=Path(tmp) / "worker"
             )
 
             found = TierManifest.find_for_path(client.ledger_path)
             assert found is not None
-            assert found.tier == "FIRST"
+            assert found.tier == "HO2"  # FIRST migrates to HO2
 
 
 class TestChainVerification:
@@ -293,7 +295,8 @@ class TestChainVerification:
             # Verify chain
             valid, issues = client.verify_chain()
             assert valid, f"Chain invalid: {issues}"
-            assert len(client.read_all()) == 5
+            # 6 entries: 1 GENESIS + 5 test entries
+            assert len(client.read_all()) == 6
 
 
 if __name__ == "__main__":

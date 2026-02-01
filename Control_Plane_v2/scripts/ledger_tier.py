@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.ledger_factory import LedgerFactory
-from lib.tier_manifest import TierManifest
+from lib.tier_manifest import TierManifest, migrate_tier_name
 from lib.ledger_client import LedgerClient
 
 
@@ -30,8 +30,11 @@ def cmd_create(args):
         print(f"Error: Tier already exists at {tier_root}", file=sys.stderr)
         return 1
 
+    # Migrate legacy tier name to canonical
+    tier = migrate_tier_name(args.tier)
+
     manifest, client = LedgerFactory.create_tier(
-        tier=args.tier,
+        tier=tier,
         tier_root=tier_root,
         work_order_id=args.work_order_id,
         session_id=args.session_id,
@@ -39,7 +42,7 @@ def cmd_create(args):
         ledger_name=args.ledger_name,
     )
 
-    print(f"Created {args.tier} tier at {tier_root}")
+    print(f"Created {tier} tier at {tier_root}")
     print(f"  Manifest: {manifest.manifest_path}")
     print(f"  Ledger:   {manifest.absolute_ledger_path}")
     if args.parent:
@@ -175,8 +178,9 @@ def main():
 
     # create
     p_create = subparsers.add_parser("create", help="Create a new tier")
-    p_create.add_argument("--tier", required=True, choices=["HOT", "SECOND", "FIRST"],
-                          help="Tier type")
+    p_create.add_argument("--tier", required=True,
+                          choices=["HO3", "HO2", "HO1", "HOT", "SECOND", "FIRST"],
+                          help="Tier type (canonical: HO3, HO2, HO1; legacy: HOT, SECOND, FIRST)")
     p_create.add_argument("--root", required=True, help="Tier root directory")
     p_create.add_argument("--work-order-id", help="Work order ID (SECOND tier)")
     p_create.add_argument("--session-id", help="Session ID (FIRST tier)")

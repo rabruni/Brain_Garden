@@ -12,22 +12,40 @@ Checks:
 
 Usage:
     python3 scripts/validate_packages.py
+    python3 scripts/validate_packages.py --root /path/to/plane
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # Add repo root for imports when run from Control_Plane/
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import REPO_ROOT, CONTROL_PLANE
+from lib.plane import get_current_plane, PlaneContext
 
+# Legacy default (used when plane not specified)
 PKG_PATH = CONTROL_PLANE / "registries" / "packages_registry.csv"
+
+
+def get_pkg_path(plane: Optional[PlaneContext] = None) -> Path:
+    """Get the packages registry path for a plane."""
+    if plane is not None:
+        return plane.root / "registries" / "packages_registry.csv"
+    return PKG_PATH
+
+
+def get_root(plane: Optional[PlaneContext] = None) -> Path:
+    """Get the root path for a plane."""
+    if plane is not None:
+        return plane.root
+    return CONTROL_PLANE
 
 STATUS = {"proposed", "draft", "validated", "active", "superseded", "deprecated", "retired", "archived", "yanked"}
 SELECTED = {"yes", "no", ""}
@@ -148,16 +166,26 @@ def detect_cycle(graph: Dict[str, List[str]]) -> bool:
 
 
 def main() -> int:
-    rows = load_rows(PKG_PATH)
+    ap = argparse.ArgumentParser(description="Validate packages registry")
+    ap.add_argument("--root", type=Path, help="Plane root path (for multi-plane operation)")
+    args = ap.parse_args()
+
+    # Resolve plane context
+    plane_root = args.root.resolve() if args.root else None
+    plane = get_current_plane(plane_root)
+    pkg_path = get_pkg_path(plane)
+    root = get_root(plane)
+
+    rows = load_rows(pkg_path)
     if not rows:
-        warn("packages_registry.csv is empty")
+        warn(f"{pkg_path.name} is empty")
         return 0
 
     headers = list(rows[0].keys())
 
     ids = set()
     for i, row in enumerate(rows, start=2):
-        ctx = f"packages_registry.csv:{i} ({row.get('id','')})"
+        ctx = f"{pkg_path.name}:{i} ({row.get('id','')})"
         pid = (row.get("id") or "").strip()
         if not pid:
             fail(f"{ctx}: missing id")
@@ -238,7 +266,7 @@ def main() -> int:
         digest = (row.get("digest") or "").strip()
         if not digest and (row.get("source_type") or "").strip() == "local":
             art = (row.get("artifact_path") or row.get("source") or "").lstrip("/")
-            art_path = REPO_ROOT / art
+            art_path = root / art
             if art_path.is_file():
                 try:
                     digest = sha256_file(art_path)
@@ -254,7 +282,7 @@ def main() -> int:
         other_digest = (other.get("digest") or "").strip()
         if not other_digest and (other.get("source_type") or "").strip() == "local":
             art = (other.get("artifact_path") or other.get("source") or "").lstrip("/")
-            art_path = REPO_ROOT / art
+            art_path = root / art
             if art_path.is_file():
                 try:
                     other_digest = sha256_file(art_path)
@@ -269,7 +297,7 @@ def main() -> int:
     # dep existence and cycle detection
     graph = build_graph(rows)
     for i, row in enumerate(rows, start=2):
-        ctx = f"packages_registry.csv:{i} ({row.get('id','')})"
+        ctx = f"{pkg_path.name}:{i} ({row.get('id','')})"
         for dep in graph[row["id"]]:
             if dep and dep not in ids:
                 fail(f"{ctx}: missing dependency '{dep}'")
@@ -278,7 +306,7 @@ def main() -> int:
 
     # Attestation validation
     for i, row in enumerate(rows, start=2):
-        ctx = f"packages_registry.csv:{i} ({row.get('id','')})"
+        ctx = f"{pkg_path.name}:{i} ({row.get('id','')})"
         status = (row.get("status") or "").strip()
         source_type = (row.get("source_type") or "").strip()
 
@@ -293,9 +321,9 @@ def main() -> int:
         if attestation_path:
             # Resolve path
             if attestation_path.startswith("/"):
-                att_full_path = CONTROL_PLANE / attestation_path.lstrip("/")
+                att_full_path = root / attestation_path.lstrip("/")
             else:
-                att_full_path = CONTROL_PLANE / attestation_path
+                att_full_path = root / attestation_path
 
             # Check file exists
             if not att_full_path.exists():
@@ -329,7 +357,7 @@ def main() -> int:
                 except Exception as e:
                     warn(f"{ctx}: could not validate attestation: {e}")
 
-    print("OK: packages_registry.csv valid")
+    print(f"OK: {pkg_path.name} valid")
     return 0
 
 

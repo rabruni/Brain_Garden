@@ -1,9 +1,14 @@
 """Tier Manifest for multi-tier ledger support.
 
 Defines the TierManifest dataclass that declares tier configuration
-for HOT/SECOND/FIRST tier replicas, enabling tier-agnostic ledger capability.
+for HO3/HO2/HO1 tier replicas, enabling tier-agnostic ledger capability.
 
 Each tier root directory contains a tier.json manifest file.
+
+Canonical naming:
+- HO3 (Higher Order 3): Highest privilege, formerly "HOT"
+- HO2 (Higher Order 2): Middle tier, formerly "SECOND"
+- HO1 (Higher Order 1): Lowest tier, formerly "FIRST"
 """
 
 import json
@@ -13,8 +18,38 @@ from pathlib import Path
 from typing import Optional, Literal
 
 
-TierType = Literal["HOT", "SECOND", "FIRST"]
+# Canonical tier names
+TierType = Literal["HO3", "HO2", "HO1"]
 TierStatus = Literal["active", "archived", "closed"]
+
+# Migration mapping from legacy names to canonical names
+# Note: FIRST_ORDER was middle tier, SECOND_ORDER was lowest tier
+TIER_MIGRATION = {
+    "HOT": "HO3",
+    "FIRST": "HO2",
+    "SECOND": "HO1",
+    "FIRST_ORDER": "HO2",
+    "SECOND_ORDER": "HO1",
+}
+
+# Reverse mapping for backward compatibility output
+TIER_LEGACY_NAMES = {
+    "HO3": "HOT",
+    "HO2": "FIRST",
+    "HO1": "SECOND",
+}
+
+
+def migrate_tier_name(tier: str) -> str:
+    """Migrate a tier name from legacy to canonical form.
+
+    Args:
+        tier: Tier name (legacy or canonical)
+
+    Returns:
+        Canonical tier name (HO3, HO2, or HO1)
+    """
+    return TIER_MIGRATION.get(tier, tier)
 
 
 @dataclass
@@ -103,6 +138,10 @@ class TierManifest:
         Raises:
             FileNotFoundError: If tier.json doesn't exist
             ValueError: If tier.json is invalid
+
+        Note:
+            Legacy tier names (HOT, SECOND, FIRST) are automatically
+            migrated to canonical names (HO3, HO2, HO1).
         """
         if not path.exists():
             raise FileNotFoundError(f"Tier manifest not found: {path}")
@@ -110,8 +149,11 @@ class TierManifest:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
+        # Migrate legacy tier name to canonical
+        tier = migrate_tier_name(data["tier"])
+
         return cls(
-            tier=data["tier"],
+            tier=tier,
             tier_root=Path(data["tier_root"]),
             ledger_path=Path(data["ledger_path"]),
             parent_ledger=data.get("parent_ledger"),

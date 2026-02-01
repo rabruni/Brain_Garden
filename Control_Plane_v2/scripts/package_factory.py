@@ -5,7 +5,7 @@ package_factory.py - Package Factory Workflow Orchestrator.
 Implements the canonical package flow:
 CREATE -> VALIDATE -> PACK -> SIGN -> ATTEST -> REGISTER -> INSTALL -> VERIFY
 
-Per FMWK-PKG-001: Package Standard v1.0
+Per FMWK-PKG-001: Package Standard v1.1 and Plane-Aware Package System design.
 
 Usage:
     python3 scripts/package_factory.py \\
@@ -13,6 +13,13 @@ Usage:
         --src packages/PKG-T0-001 \\
         --sign \\
         --attest \\
+        --install
+
+    # With plane scoping
+    python3 scripts/package_factory.py \\
+        --id PKG-T0-001 \\
+        --src packages/PKG-T0-001 \\
+        --root /path/to/plane \\
         --install
 
     # Validate only (no pack/install)
@@ -43,6 +50,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.paths import CONTROL_PLANE
 from lib.ledger_client import LedgerClient, LedgerEntry
+from lib.plane import (
+    PlaneContext,
+    get_current_plane,
+    validate_target_plane,
+    validate_external_interface_direction,
+)
 
 # Paths
 PACKAGES_DIR = CONTROL_PLANE / "packages"
@@ -178,6 +191,35 @@ def validate_tier_deps(manifest: Dict[str, Any]) -> Tuple[bool, List[str]]:
                     errors.append(
                         f"I1-TIER violation: {pkg_tier} cannot depend on {dep_tier} ({dep_id})"
                     )
+
+    return len(errors) == 0, errors
+
+
+def validate_plane_rules(manifest: Dict[str, Any], plane: PlaneContext) -> Tuple[bool, List[str]]:
+    """Validate plane-specific rules.
+
+    Gate G2b: plane rules valid (v1.1)
+    """
+    errors = []
+
+    # Check target_plane
+    target_plane = manifest.get("target_plane", "any")
+    if not validate_target_plane(target_plane, plane):
+        errors.append(
+            f"Package targets plane '{target_plane}' but current plane is '{plane.name}'"
+        )
+
+    # Check external_interfaces direction rules
+    external_interfaces = manifest.get("external_interfaces", [])
+    for iface in external_interfaces:
+        iface_name = iface.get("name", "unknown")
+        source_plane = iface.get("source_plane", "")
+
+        if source_plane and not validate_external_interface_direction(plane, source_plane):
+            errors.append(
+                f"Interface '{iface_name}' from plane '{source_plane}' cannot be "
+                f"referenced by plane '{plane.name}' (direction violation)"
+            )
 
     return len(errors) == 0, errors
 
@@ -431,6 +473,7 @@ def log_to_ledger(pkg_id: str, action: str, result: FactoryResult) -> None:
 def run_factory(
     pkg_id: str,
     src_dir: Path,
+    plane: PlaneContext,
     sign: bool = False,
     attest: bool = False,
     install: bool = False,
@@ -458,6 +501,8 @@ def run_factory(
     print(f"Package Factory v{FACTORY_VERSION}")
     print(f"Package: {pkg_id}")
     print(f"Source: {src_dir}")
+    print(f"Plane: {plane.name} ({plane.plane_type.value})")
+    print(f"Plane root: {plane.root}")
     print()
 
     # Load manifest
@@ -489,6 +534,16 @@ def run_factory(
         result.add_gate("G2", False, f"Tier violations: {errors}")
         return result
 
+    # G2b: Validate plane rules (v1.1)
+    if manifest.get("schema_version") == "1.1" or manifest.get("target_plane") or manifest.get("external_interfaces"):
+        print("G2b: Validating plane rules...")
+        valid, errors = validate_plane_rules(manifest, plane)
+        if valid:
+            result.add_gate("G2b", True, "Plane rules valid")
+        else:
+            result.add_gate("G2b", False, f"Plane violations: {errors}")
+            return result
+
     if validate_only:
         print("\nValidation complete (--validate-only)")
         return result
@@ -502,9 +557,11 @@ def run_factory(
         result.add_gate("G3", False, f"Pack not deterministic: {digest1[:16]}... != {digest2[:16]}...")
         return result
 
-    # Create actual archive
+    # Create actual archive (in plane-specific store)
     archive_name = f"{pkg_id}_{manifest.get('name', 'pkg').replace(' ', '_').lower()}.tar.gz"
-    archive_path = PACKAGES_STORE / archive_name
+    packages_store = plane.root / "packages_store"
+    packages_store.mkdir(parents=True, exist_ok=True)
+    archive_path = packages_store / archive_name
     print(f"Creating archive: {archive_path}")
     digest, files = create_tarball(src_dir, archive_path, manifest)
     result.archive_path = archive_path
@@ -677,13 +734,22 @@ def main() -> int:
         action="store_true",
         help="Allow skipping attestation (dev only)"
     )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        help="Plane root path (defaults to CONTROL_PLANE)"
+    )
 
     args = parser.parse_args()
 
-    # Resolve source directory
+    # Resolve plane context
+    plane_root = args.root.resolve() if args.root else None
+    plane = get_current_plane(plane_root)
+
+    # Resolve source directory (relative to plane root)
     src_dir = Path(args.src)
     if not src_dir.is_absolute():
-        src_dir = CONTROL_PLANE / src_dir
+        src_dir = plane.root / src_dir
 
     if not src_dir.exists():
         print(f"ERROR: Source directory not found: {src_dir}")
@@ -697,6 +763,7 @@ def main() -> int:
     result = run_factory(
         pkg_id=args.id,
         src_dir=src_dir,
+        plane=plane,
         sign=args.sign,
         attest=args.attest,
         install=args.install,

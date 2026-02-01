@@ -1,41 +1,70 @@
 #!/usr/bin/env python3
 """
 Registry operations - CRUD and lookup utilities.
+
+Plane-Aware:
+    Functions accept an optional `plane` parameter (PlaneContext).
+    When provided, operations are scoped to that plane's root instead of
+    the global CONTROL_PLANE singleton.
 """
 import csv
 from pathlib import Path
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, TYPE_CHECKING
 
 from .paths import CONTROL_PLANE, REGISTRIES_DIR, REPO_ROOT
 
+if TYPE_CHECKING:
+    from lib.plane import PlaneContext
 
-def find_all_registries() -> List[Path]:
-    """Find all CSV registries in Control_Plane.
+
+def _get_plane_paths(plane: Optional["PlaneContext"] = None) -> Tuple[Path, Path]:
+    """Get the control plane root and registries dir for a plane.
+
+    Args:
+        plane: Optional PlaneContext to use
+
+    Returns:
+        Tuple of (root, registries_dir)
+    """
+    if plane is not None:
+        return plane.root, plane.root / "registries"
+    return CONTROL_PLANE, REGISTRIES_DIR
+
+
+def find_all_registries(plane: Optional["PlaneContext"] = None) -> List[Path]:
+    """Find all CSV registries in the control plane.
 
     Searches:
     - registries/*.csv
     - modules/**/registries/*.csv
     - init/init_registry.csv
     - boot_os_registry.csv
+
+    Args:
+        plane: Optional PlaneContext to scope the search (uses plane.root)
+
+    Returns:
+        Sorted list of registry paths found
     """
+    root, registries_dir = _get_plane_paths(plane)
     registries = []
 
     # Root registries
-    if REGISTRIES_DIR.is_dir():
-        registries.extend(REGISTRIES_DIR.glob("*.csv"))
+    if registries_dir.is_dir():
+        registries.extend(registries_dir.glob("*.csv"))
 
     # Module registries
-    modules_dir = CONTROL_PLANE / "modules"
+    modules_dir = root / "modules"
     if modules_dir.is_dir():
         registries.extend(modules_dir.glob("**/registries/*.csv"))
 
     # Init registry
-    init_reg = CONTROL_PLANE / "init" / "init_registry.csv"
+    init_reg = root / "init" / "init_registry.csv"
     if init_reg.is_file():
         registries.append(init_reg)
 
     # Boot OS registry
-    boot_reg = CONTROL_PLANE / "boot_os_registry.csv"
+    boot_reg = root / "boot_os_registry.csv"
     if boot_reg.is_file():
         registries.append(boot_reg)
 
@@ -71,7 +100,10 @@ def get_id_column(headers: List[str]) -> Optional[str]:
     return None
 
 
-def find_item(query: str) -> Optional[Tuple[Dict, Path, int]]:
+def find_item(
+    query: str,
+    plane: Optional["PlaneContext"] = None,
+) -> Optional[Tuple[Dict, Path, int]]:
     """Find an item by ID or NAME across all registries.
 
     Returns (row, registry_path, row_index) or None.
@@ -83,8 +115,15 @@ def find_item(query: str) -> Optional[Tuple[Dict, Path, int]]:
 
     Note: While ID is the primary key per constitution, we support
     name lookup for human convenience.
+
+    Args:
+        query: ID or name to search for
+        plane: Optional PlaneContext to scope the search (uses plane.root)
+
+    Returns:
+        Tuple of (row, registry_path, row_index) or None if not found
     """
-    registries = find_all_registries()
+    registries = find_all_registries(plane=plane)
     query_lower = query.lower().strip()
     query_upper = query.upper().strip()
 
@@ -126,9 +165,20 @@ def find_item(query: str) -> Optional[Tuple[Dict, Path, int]]:
     return None
 
 
-def find_registry_by_name(name: str) -> Optional[Path]:
-    """Find a registry by partial name match."""
-    registries = find_all_registries()
+def find_registry_by_name(
+    name: str,
+    plane: Optional["PlaneContext"] = None,
+) -> Optional[Path]:
+    """Find a registry by partial name match.
+
+    Args:
+        name: Partial name to search for
+        plane: Optional PlaneContext to scope the search (uses plane.root)
+
+    Returns:
+        Path to the registry, or None if not found
+    """
+    registries = find_all_registries(plane=plane)
     name_lower = name.lower()
 
     for reg in registries:
@@ -138,8 +188,15 @@ def find_registry_by_name(name: str) -> Optional[Path]:
     return None
 
 
-def count_registry_stats() -> Dict[str, int]:
-    """Count items by status across all registries."""
+def count_registry_stats(plane: Optional["PlaneContext"] = None) -> Dict[str, int]:
+    """Count items by status across all registries.
+
+    Args:
+        plane: Optional PlaneContext to scope the count (uses plane.root)
+
+    Returns:
+        Dictionary with registry stats
+    """
     stats = {
         "registries": 0,
         "total": 0,
@@ -150,7 +207,7 @@ def count_registry_stats() -> Dict[str, int]:
         "deprecated": 0,
     }
 
-    registries = find_all_registries()
+    registries = find_all_registries(plane=plane)
     stats["registries"] = len(registries)
 
     for reg_path in registries:

@@ -42,6 +42,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.merkle import hash_string, merkle_root
 
+
+@dataclass
+class TierContext:
+    """Context for tier-aware ledger stamping.
+
+    Attached to LedgerClient to automatically stamp entries with tier metadata.
+    """
+    tier: str
+    plane_root: Path
+    work_order_id: Optional[str] = None
+    session_id: Optional[str] = None
+
+    def to_metadata(self) -> Dict[str, Any]:
+        """Convert to metadata dict for entry stamping."""
+        meta = {
+            "_tier": self.tier,
+            "_plane_root": str(self.plane_root),
+        }
+        if self.work_order_id:
+            meta["_work_order_id"] = self.work_order_id
+        if self.session_id:
+            meta["_session_id"] = self.session_id
+        return meta
+
+
 # Default ledger location
 DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "ledger" / "governance.jsonl"
 # Note: Index paths are now computed per-instance in LedgerClient.__init__
@@ -145,6 +170,7 @@ class LedgerClient:
         batch_size: int = DEFAULT_BATCH_SIZE,
         batch_interval_sec: float = DEFAULT_BATCH_INTERVAL_SEC,
         enable_index: bool = True,
+        tier_context: Optional[TierContext] = None,
     ):
         """Initialize ledger client.
 
@@ -155,8 +181,10 @@ class LedgerClient:
             batch_size: buffer entries before flush (1 keeps legacy behavior)
             batch_interval_sec: max seconds to hold a buffer (0 disables)
             enable_index: write per-segment submission offsets and metadata
+            tier_context: Optional tier context for entry stamping
         """
         self.ledger_path = ledger_path or DEFAULT_LEDGER_PATH
+        self.tier_context = tier_context
         self.rotate_bytes = rotate_bytes
         self.rotate_daily = rotate_daily
         self.batch_size = max(1, batch_size)
@@ -352,12 +380,20 @@ class LedgerClient:
     def write(self, entry: LedgerEntry) -> str:
         """Append entry to ledger with hash chaining.
 
+        If tier_context is set, automatically stamps entries with tier metadata.
+
         Args:
             entry: LedgerEntry to write
 
         Returns:
             Entry ID
         """
+        # Stamp tier context into metadata if available
+        if self.tier_context:
+            tier_meta = self.tier_context.to_metadata()
+            for key, value in tier_meta.items():
+                entry.metadata.setdefault(key, value)
+
         self._buffer.append(entry)
         self._buffer_bytes += len(entry.to_json()) + 1
 
@@ -686,3 +722,192 @@ class LedgerClient:
                 except Exception:
                     continue
         return merkle_root(roots) if roots else ""
+
+    def write_genesis(
+        self,
+        tier: str,
+        plane_root: Path,
+        parent_ledger: Optional[str] = None,
+        parent_hash: Optional[str] = None,
+        work_order_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """Write GENESIS entry as first entry in ledger.
+
+        GENESIS entries mark the beginning of a ledger chain and contain
+        cross-chain lineage information linking to the parent ledger.
+
+        Args:
+            tier: Tier name (HO3, HO2, HO1)
+            plane_root: Absolute path to plane root directory
+            parent_ledger: Path/URI to parent tier's ledger (optional)
+            parent_hash: Hash of last entry in parent ledger (optional)
+            work_order_id: Work order ID if in a work-order instance
+            session_id: Session ID if in a session instance
+
+        Returns:
+            Entry ID of the GENESIS entry
+
+        Raises:
+            ValueError: If ledger already has entries
+        """
+        if self.count() > 0:
+            raise ValueError("Cannot write GENESIS to non-empty ledger")
+
+        entry = LedgerEntry(
+            event_type="GENESIS",
+            submission_id="GENESIS",
+            decision="CHAIN_INITIALIZED",
+            reason=f"Ledger chain initialized for {tier} plane",
+            metadata={
+                "tier": tier,
+                "plane_root": str(plane_root),
+                "parent_ledger": parent_ledger,
+                "parent_hash": parent_hash,
+                "work_order_id": work_order_id,
+                "session_id": session_id,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        return self.write(entry)
+
+    def verify_genesis(self) -> Tuple[bool, List[str]]:
+        """Verify GENESIS entry is valid first entry.
+
+        Checks:
+        1. Ledger is not empty
+        2. First entry is GENESIS event_type
+        3. GENESIS has required metadata fields
+
+        Returns:
+            Tuple of (is_valid, list_of_issues)
+            - is_valid: True if no FAIL issues
+            - issues: List of WARN/FAIL/INFO messages
+        """
+        entries = self.read_all()
+        issues: List[str] = []
+
+        if not entries:
+            issues.append("FAIL: Ledger is empty (no GENESIS)")
+            return False, issues
+
+        first = entries[0]
+        if first.event_type != "GENESIS":
+            issues.append(f"WARN: First entry is {first.event_type}, not GENESIS")
+
+        if first.event_type == "GENESIS":
+            # Check required metadata
+            meta = first.metadata
+            if not meta.get("tier"):
+                issues.append("WARN: GENESIS missing tier metadata")
+            if not meta.get("plane_root"):
+                issues.append("WARN: GENESIS missing plane_root metadata")
+            if not meta.get("created_at"):
+                issues.append("WARN: GENESIS missing created_at metadata")
+
+        return len([i for i in issues if i.startswith("FAIL")]) == 0, issues
+
+    def verify_chain_link(self, parent_ledger_path: Path) -> Tuple[bool, List[str]]:
+        """Verify parent_hash in GENESIS matches parent ledger.
+
+        Args:
+            parent_ledger_path: Path to parent ledger file
+
+        Returns:
+            Tuple of (is_valid, list_of_issues)
+            - is_valid: True if chain link is valid
+            - issues: List of WARN/FAIL/INFO messages
+        """
+        entries = self.read_all()
+        issues: List[str] = []
+
+        if not entries or entries[0].event_type != "GENESIS":
+            issues.append("FAIL: No GENESIS entry to verify")
+            return False, issues
+
+        genesis = entries[0]
+        expected_parent_hash = genesis.metadata.get("parent_hash")
+
+        if not expected_parent_hash:
+            issues.append("INFO: No parent_hash in GENESIS (root ledger)")
+            return True, issues
+
+        if not parent_ledger_path.exists():
+            issues.append(f"FAIL: Parent ledger not found: {parent_ledger_path}")
+            return False, issues
+
+        parent_client = LedgerClient(ledger_path=parent_ledger_path)
+        parent_entries = parent_client.read_all()
+
+        if not parent_entries:
+            issues.append("FAIL: Parent ledger is empty")
+            return False, issues
+
+        actual_parent_hash = parent_entries[-1].entry_hash
+        if not actual_parent_hash:
+            issues.append("WARN: Parent ledger last entry has no entry_hash (legacy)")
+            return True, issues
+
+        if expected_parent_hash != actual_parent_hash:
+            issues.append(
+                f"FAIL: Parent hash mismatch: expected {expected_parent_hash[:16]}..., "
+                f"got {actual_parent_hash[:16]}..."
+            )
+            return False, issues
+
+        return True, []
+
+    def get_last_entry_hash_value(self) -> Optional[str]:
+        """Get the entry_hash of the last entry in the ledger.
+
+        Returns:
+            Hash string if ledger has entries with hashes, None otherwise
+        """
+        entries = self.read_all()
+        if not entries:
+            return None
+        # Return last entry's hash
+        last = entries[-1]
+        return last.entry_hash if last.entry_hash else None
+
+    def has_dedupe_key(self, dedupe_key: str) -> bool:
+        """Check if an entry with the given dedupe_key exists.
+
+        Dedupe keys are stored in metadata["_dedupe_key"].
+
+        Args:
+            dedupe_key: Dedupe key to search for
+
+        Returns:
+            True if an entry with this dedupe_key exists
+        """
+        entries = self.read_all()
+        for entry in entries:
+            if entry.metadata.get("_dedupe_key") == dedupe_key:
+                return True
+        return False
+
+    def read_by_event_type(self, event_type: str) -> List[LedgerEntry]:
+        """Read entries with a specific event type.
+
+        Args:
+            event_type: Event type to filter by
+
+        Returns:
+            List of matching entries in order
+        """
+        entries = self.read_all()
+        return [e for e in entries if e.event_type == event_type]
+
+    def read_entries_range(self, start: int, end: int) -> List[LedgerEntry]:
+        """Read entries in a specific index range.
+
+        Args:
+            start: Start index (inclusive)
+            end: End index (exclusive)
+
+        Returns:
+            List of entries in the range
+        """
+        entries = self.read_all()
+        return entries[start:end]

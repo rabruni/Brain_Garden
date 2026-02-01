@@ -8,8 +8,8 @@ from lib.auth import Identity
 
 # Default role → actions mapping
 ROLE_ACTIONS: Mapping[str, set[str]] = {
-    "admin": {"create", "install", "update", "remove", "pack", "verify", "hash_update", "checkpoint", "rollback"},
-    "maintainer": {"install", "update", "remove", "pack", "verify", "checkpoint"},
+    "admin": {"create", "install", "uninstall", "update", "remove", "pack", "verify", "hash_update", "checkpoint", "rollback"},
+    "maintainer": {"install", "uninstall", "update", "remove", "pack", "verify", "checkpoint"},
     "auditor": {"verify"},
     "reader": {"verify"},
 }

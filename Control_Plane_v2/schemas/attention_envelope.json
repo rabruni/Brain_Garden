@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-plane.local/schemas/attention_envelope.json",
+  "title": "Attention Envelope Schema v1.0",
+  "description": "Schema for attention envelopes - cross-cutting concern containers for agent coordination",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "envelope_id",
+    "created_at",
+    "source_plane",
+    "attention_type"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Envelope schema version"
+    },
+    "envelope_id": {
+      "type": "string",
+      "pattern": "^ENV-[A-Z0-9]{8}$",
+      "description": "Unique envelope identifier"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 creation timestamp"
+    },
+    "source_plane": {
+      "type": "string",
+      "enum": ["hot", "first", "second"],
+      "description": "Plane where the envelope originated"
+    },
+    "attention_type": {
+      "type": "string",
+      "enum": [
+        "policy_update",
+        "compliance_check",
+        "audit_request",
+        "escalation",
+        "notification",
+        "directive"
+      ],
+      "description": "Type of attention request"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low"],
+      "default": "medium",
+      "description": "Attention priority level"
+    },
+    "target_planes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["hot", "first", "second"]
+      },
+      "uniqueItems": true,
+      "description": "Planes that should receive this envelope"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Envelope-specific payload data",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Human-readable subject line"
+        },
+        "body": {
+          "type": "string",
+          "maxLength": 10000,
+          "description": "Detailed message body"
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["package", "policy", "framework", "ledger_entry"]
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": ["type", "id"]
+          },
+          "description": "Referenced artifacts"
+        },
+        "action_required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether action is required from recipient"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Optional deadline for action"
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "description": "Routing metadata for envelope delivery",
+      "properties": {
+        "delivery_mode": {
+          "type": "string",
+          "enum": ["immediate", "batched", "scheduled"],
+          "default": "immediate"
+        },
+        "acknowledge_required": {
+          "type": "boolean",
+          "default": false
+        },
+        "retry_policy": {
+          "type": "object",
+          "properties": {
+            "max_retries": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10,
+              "default": 3
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3600,
+              "default": 60
+            }
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^([0-9a-fA-F]{64})?$",
+      "description": "HMAC-SHA256 signature for integrity verification"
+    },
+    "parent_envelope_id": {
+      "type": "string",
+      "pattern": "^ENV-[A-Z0-9]{8}$",
+      "description": "Parent envelope ID for threading/escalation chains"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional envelope metadata"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "attention_type": { "const": "escalation" }
+        }
+      },
+      "then": {
+        "required": ["parent_envelope_id"],
+        "description": "Escalations must reference a parent envelope"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "priority": { "const": "critical" }
+        }
+      },
+      "then": {
+        "properties": {
+          "routing": {
+            "properties": {
+              "acknowledge_required": { "const": true }
+            }
+          }
+        },
+        "description": "Critical priority requires acknowledgment"
+      }
+    }
+  ]
+}

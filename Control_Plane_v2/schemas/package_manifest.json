@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://control-plane.local/schemas/package_manifest.json",
-  "title": "Package Manifest Schema v1.0",
-  "description": "Schema for Control Plane package manifest.json files (FMWK-PKG-001)",
+  "title": "Package Manifest Schema v1.1",
+  "description": "Schema for Control Plane package manifest.json files (FMWK-PKG-001) - includes plane-aware fields",
   "type": "object",
   "required": [
     "schema_version",
@@ -16,8 +16,8 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.0",
-      "description": "Manifest schema version"
+      "enum": ["1.0", "1.1"],
+      "description": "Manifest schema version (1.0 or 1.1)"
     },
     "id": {
       "type": "string",
@@ -62,7 +62,49 @@
         "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$"
       },
       "default": [],
-      "description": "Package ID dependencies"
+      "description": "Package ID dependencies (LOCAL PACKAGES ONLY - within same plane)"
+    },
+    "target_plane": {
+      "type": "string",
+      "enum": ["ho3", "ho2", "ho1", "hot", "first", "second", "any"],
+      "default": "any",
+      "description": "Target plane for installation (v1.1). Canonical names: ho3, ho2, ho1. Legacy: hot, first, second. 'any' allows installation in any plane."
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["local_only", "exportable"],
+      "default": "local_only",
+      "description": "Package scope - local_only means deps must be in same plane"
+    },
+    "external_interfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "source_plane"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Interface/contract name"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+            "description": "Interface version (major.minor)"
+          },
+          "source_plane": {
+            "type": "string",
+            "enum": ["ho3", "ho2", "ho1", "hot", "first", "second"],
+            "description": "Plane where the interface originates (READ-ONLY reference). Canonical: ho3, ho2, ho1. Legacy: hot, first, second."
+          },
+          "schema_ref": {
+            "type": "string",
+            "description": "Optional reference to schema file"
+          }
+        }
+      },
+      "default": [],
+      "description": "READ-ONLY dependencies on external plane interfaces (schemas/contracts)"
     },
     "conflicts": {
       "type": "array",
@@ -228,6 +270,18 @@
         "T1": { "const": 2 },
         "T2": { "const": 3 },
         "T3": { "const": 4 }
+      }
+    },
+    "plane_direction_rules": {
+      "description": "External interface direction rules: HO3->HO2->HO1 (higher privilege can reference lower). Legacy: HOT->FIRST->SECOND",
+      "type": "object",
+      "properties": {
+        "ho3_can_reference": ["ho2", "ho1"],
+        "ho2_can_reference": ["ho1"],
+        "ho1_can_reference": [],
+        "hot_can_reference": ["first", "second"],
+        "first_can_reference": ["second"],
+        "second_can_reference": []
       }
     }
   }
