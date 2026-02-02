@@ -92,10 +92,10 @@ class TestCanonicalNaming:
     def test_migrate_tier_name(self):
         """migrate_tier_name converts legacy to canonical."""
         assert migrate_tier_name("HOT") == "HO3"
-        assert migrate_tier_name("FIRST") == "HO2"  # Middle tier
-        assert migrate_tier_name("SECOND") == "HO1"  # Lowest tier
-        assert migrate_tier_name("FIRST_ORDER") == "HO2"
-        assert migrate_tier_name("SECOND_ORDER") == "HO1"
+        assert migrate_tier_name("FIRST") == "HO1"  # Lowest tier (First Order)
+        assert migrate_tier_name("SECOND") == "HO2"  # Middle tier (Second Order)
+        assert migrate_tier_name("FIRST_ORDER") == "HO1"
+        assert migrate_tier_name("SECOND_ORDER") == "HO2"
         # Already canonical
         assert migrate_tier_name("HO3") == "HO3"
 
@@ -127,8 +127,8 @@ class TestTierMigration:
             manifest = TierManifest.load(tier_json)
             assert manifest.tier == "HO3"
 
-    def test_load_tier_json_first_to_ho2(self):
-        """Loading tier.json with 'FIRST' migrates to 'HO2' (middle tier)."""
+    def test_load_tier_json_first_to_ho1(self):
+        """Loading tier.json with 'FIRST' migrates to 'HO1' (lowest tier)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tier_root = Path(tmpdir)
             tier_json = tier_root / "tier.json"
@@ -136,12 +136,12 @@ class TestTierMigration:
             tier_json.write_text(json.dumps({
                 "tier": "FIRST",
                 "tier_root": str(tier_root),
-                "ledger_path": "ledger/workorder.jsonl",
+                "ledger_path": "ledger/worker.jsonl",
                 "status": "active",
             }))
 
             manifest = TierManifest.load(tier_json)
-            assert manifest.tier == "HO2"  # FIRST was middle tier
+            assert manifest.tier == "HO1"  # FIRST (First Order) is lowest tier
 
     def test_save_writes_canonical(self):
         """Saving tier manifest writes canonical tier name."""
