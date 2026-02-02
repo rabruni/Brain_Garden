@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "plane_id": "ho3",
+  "description": "Governed roots definition for G0 gate. Files in these directories MUST be registered in file_ownership_registry.",
+  "governed_roots": [
+    "lib/",
+    "scripts/",
+    "frameworks/",
+    "schemas/",
+    "policies/",
+    "registries/",
+    "modules/",
+    "tests/"
+  ],
+  "excluded_patterns": [
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "**/__init__.py"
+  ],
+  "notes": {
+    "G0_behavior": "G0 gate validates that every file in governed_roots exists in file_ownership_registry.csv",
+    "external_files": "Files outside governed_roots are not subject to G0 validation",
+    "exclusions": "Files matching excluded_patterns are skipped during validation"
+  }
+}

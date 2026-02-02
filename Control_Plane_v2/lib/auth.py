@@ -73,16 +73,22 @@ def _load_external_secrets() -> dict[str, str]:
 
     Raises:
         AuthConfigError: If no secrets file found (fail-closed)
-    """
-    from lib.paths import CONTROL_PLANE  # Import here to avoid circular
 
-    # Check explicit path first
+    Note (Issue 4 Fix):
+        When CONTROL_PLANE_SECRETS_FILE is set, we MUST NOT import lib.paths
+        to avoid bootstrap recursion. Only import lib.paths when searching
+        default paths that need CONTROL_PLANE.
+    """
+    # Check explicit path first - MUST NOT import lib.paths here (Issue 4)
     explicit = os.getenv("CONTROL_PLANE_SECRETS_FILE")
     if explicit:
         path = Path(explicit).expanduser()
         if path.exists():
             return _parse_env_file(path)
         raise AuthConfigError(f"CONTROL_PLANE_SECRETS_FILE not found: {explicit}")
+
+    # Only import CONTROL_PLANE when searching default paths (Issue 4 fix)
+    from lib.paths import CONTROL_PLANE
 
     # Search default locations (using CONTROL_PLANE for sibling path)
     search_paths = [
