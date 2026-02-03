@@ -26,6 +26,9 @@
         "CP-PKG-001_framework_and_package_spec.md",
         "CP-SDLC-QUAL-001_feedback_governance.md",
         "Framework 100 Development SDLC.txt",
+        "PHASE-02_ACCEPTANCE.md",
+        "PHASE-02_PLAYBOOK.md",
+        "PHASE-02_SYSTEM.md",
         "System_Structure.txt",
         "System_Structure.txt.bak",
         "developer_guide.md",
@@ -287,6 +290,21 @@
       "classification": "other"
     },
     {
+      "path": "docs/PHASE-02_ACCEPTANCE.md",
+      "sha256": "sha256:dca58b3be2ad5b8b4be8e319efa76011b8f8e721909934525f85bb7dbe3ed956",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/PHASE-02_PLAYBOOK.md",
+      "sha256": "sha256:495f4a253f529c516adfc42a747ca84d3e01f2e90c1c1cab34e944566577158a",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/PHASE-02_SYSTEM.md",
+      "sha256": "sha256:df9ad53466b65b7f51c625b9a404566377078a66820198f8002f2a08a04afbba",
+      "classification": "documentation"
+    },
+    {
       "path": "frameworks/FMWK-000_governance_framework.md",
       "sha256": "sha256:89ae8f7f270144a109414fea0bc04f884e0b89f081e155ec79b2cf967e62e35c",
       "classification": "law_doc"
@@ -458,7 +476,7 @@
     },
     {
       "path": "registries/control_plane_registry.csv",
-      "sha256": "sha256:aae91bb3a8950e8a39143e364fe13352c388020e07c9c46d33e70f2551ba848e",
+      "sha256": "sha256:bad7dc44dbcadad7daeb6d7551913420b7b04f63e838d7945025cbbae3a0e779",
       "classification": "registry"
     },
     {

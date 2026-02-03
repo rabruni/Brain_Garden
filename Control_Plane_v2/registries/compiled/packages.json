@@ -1,9 +1,9 @@
 {
   "packages": [
     {
-      "assets_count": 134,
-      "installed_at": "2026-02-03T04:23:32.204397+00:00",
-      "manifest_hash": "sha256:aff69409dd1dedb637d67e6671f97f54923a2d5b11e35384925aa27e5455a362",
+      "assets_count": 137,
+      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "manifest_hash": "sha256:d6483ae8026c70c95e4b027867d1bc20aee1ae1c45e7ded94e439c0d795b1ed4",
       "package_id": "PKG-BASELINE-HO3-000",
       "package_type": "baseline",
       "plane_id": "ho3",
@@ -11,5 +11,5 @@
       "uninstalled_at": ""
     }
   ],
-  "rebuilt_at": "2026-02-03T04:45:14.913223+00:00"
+  "rebuilt_at": "2026-02-03T06:11:57.251870+00:00"
 }
