@@ -12,7 +12,8 @@
         "control_plane_chain.json.bak",
         "governed_roots.json",
         "registry_policy.json",
-        "trusted_keys.json"
+        "trusted_keys.json",
+        "signing_keys.json"
       ]
     },
     {
@@ -159,7 +160,10 @@
         "verify_integrity.sh",
         "wo_approve.py",
         "wo_keygen.py",
-        "wo_verify.py"
+        "wo_verify.py",
+        "g3_gate.py",
+        "g4_gate.py",
+        "g5_gate.py"
       ]
     },
     {
@@ -204,7 +208,11 @@
         "test_plane.py",
         "test_pristine.py",
         "test_provenance.py",
-        "test_tier_ledger.py"
+        "test_tier_ledger.py",
+        "test_g3_gate.py",
+        "test_g4_gate.py",
+        "test_g5_gate.py",
+        "test_g6_full.py"
       ]
     }
   ],
@@ -231,7 +239,7 @@
     },
     {
       "path": "config/trusted_keys.json",
-      "sha256": "sha256:5d56c06384ae43c9541f31c8404bc856d335635555a82f8389550ac0b62eac71",
+      "sha256": "sha256:b2748f8998dfa3f7e2cee4efb13aa72798d60428ea7adcc212b32eb6b7194a37",
       "classification": "config"
     },
     {
@@ -476,7 +484,7 @@
     },
     {
       "path": "registries/control_plane_registry.csv",
-      "sha256": "sha256:bad7dc44dbcadad7daeb6d7551913420b7b04f63e838d7945025cbbae3a0e779",
+      "sha256": "sha256:11906a597fb3fe9bca907ae84fb94734f2062bb659346e09e8aaef66b9ac73ed",
       "classification": "registry"
     },
     {
@@ -531,7 +539,7 @@
     },
     {
       "path": "scripts/apply_work_order.py",
-      "sha256": "sha256:82c1d17bafd54d71d6e484b5977b2a02fe2d0e7e1c02e4339751662bc26702f6",
+      "sha256": "sha256:146ffb80ccae08df6f7e11b59766df69d0f96b5a57b9d4004c04aed5bf81bbbf",
       "classification": "script"
     },
     {
@@ -576,7 +584,7 @@
     },
     {
       "path": "scripts/gate_check.py",
-      "sha256": "sha256:92c4b45ee6d28c9bfdac6f4440d4b4d0ffdce0990a08f443f94de1bbfdbcd7c5",
+      "sha256": "sha256:9ef438fdf3a1649830c3c86d2bf418c70d476b9a393dd7544fc3fa2b3be6f2e2",
       "classification": "script"
     },
     {
@@ -893,6 +901,46 @@
       "path": "tests/test_tier_ledger.py",
       "sha256": "sha256:03085cd1cf1e8f8d45e9007b9b347fdcc2bdc194304c2bc75633597b88ba9320",
       "classification": "test"
+    },
+    {
+      "path": "scripts/g3_gate.py",
+      "sha256": "sha256:5092a3fb51604e02bca1dace9f72831e51a516c8117bad110eb7c26a74bf8430",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/g4_gate.py",
+      "sha256": "sha256:94bd41a6e5316a7447978d537ee1b2395e27f74be5d42f008f8370d21488d9ca",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/g5_gate.py",
+      "sha256": "sha256:7cacd44aa63466ad29704513d15f4c8eb7c7fdc3d0d12b4f26906fa4ad6c25d0",
+      "classification": "script"
+    },
+    {
+      "path": "tests/test_g3_gate.py",
+      "sha256": "sha256:005c88f23004f8f2adc173621b4454c15f266f8b5e6a998a039916052d6e5275",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_g4_gate.py",
+      "sha256": "sha256:dd437ffe65dec7c5849160042141c9181ea1b5e25cbdab441af95eda44693d93",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_g5_gate.py",
+      "sha256": "sha256:a3347e855521cbdd000632c2f8985fc2b08ea34d80f8f8c5aaa5e4f3cf434560",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_g6_full.py",
+      "sha256": "sha256:1361e848eeccf7b0b4f08ff90a1329c41ac0a4878151575d063520d686681a6e",
+      "classification": "test"
+    },
+    {
+      "path": "config/signing_keys.json",
+      "sha256": "sha256:50a5fd69254794d39ab3cdd8278bb647659ddb08d3e818c56d73b8fb495dc57e",
+      "classification": "config"
     }
   ],
   "dependencies": [],
@@ -921,7 +969,7 @@
     ],
     "hash_algorithm": "sha256",
     "hash_format_version": "1.0",
-    "generated_at": "2026-02-02T23:35:09.206236+00:00",
+    "generated_at": "2026-02-03T06:48:32.228494+00:00",
     "generator": "generate_baseline_manifest.py",
     "generator_version": "1.0.0",
     "plane_context": "HO3",

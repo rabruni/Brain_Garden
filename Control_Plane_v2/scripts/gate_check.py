@@ -489,28 +489,93 @@ def check_g2_work_order(
     return result
 
 
-def check_g3_constraints(plane_root: Path) -> GateResult:
+def check_g3_constraints(
+    plane_root: Path,
+    wo: Optional[dict] = None,
+    changed_files: Optional[List[str]] = None,
+    workspace_root: Optional[Path] = None
+) -> GateResult:
     """G3: CONSTRAINTS - Verify no constraint violations.
 
     Checks:
     - No new dependencies without dependency_add WO
     - No new files without spec_delta WO
     - No API changes without version bump
+
+    When wo and changed_files provided, runs full G3 validation.
+    Otherwise reports on constraint system health.
     """
+    # If WO provided, use full G3 implementation
+    if wo is not None:
+        try:
+            from scripts.g3_gate import run_g3_gate
+
+            g3_result = run_g3_gate(
+                wo=wo,
+                changed_files=changed_files or [],
+                workspace_root=workspace_root or plane_root
+            )
+
+            return GateResult(
+                gate="G3",
+                passed=g3_result.passed,
+                message=g3_result.message,
+                errors=g3_result.errors,
+                warnings=g3_result.warnings,
+                details=g3_result.details
+            )
+        except ImportError as e:
+            return GateResult(
+                gate="G3",
+                passed=False,
+                message=f"G3 gate module not available: {e}",
+                errors=["Import g3_gate.py failed"]
+            )
+
+    # No WO - report on constraint system health
     result = GateResult(gate="G3", passed=True, message="Constraints check passed")
-
-    # This would analyze recent changes against WO constraints
-    # For now, just report healthy
-
     return result
 
 
-def check_g4_acceptance(plane_root: Path) -> GateResult:
+def check_g4_acceptance(
+    plane_root: Path,
+    wo: Optional[dict] = None,
+    workspace_root: Optional[Path] = None
+) -> GateResult:
     """G4: ACCEPTANCE - Verify acceptance tests pass.
 
-    This gate is typically run during WO execution,
-    but we can check if test infrastructure exists.
+    When wo provided, runs acceptance.tests shell commands in workspace.
+    Otherwise reports on test infrastructure health.
+
+    Per user decision Q2=B: Timeout only (300s), rely on workspace isolation.
     """
+    # If WO provided, use full G4 implementation
+    if wo is not None:
+        try:
+            from scripts.g4_gate import run_g4_gate
+
+            g4_result = run_g4_gate(
+                wo=wo,
+                workspace_root=workspace_root or plane_root
+            )
+
+            return GateResult(
+                gate="G4",
+                passed=g4_result.passed,
+                message=g4_result.message,
+                errors=g4_result.errors,
+                warnings=g4_result.warnings,
+                details=g4_result.details
+            )
+        except ImportError as e:
+            return GateResult(
+                gate="G4",
+                passed=False,
+                message=f"G4 gate module not available: {e}",
+                errors=["Import g4_gate.py failed"]
+            )
+
+    # No WO - report on test infrastructure health
     result = GateResult(gate="G4", passed=True, message="Acceptance infrastructure check passed")
 
     test_dir = plane_root / 'tests'
@@ -524,11 +589,49 @@ def check_g4_acceptance(plane_root: Path) -> GateResult:
     return result
 
 
-def check_g5_signature(plane_root: Path) -> GateResult:
-    """G5: SIGNATURE - Verify package signatures.
+def check_g5_signature(
+    plane_root: Path,
+    wo: Optional[dict] = None,
+    changed_files: Optional[List[str]] = None,
+    workspace_root: Optional[Path] = None
+) -> GateResult:
+    """G5: SIGNATURE - Create and verify changeset attestation.
 
-    Checks packages in packages_store have valid signatures.
+    When wo and changed_files provided, computes changeset digest and creates attestation.
+    Otherwise reports on package store signature status.
+
+    Per user decision Q3=C: Role-based keys (signer role separate from wo_approver).
+    Uses build-001 signing key from config/signing_keys.json.
     """
+    # If WO provided, use full G5 implementation
+    if wo is not None:
+        try:
+            from scripts.g5_gate import run_g5_gate
+
+            g5_result = run_g5_gate(
+                wo=wo,
+                changed_files=changed_files or [],
+                workspace_root=workspace_root or plane_root,
+                plane_root=plane_root
+            )
+
+            return GateResult(
+                gate="G5",
+                passed=g5_result.passed,
+                message=g5_result.message,
+                errors=g5_result.errors,
+                warnings=g5_result.warnings,
+                details=g5_result.details
+            )
+        except ImportError as e:
+            return GateResult(
+                gate="G5",
+                passed=False,
+                message=f"G5 gate module not available: {e}",
+                errors=["Import g5_gate.py failed"]
+            )
+
+    # No WO - report on package store signature status
     result = GateResult(gate="G5", passed=True, message="Signature check passed")
 
     packages_dir = plane_root / 'packages_store'

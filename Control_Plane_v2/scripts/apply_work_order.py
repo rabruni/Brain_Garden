@@ -298,36 +298,107 @@ def gate_g2_work_order_legacy(
     return GateResult("G2", True, "Work Order validated (legacy mode)")
 
 
-def gate_g3_constraints(wo: dict, plane_root: Path) -> GateResult:
-    """G3: CONSTRAINTS - Verify no constraint violations."""
-    constraints = wo.get('constraints', {})
+def gate_g3_constraints(
+    wo: dict,
+    plane_root: Path,
+    changed_files: Optional[List[str]] = None,
+    workspace_root: Optional[Path] = None
+) -> GateResult:
+    """G3: CONSTRAINTS - Verify no constraint violations.
 
-    # Basic constraint checks
-    wo_type = wo.get('type', '')
+    Per user decision Q1=B: Detect unauthorized dependency changes via diff.
+    """
+    try:
+        from scripts.g3_gate import run_g3_gate
 
-    if constraints.get('no_new_deps_unless') and wo_type != 'dependency_add':
-        # Would need to analyze actual changes to enforce
-        pass
+        g3_result = run_g3_gate(
+            wo=wo,
+            changed_files=changed_files or [],
+            workspace_root=workspace_root or plane_root
+        )
 
-    return GateResult("G3", True, "Constraints validated")
+        return GateResult(
+            gate="G3",
+            passed=g3_result.passed,
+            message=g3_result.message,
+            details=g3_result.details if hasattr(g3_result, 'details') else None
+        )
+    except ImportError:
+        # Fallback: basic constraint checks
+        constraints = wo.get('constraints', {})
+        wo_type = wo.get('type', '')
+
+        if constraints.get('no_new_deps_unless') and wo_type != 'dependency_add':
+            # Would need to analyze actual changes to enforce
+            pass
+
+        return GateResult("G3", True, "Constraints validated (basic)")
 
 
-def gate_g4_acceptance(wo: dict, plane_root: Path) -> GateResult:
-    """G4: ACCEPTANCE - Run acceptance tests."""
-    acceptance = wo.get('acceptance', {})
-    tests = acceptance.get('tests', [])
-    checks = acceptance.get('checks', [])
+def gate_g4_acceptance(
+    wo: dict,
+    plane_root: Path,
+    workspace_root: Optional[Path] = None
+) -> GateResult:
+    """G4: ACCEPTANCE - Run acceptance tests.
 
-    # In dry-run mode, just validate test commands exist
-    # Full implementation would execute them in isolated workspace
+    Per user decision Q2=B: 300s timeout, rely on workspace isolation.
+    """
+    try:
+        from scripts.g4_gate import run_g4_gate
 
-    return GateResult("G4", True, f"Acceptance ready: {len(tests)} tests, {len(checks)} checks")
+        g4_result = run_g4_gate(
+            wo=wo,
+            workspace_root=workspace_root or plane_root
+        )
+
+        return GateResult(
+            gate="G4",
+            passed=g4_result.passed,
+            message=g4_result.message,
+            details=g4_result.details if hasattr(g4_result, 'details') else None
+        )
+    except ImportError:
+        # Fallback: report test readiness
+        acceptance = wo.get('acceptance', {})
+        tests = acceptance.get('tests', [])
+        checks = acceptance.get('checks', [])
+
+        return GateResult("G4", True, f"Acceptance ready: {len(tests)} tests, {len(checks)} checks (module not loaded)")
 
 
-def gate_g5_signature(wo: dict, plane_root: Path) -> GateResult:
-    """G5: SIGNATURE - Verify package signature."""
-    # Signature verification would happen here
-    return GateResult("G5", True, "Signature check skipped (no package)")
+def gate_g5_signature(
+    wo: dict,
+    plane_root: Path,
+    changed_files: Optional[List[str]] = None,
+    workspace_root: Optional[Path] = None
+) -> GateResult:
+    """G5: SIGNATURE - Create changeset attestation.
+
+    Per user decision Q3=C: Role-based keys (build-001 signing key).
+    """
+    try:
+        from scripts.g5_gate import run_g5_gate
+
+        g5_result = run_g5_gate(
+            wo=wo,
+            changed_files=changed_files or [],
+            workspace_root=workspace_root or plane_root,
+            plane_root=plane_root
+        )
+
+        return GateResult(
+            gate="G5",
+            passed=g5_result.passed,
+            message=g5_result.message,
+            details={
+                'attestation': g5_result.attestation.to_dict() if g5_result.attestation else None,
+                **g5_result.details
+            } if hasattr(g5_result, 'details') else None
+        )
+    except ImportError:
+        # Fallback: signature check skipped
+        return GateResult("G5", True, "Signature check skipped (g5_gate not available)")
 
 
 def gate_g6_ledger(wo: dict, plane_root: Path) -> GateResult:
@@ -341,23 +412,29 @@ def run_validate_gates(
     wo_path: Path,
     wo_payload_hash: str,
     plane_root: Path,
-    skip_signature: bool = False
+    skip_signature: bool = False,
+    changed_files: Optional[List[str]] = None,
+    workspace_root: Optional[Path] = None
 ) -> Tuple[List[GateResult], bool, bool]:
     """Run all VALIDATE phase gates.
 
-    Gate order per FMWK-000 Phase 2:
+    Gate order per FMWK-000 Phase 3:
     1. G2: WORK_ORDER (approval + idempotency + scope) - FIRST
     2. Scope diff validation (fail-fast)
     3. G0: OWNERSHIP
     4. G1: CHAIN
-    5. G3: CONSTRAINTS
-    6. G4: ACCEPTANCE
+    5. G3: CONSTRAINTS (Q1=B: dependency diff detection)
+    6. G4: ACCEPTANCE (Q2=B: 300s timeout, workspace isolation)
 
     Returns:
         (gate_results, all_passed, is_idempotent)
     """
     results = []
     is_idempotent = False
+
+    # Use plane_root as workspace if not specified
+    effective_workspace = workspace_root or plane_root
+    effective_changed = changed_files or wo.get('scope', {}).get('allowed_files', [])
 
     # G2: WORK_ORDER - Run FIRST per FMWK-000 spec
     # This validates approval, signature, idempotency, and scope
@@ -381,14 +458,14 @@ def run_validate_gates(
     if not g1.passed:
         return results, False, False
 
-    # G3: CONSTRAINTS
-    g3 = gate_g3_constraints(wo, plane_root)
+    # G3: CONSTRAINTS - Per Q1=B: detect dependency changes via diff
+    g3 = gate_g3_constraints(wo, plane_root, effective_changed, effective_workspace)
     results.append(g3)
     if not g3.passed:
         return results, False, False
 
-    # G4: ACCEPTANCE
-    g4 = gate_g4_acceptance(wo, plane_root)
+    # G4: ACCEPTANCE - Per Q2=B: 300s timeout, workspace isolation
+    g4 = gate_g4_acceptance(wo, plane_root, effective_workspace)
     results.append(g4)
     if not g4.passed:
         return results, False, False
@@ -396,21 +473,34 @@ def run_validate_gates(
     return results, True, False
 
 
-def run_apply_gates(wo: dict, plane_root: Path) -> Tuple[List[GateResult], bool]:
+def run_apply_gates(
+    wo: dict,
+    plane_root: Path,
+    changed_files: Optional[List[str]] = None,
+    workspace_root: Optional[Path] = None
+) -> Tuple[List[GateResult], bool]:
     """Run all APPLY phase gates (G5-G6).
+
+    Gate order per FMWK-000 Phase 3:
+    1. G5: SIGNATURE (Q3=C: role-based build-001 signing key, attestation with changeset_digest)
+    2. G6: LEDGER (cross-tier chain verification)
 
     Returns:
         (gate_results, all_passed)
     """
     results = []
 
-    # G5: SIGNATURE
-    g5 = gate_g5_signature(wo, plane_root)
+    # Use plane_root as workspace if not specified
+    effective_workspace = workspace_root or plane_root
+    effective_changed = changed_files or wo.get('scope', {}).get('allowed_files', [])
+
+    # G5: SIGNATURE - Per Q3=C: create attestation with changeset_digest
+    g5 = gate_g5_signature(wo, plane_root, effective_changed, effective_workspace)
     results.append(g5)
     if not g5.passed:
         return results, False
 
-    # G6: LEDGER
+    # G6: LEDGER - Cross-tier chain verification
     g6 = gate_g6_ledger(wo, plane_root)
     results.append(g6)
     if not g6.passed:
@@ -637,8 +727,11 @@ def execute_work_order(
             result.message = "Dry run - no changes applied"
             return result
 
-        # Run APPLY gates
-        apply_results, apply_passed = run_apply_gates(wo, plane_root)
+        # Extract changed files from WO scope
+        changed_files = wo.get('scope', {}).get('allowed_files', [])
+
+        # Run APPLY gates (G5, G6) with changed files for attestation
+        apply_results, apply_passed = run_apply_gates(wo, plane_root, changed_files, plane_root)
         result.gates.extend(apply_results)
 
         if not apply_passed:
