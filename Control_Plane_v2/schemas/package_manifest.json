@@ -1,28 +1,160 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://control-plane.local/schemas/package_manifest.json",
-  "title": "Package Manifest Schema v1.1",
-  "description": "Schema for Control Plane package manifest.json files (FMWK-PKG-001) - includes plane-aware fields",
+  "title": "Package Manifest Schema v1.2",
+  "description": "Schema for Control Plane package manifest.json files (FMWK-PKG-001, CP-IMPL-001) - includes plane-aware fields and namespaced install targets",
   "type": "object",
   "required": [
     "schema_version",
-    "id",
-    "name",
-    "version",
-    "tier",
-    "artifact_paths",
-    "deps"
+    "version"
+  ],
+  "oneOf": [
+    {
+      "description": "Legacy format (v1.0/v1.1): requires id, tier, artifact_paths, deps",
+      "required": ["id", "tier", "artifact_paths", "deps"],
+      "properties": {
+        "schema_version": { "enum": ["1.0", "1.1"] }
+      }
+    },
+    {
+      "description": "New format (v1.2): requires package_id, assets",
+      "required": ["package_id", "assets"],
+      "properties": {
+        "schema_version": { "enum": ["1.2"] }
+      }
+    }
   ],
   "properties": {
     "schema_version": {
       "type": "string",
-      "enum": ["1.0", "1.1"],
-      "description": "Manifest schema version (1.0 or 1.1)"
+      "enum": ["1.0", "1.1", "1.2"],
+      "description": "Manifest schema version (1.0, 1.1, or 1.2)"
     },
     "id": {
       "type": "string",
       "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$",
-      "description": "Package identifier (e.g., PKG-T0-001)"
+      "description": "LEGACY: Package identifier (e.g., PKG-T0-001). Use package_id for v1.2+"
+    },
+    "package_id": {
+      "type": "string",
+      "pattern": "^PKG-[A-Z0-9-]+$",
+      "description": "Package identifier (e.g., PKG-BASELINE-HO3-000, PKG-SDLC-100)"
+    },
+    "package_type": {
+      "type": "string",
+      "enum": ["baseline", "framework", "spec", "library", "gate", "tool"],
+      "description": "Package type classification (v1.2). baseline = claims ownership of existing files, others = deliver new files"
+    },
+    "install_targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["namespace", "root"],
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "enum": ["pristine", "config", "registry", "ledger"],
+            "description": "Namespace for installation (pristine = governed code roots)"
+          },
+          "root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Root path relative to plane (e.g., 'lib/', 'scripts/', 'config/')"
+          },
+          "writable": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether files in this target are writable post-install (false for pristine)"
+          }
+        }
+      },
+      "default": [],
+      "description": "Namespaced install targets for v1.2 packages. Determines where assets are installed."
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "File path relative to plane root"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "description": "Content hash in sha256:<64hex> format"
+          },
+          "classification": {
+            "type": "string",
+            "enum": ["code", "config", "schema", "policy", "framework", "test", "doc", "data"],
+            "default": "code",
+            "description": "Asset classification for governance rules"
+          },
+          "install_target": {
+            "type": "string",
+            "description": "Which install_target namespace this asset belongs to (must match a namespace in install_targets)"
+          }
+        }
+      },
+      "description": "Full asset list with hashes and classification (v1.2 format)"
+    },
+    "asset_classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["lib/**/*.py", "scripts/**/*.py", "modules/**/*.py"],
+          "description": "Glob patterns for code files"
+        },
+        "config": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["config/**/*.json", "config/**/*.yaml"],
+          "description": "Glob patterns for config files"
+        },
+        "schema": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["schemas/**/*.json"],
+          "description": "Glob patterns for schema files"
+        },
+        "policy": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["policies/**/*.yaml", "policies/**/*.json"],
+          "description": "Glob patterns for policy files"
+        },
+        "framework": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["frameworks/**/*.md"],
+          "description": "Glob patterns for framework definition files"
+        },
+        "test": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["tests/**/*.py"],
+          "description": "Glob patterns for test files"
+        },
+        "doc": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["docs/**/*.md"],
+          "description": "Glob patterns for documentation files"
+        },
+        "data": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": [],
+          "description": "Glob patterns for data files"
+        }
+      },
+      "description": "Classification rules mapping glob patterns to asset types (v1.2). Used for fail-closed ambiguity detection."
     },
     "name": {
       "type": "string",

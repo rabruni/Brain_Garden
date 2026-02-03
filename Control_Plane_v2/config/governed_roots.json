@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "plane_id": "ho3",
   "description": "Governed roots definition for G0 gate. Files in these directories MUST be registered in file_ownership_registry.",
   "governed_roots": [
@@ -10,16 +10,30 @@
     "policies/",
     "registries/",
     "modules/",
-    "tests/"
+    "tests/",
+    "specs/",
+    "config/",
+    "docs/"
   ],
   "excluded_patterns": [
     "**/__pycache__/**",
     "**/*.pyc",
-    "**/__init__.py"
+    "**/__init__.py",
+    "registries/file_ownership.csv",
+    "registries/packages_state.csv",
+    "registries/compiled/**",
+    "config/seal.json"
+  ],
+  "derived_registries": [
+    "registries/file_ownership.csv",
+    "registries/packages_state.csv",
+    "registries/compiled/file_ownership.json",
+    "registries/compiled/packages.json"
   ],
   "notes": {
     "G0_behavior": "G0 gate validates that every file in governed_roots exists in file_ownership_registry.csv",
     "external_files": "Files outside governed_roots are not subject to G0 validation",
-    "exclusions": "Files matching excluded_patterns are skipped during validation"
+    "exclusions": "Files matching excluded_patterns are skipped during validation",
+    "derived_registries": "These are rebuilt from ledger+manifests, not owned by packages. Excluded from baseline and G0B."
   }
 }
