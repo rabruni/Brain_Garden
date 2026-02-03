@@ -11,9 +11,10 @@
         "control_plane_chain.json",
         "control_plane_chain.json.bak",
         "governed_roots.json",
+        "kernel_files.json",
         "registry_policy.json",
-        "trusted_keys.json",
-        "signing_keys.json"
+        "signing_keys.json",
+        "trusted_keys.json"
       ]
     },
     {
@@ -129,12 +130,19 @@
         "cp_version_checkpoint.py",
         "cp_version_list.py",
         "cp_version_rollback.py",
+        "g0k_gate.py",
         "g2_gate.py",
+        "g3_gate.py",
+        "g4_gate.py",
+        "g5_gate.py",
+        "g6_gate.py",
         "gate_check.py",
         "generate_baseline_manifest.py",
         "genesis_bootstrap.py",
         "install_baseline.py",
         "integrity_check.py",
+        "kernel_build.py",
+        "kernel_install.py",
         "ledger_repair.py",
         "ledger_tier.py",
         "package_factory.py",
@@ -160,10 +168,7 @@
         "verify_integrity.sh",
         "wo_approve.py",
         "wo_keygen.py",
-        "wo_verify.py",
-        "g3_gate.py",
-        "g4_gate.py",
-        "g5_gate.py"
+        "wo_verify.py"
       ]
     },
     {
@@ -197,7 +202,12 @@
         "test_cross_tier_provenance.py",
         "test_factory_canary.py",
         "test_g2_gate.py",
+        "test_g3_gate.py",
+        "test_g4_gate.py",
+        "test_g5_gate.py",
+        "test_g6_full.py",
         "test_idempotency.py",
+        "test_kernel_parity.py",
         "test_ledger_chain.py",
         "test_manifest_v11.py",
         "test_multiplane.py",
@@ -208,11 +218,7 @@
         "test_plane.py",
         "test_pristine.py",
         "test_provenance.py",
-        "test_tier_ledger.py",
-        "test_g3_gate.py",
-        "test_g4_gate.py",
-        "test_g5_gate.py",
-        "test_g6_full.py"
+        "test_tier_ledger.py"
       ]
     }
   ],
@@ -233,8 +239,18 @@
       "classification": "config"
     },
     {
+      "path": "config/kernel_files.json",
+      "sha256": "sha256:367a1df3daf5b0185ce2d02503e9f9a0617e031b4fa7442c311f2b3fa1ad9b23",
+      "classification": "config"
+    },
+    {
       "path": "config/registry_policy.json",
       "sha256": "sha256:d34f53c5df80fd973e21f438249d6aa12ef2e48774f5981b106e88c8550519b2",
+      "classification": "config"
+    },
+    {
+      "path": "config/signing_keys.json",
+      "sha256": "sha256:50a5fd69254794d39ab3cdd8278bb647659ddb08d3e818c56d73b8fb495dc57e",
       "classification": "config"
     },
     {
@@ -278,6 +294,21 @@
       "classification": "other"
     },
     {
+      "path": "docs/PHASE-02_ACCEPTANCE.md",
+      "sha256": "sha256:dca58b3be2ad5b8b4be8e319efa76011b8f8e721909934525f85bb7dbe3ed956",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/PHASE-02_PLAYBOOK.md",
+      "sha256": "sha256:495f4a253f529c516adfc42a747ca84d3e01f2e90c1c1cab34e944566577158a",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/PHASE-02_SYSTEM.md",
+      "sha256": "sha256:df9ad53466b65b7f51c625b9a404566377078a66820198f8002f2a08a04afbba",
+      "classification": "documentation"
+    },
+    {
       "path": "docs/System_Structure.txt",
       "sha256": "sha256:1cf8a88dea874a7bfd59ae5c5fa9c9847c9500e68f746a1593332a8019634704",
       "classification": "other"
@@ -296,21 +327,6 @@
       "path": "docs/notes_Framework.txt",
       "sha256": "sha256:3747a0b5ff0606fe18384fa193f9b7ce15e06dcbae39305250e8e7c84c94a97e",
       "classification": "other"
-    },
-    {
-      "path": "docs/PHASE-02_ACCEPTANCE.md",
-      "sha256": "sha256:dca58b3be2ad5b8b4be8e319efa76011b8f8e721909934525f85bb7dbe3ed956",
-      "classification": "documentation"
-    },
-    {
-      "path": "docs/PHASE-02_PLAYBOOK.md",
-      "sha256": "sha256:495f4a253f529c516adfc42a747ca84d3e01f2e90c1c1cab34e944566577158a",
-      "classification": "documentation"
-    },
-    {
-      "path": "docs/PHASE-02_SYSTEM.md",
-      "sha256": "sha256:df9ad53466b65b7f51c625b9a404566377078a66820198f8002f2a08a04afbba",
-      "classification": "documentation"
     },
     {
       "path": "frameworks/FMWK-000_governance_framework.md",
@@ -484,7 +500,7 @@
     },
     {
       "path": "registries/control_plane_registry.csv",
-      "sha256": "sha256:11906a597fb3fe9bca907ae84fb94734f2062bb659346e09e8aaef66b9ac73ed",
+      "sha256": "sha256:6e6f1273c52f4c9c265910c09e239661cfcb28fb929d1ed278a3f45242287dd5",
       "classification": "registry"
     },
     {
@@ -578,13 +594,38 @@
       "classification": "script"
     },
     {
+      "path": "scripts/g0k_gate.py",
+      "sha256": "sha256:66bf2185ddf3622504827dc79db2e2472f7d0838ee3c4665f6e1aeb13166269c",
+      "classification": "script"
+    },
+    {
       "path": "scripts/g2_gate.py",
       "sha256": "sha256:83c19bead37682f8464f19a138dd849039078ec69fe65f1aff0c309919bd4a3a",
       "classification": "script"
     },
     {
+      "path": "scripts/g3_gate.py",
+      "sha256": "sha256:5092a3fb51604e02bca1dace9f72831e51a516c8117bad110eb7c26a74bf8430",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/g4_gate.py",
+      "sha256": "sha256:94bd41a6e5316a7447978d537ee1b2395e27f74be5d42f008f8370d21488d9ca",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/g5_gate.py",
+      "sha256": "sha256:7cacd44aa63466ad29704513d15f4c8eb7c7fdc3d0d12b4f26906fa4ad6c25d0",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/g6_gate.py",
+      "sha256": "sha256:62521b41b9f540c1fad3b654b4f5930e359a7674fb4d420159a306783d210513",
+      "classification": "script"
+    },
+    {
       "path": "scripts/gate_check.py",
-      "sha256": "sha256:9ef438fdf3a1649830c3c86d2bf418c70d476b9a393dd7544fc3fa2b3be6f2e2",
+      "sha256": "sha256:c723c553778e3ce47761a764a710414e7b1c5d3d59dd0c8f28b6cda210597dae",
       "classification": "script"
     },
     {
@@ -605,6 +646,16 @@
     {
       "path": "scripts/integrity_check.py",
       "sha256": "sha256:09e88c78d75758631a0137be5ade702ef9301f66e0f668f85ea8ba3148d5cc16",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/kernel_build.py",
+      "sha256": "sha256:6d9f595f56c50a7164f300eaf6bff5786680567a658ed0188400d8c94d020120",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/kernel_install.py",
+      "sha256": "sha256:78397447fd395289d010715e9672f987655549ad2e21cdbf74362b82094682db",
       "classification": "script"
     },
     {
@@ -843,8 +894,33 @@
       "classification": "test"
     },
     {
+      "path": "tests/test_g3_gate.py",
+      "sha256": "sha256:005c88f23004f8f2adc173621b4454c15f266f8b5e6a998a039916052d6e5275",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_g4_gate.py",
+      "sha256": "sha256:dd437ffe65dec7c5849160042141c9181ea1b5e25cbdab441af95eda44693d93",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_g5_gate.py",
+      "sha256": "sha256:a3347e855521cbdd000632c2f8985fc2b08ea34d80f8f8c5aaa5e4f3cf434560",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_g6_full.py",
+      "sha256": "sha256:1361e848eeccf7b0b4f08ff90a1329c41ac0a4878151575d063520d686681a6e",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_idempotency.py",
       "sha256": "sha256:9444c6b1c27e3bd8932fcab196aa49a3de0fc352fe37265053e79869dfc1abce",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_kernel_parity.py",
+      "sha256": "sha256:2188bedf9f87c4dc6a3ec96bfb23c009d4c8941acde06190b34be15339fb30d7",
       "classification": "test"
     },
     {
@@ -869,7 +945,7 @@
     },
     {
       "path": "tests/test_phase1_baseline.py",
-      "sha256": "sha256:7043a5003265d1778df1529f24014fad4841f33b038d713878bd867356f29626",
+      "sha256": "sha256:804808ef6d8538e4fd31bf559285d3089e7e4753aee70eef1e81524e4a69faf6",
       "classification": "test"
     },
     {
@@ -901,46 +977,6 @@
       "path": "tests/test_tier_ledger.py",
       "sha256": "sha256:03085cd1cf1e8f8d45e9007b9b347fdcc2bdc194304c2bc75633597b88ba9320",
       "classification": "test"
-    },
-    {
-      "path": "scripts/g3_gate.py",
-      "sha256": "sha256:5092a3fb51604e02bca1dace9f72831e51a516c8117bad110eb7c26a74bf8430",
-      "classification": "script"
-    },
-    {
-      "path": "scripts/g4_gate.py",
-      "sha256": "sha256:94bd41a6e5316a7447978d537ee1b2395e27f74be5d42f008f8370d21488d9ca",
-      "classification": "script"
-    },
-    {
-      "path": "scripts/g5_gate.py",
-      "sha256": "sha256:7cacd44aa63466ad29704513d15f4c8eb7c7fdc3d0d12b4f26906fa4ad6c25d0",
-      "classification": "script"
-    },
-    {
-      "path": "tests/test_g3_gate.py",
-      "sha256": "sha256:005c88f23004f8f2adc173621b4454c15f266f8b5e6a998a039916052d6e5275",
-      "classification": "test"
-    },
-    {
-      "path": "tests/test_g4_gate.py",
-      "sha256": "sha256:dd437ffe65dec7c5849160042141c9181ea1b5e25cbdab441af95eda44693d93",
-      "classification": "test"
-    },
-    {
-      "path": "tests/test_g5_gate.py",
-      "sha256": "sha256:a3347e855521cbdd000632c2f8985fc2b08ea34d80f8f8c5aaa5e4f3cf434560",
-      "classification": "test"
-    },
-    {
-      "path": "tests/test_g6_full.py",
-      "sha256": "sha256:1361e848eeccf7b0b4f08ff90a1329c41ac0a4878151575d063520d686681a6e",
-      "classification": "test"
-    },
-    {
-      "path": "config/signing_keys.json",
-      "sha256": "sha256:50a5fd69254794d39ab3cdd8278bb647659ddb08d3e818c56d73b8fb495dc57e",
-      "classification": "config"
     }
   ],
   "dependencies": [],
@@ -969,7 +1005,7 @@
     ],
     "hash_algorithm": "sha256",
     "hash_format_version": "1.0",
-    "generated_at": "2026-02-03T06:48:32.228494+00:00",
+    "generated_at": "2026-02-03T07:27:24.993798+00:00",
     "generator": "generate_baseline_manifest.py",
     "generator_version": "1.0.0",
     "plane_context": "HO3",

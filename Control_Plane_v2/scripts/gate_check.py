@@ -646,34 +646,108 @@ def check_g5_signature(
     return result
 
 
+def check_g0k_kernel_parity(
+    plane_root: Path,
+    wo: Optional[dict] = None,
+    verify_files: bool = False
+) -> GateResult:
+    """G0K: KERNEL_PARITY - Verify kernel packages are identical across all tiers.
+
+    Phase 4 implementation using full G0K gate from g0k_gate.py.
+
+    Checks (manifest-first per R2):
+    1. Kernel manifest exists on each tier (HO3, HO2, HO1)
+    2. Manifest hashes are identical across tiers
+    3. Optional: files match manifest hashes (--verify-files)
+
+    Per AC-K6: Any WO modifying kernel files MUST fail unless kernel_upgrade type.
+
+    Args:
+        plane_root: Path to plane root
+        wo: Optional Work Order to check for kernel file modifications
+        verify_files: Also verify files match manifest hashes
+    """
+    try:
+        from scripts.g0k_gate import run_g0k_gate
+
+        g0k_result = run_g0k_gate(
+            verify_files=verify_files,
+            wo=wo
+        )
+
+        return GateResult(
+            gate="G0K",
+            passed=g0k_result.passed,
+            message=g0k_result.message,
+            details={
+                "manifest_hashes": g0k_result.manifest_hashes,
+                "missing_tiers": g0k_result.missing_tiers,
+                "mismatched_tiers": g0k_result.mismatched_tiers,
+                "file_verification": g0k_result.file_verification,
+            }
+        )
+    except ImportError as e:
+        return GateResult(
+            gate="G0K",
+            passed=False,
+            message=f"G0K gate module not available: {e}",
+            errors=["Import g0k_gate.py failed"]
+        )
+
+
 def check_g6_ledger(plane_root: Path) -> GateResult:
-    """G6: LEDGER - Verify ledger chain integrity.
+    """G6: LEDGER - Verify ledger chain integrity across all tiers.
+
+    Phase 4 implementation using full G6 gate from g6_gate.py.
 
     Checks:
-    - Ledger entries are properly chained
-    - No gaps or modifications detected
+    - Ledger entries have valid chain structure
+    - Kernel parity verified via ledger events
+    - Cross-tier provenance chain intact
     """
-    result = GateResult(gate="G6", passed=True, message="Ledger check passed")
+    try:
+        from scripts.g6_gate import run_g6_gate
 
-    ledger_dir = plane_root / 'ledger'
-    if ledger_dir.exists():
-        ledger_files = list(ledger_dir.glob('*.jsonl'))
-        entry_count = 0
-        for lf in ledger_files:
-            with open(lf, 'r', encoding='utf-8') as f:
-                entry_count += sum(1 for line in f if line.strip())
-        result.message = f"Found {len(ledger_files)} ledger files, {entry_count} entries"
-        result.details = {"ledger_file_count": len(ledger_files), "entry_count": entry_count}
-    else:
-        result.warnings = ["ledger/ directory not found"]
+        g6_result = run_g6_gate()
 
-    return result
+        return GateResult(
+            gate="G6",
+            passed=g6_result.passed,
+            message=g6_result.message,
+            details={
+                "ledger_results": {
+                    tier: {name: r.to_dict() for name, r in ledgers.items()}
+                    for tier, ledgers in g6_result.ledger_results.items()
+                },
+                "index_results": {t: r.to_dict() for t, r in g6_result.index_results.items()},
+                "package_manifest_matches": g6_result.package_manifest_matches,
+                "kernel_parity_valid": g6_result.kernel_parity_valid,
+            }
+        )
+    except ImportError as e:
+        # Fallback to simple check
+        result = GateResult(gate="G6", passed=True, message="Ledger check passed (fallback)")
+
+        ledger_dir = plane_root / 'ledger'
+        if ledger_dir.exists():
+            ledger_files = list(ledger_dir.glob('*.jsonl'))
+            entry_count = 0
+            for lf in ledger_files:
+                with open(lf, 'r', encoding='utf-8') as f:
+                    entry_count += sum(1 for line in f if line.strip())
+            result.message = f"Found {len(ledger_files)} ledger files, {entry_count} entries"
+            result.details = {"ledger_file_count": len(ledger_files), "entry_count": entry_count}
+        else:
+            result.warnings = ["ledger/ directory not found"]
+
+        return result
 
 
 GATE_FUNCTIONS = {
     "G0": check_g0_ownership,      # Legacy alias for G0B
     "G0A": check_g0a_package_declaration,  # Package declaration (install-time)
     "G0B": check_g0b_plane_ownership,      # Plane ownership (integrity-time)
+    "G0K": check_g0k_kernel_parity,        # Kernel parity (Phase 4)
     "G1": check_g1_chain,
     "G2": check_g2_work_order,
     "G3": check_g3_constraints,
@@ -709,8 +783,9 @@ def run_gates(
         (results, all_passed)
     """
     if "all" in gates or not gates:
-        # "all" includes G0B but not G0A (G0A requires manifest)
-        gates = ["G0B", "G1", "G2", "G3", "G4", "G5", "G6"]
+        # "all" includes G0B and G0K but not G0A (G0A requires manifest)
+        # Gate ordering per Phase 4: G0K → G0B → G1 → G2 → G3 → G4 → G5 → G6
+        gates = ["G0K", "G0B", "G1", "G2", "G3", "G4", "G5", "G6"]
 
     results = []
     all_passed = True
