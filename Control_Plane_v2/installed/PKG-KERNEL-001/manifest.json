@@ -35,12 +35,16 @@
     {
       "path": "lib/registry.py",
       "sha256": "sha256:31ad6ab45921cc47e0678d8416e3395daf288c7fe81d4d70cc2a6bb956a20796"
+    },
+    {
+      "path": "scripts/trace.py",
+      "sha256": "sha256:ecc583395c7dcd1837b53b4f4a47b9a89b395e3760d0d3f5399d85432ccdd0c9"
     }
   ],
-  "assets_count": 8,
-  "manifest_hash": "sha256:a1cab9463b94891a05737fe0c3220a0b85beee6f59322bcb8a3e84aeca4d166b",
+  "assets_count": 9,
+  "manifest_hash": "sha256:74cb726323dd9a6a55cc24a697aa41de8db265c46e630ce49e001ec9f7b69bb2",
   "metadata": {
-    "built_at": "2026-02-03T07:17:24.238648+00:00",
+    "built_at": "2026-02-03T19:17:50.869939+00:00",
     "source_plane": "ho3",
     "immutable_across_tiers": true,
     "parity_gate": "G0K"

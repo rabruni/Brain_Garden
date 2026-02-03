@@ -11,7 +11,8 @@
     "lib/integrity.py",
     "lib/ledger_client.py",
     "lib/ledger_factory.py",
-    "lib/registry.py"
+    "lib/registry.py",
+    "scripts/trace.py"
   ],
   "constraints": {
     "immutable_across_tiers": true,
