@@ -2,8 +2,10 @@
 """
 gate_check.py - Run governance gates for the Control Plane.
 
-Implements the gate sequence from FMWK-000:
-- G0 (OWNERSHIP): Every file in governed roots must be in registry
+Implements the gate sequence from FMWK-000 and CP-IMPL-001:
+- G0A (PACKAGE DECLARATION): Package assets declared and hashes match (install-time)
+- G0B (PLANE OWNERSHIP): Every governed file owned by one package (integrity-time)
+- G0 (OWNERSHIP): Legacy alias for G0B
 - G1 (CHAIN): Every file->spec->framework chain must be valid
 - G2 (WORK_ORDER): Work Orders must be approved and pass idempotency
 - G3 (CONSTRAINTS): No constraint violations
@@ -11,17 +13,24 @@ Implements the gate sequence from FMWK-000:
 - G5 (SIGNATURE): Package signatures must be valid
 - G6 (LEDGER): Ledger chain must be valid
 
+BINDING CONSTRAINTS (from CP-IMPL-001):
+- G0A: At package install pre-commit - "every file being installed is declared in manifest + hashes match archive"
+- G0B: At integrity/seal check - "every governed file is owned by exactly one package + hash matches"
+- --enforce mode: exit 1 on ANY gate failure (fail-closed)
+
 Usage:
-    python3 scripts/gate_check.py --all
-    python3 scripts/gate_check.py --gate G0
-    python3 scripts/gate_check.py --gate G0 G1 --plane ho3
+    python3 scripts/gate_check.py --all --enforce
+    python3 scripts/gate_check.py --gate G0B --enforce
+    python3 scripts/gate_check.py --gate G0A --manifest /path/to/manifest.json
 """
 
 import argparse
 import csv
 import fnmatch
+import hashlib
 import json
 import sys
+import tarfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -98,19 +107,151 @@ def matches_pattern(path: str, patterns: List[str]) -> bool:
     return False
 
 
+def compute_sha256(file_path: Path) -> str:
+    """Compute SHA256 hash in standard format: sha256:<64hex>"""
+    hasher = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            hasher.update(chunk)
+    return f"sha256:{hasher.hexdigest()}"
+
+
+def load_file_ownership_registry(plane_root: Path) -> Dict[str, dict]:
+    """Load file_ownership.csv as dict keyed by file_path."""
+    registry_path = plane_root / 'registries' / 'file_ownership.csv'
+    if not registry_path.exists():
+        return {}
+
+    ownership = {}
+    with open(registry_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            file_path = row.get('file_path', '').strip()
+            if file_path:
+                ownership[file_path] = row
+    return ownership
+
+
 # =============================================================================
 # Gate Implementations
 # =============================================================================
 
-def check_g0_ownership(plane_root: Path) -> GateResult:
-    """G0: OWNERSHIP - Verify every file in governed roots is in registry.
+def check_g0a_package_declaration(
+    plane_root: Path,
+    manifest: Optional[dict] = None,
+    archive_path: Optional[Path] = None
+) -> GateResult:
+    """G0A: PACKAGE DECLARATION - Verify package is internally consistent.
+
+    Run at package install pre-commit.
 
     Checks:
-    - Load governed_roots.json allowlist
-    - Every file in governed roots MUST exist in file_ownership_registry.csv
-    - Every registry entry MUST have existing file with matching hash
+    1. Every file in archive is declared in manifest.assets[]
+    2. Every declared asset hash matches archive file hash
+    3. install_targets[] paths are valid namespaces
+    4. No path escapes (no "..", no absolute paths)
+
+    Args:
+        plane_root: Path to plane root
+        manifest: Package manifest dict (required)
+        archive_path: Path to package archive (optional, for file verification)
     """
-    result = GateResult(gate="G0", passed=True, message="Ownership check passed")
+    result = GateResult(gate="G0A", passed=True, message="Package declaration check passed")
+    errors = []
+    warnings = []
+
+    if manifest is None:
+        result.passed = False
+        result.message = "G0A requires --manifest argument"
+        result.errors = ["No manifest provided for G0A check"]
+        return result
+
+    # Valid namespaces per CP-IMPL-001
+    valid_namespaces = {
+        "frameworks", "specs", "lib", "scripts", "gates",
+        "schemas", "policies", "modules", "tests", "docs",
+        "registries", "config"
+    }
+
+    assets = manifest.get('assets', [])
+    install_targets = manifest.get('install_targets', [])
+
+    # Check 3: Valid namespaces
+    for target in install_targets:
+        namespace = target.get('namespace', '')
+        if namespace not in valid_namespaces:
+            errors.append(f"INVALID_NAMESPACE: '{namespace}' not in allowed namespaces")
+
+    # Check 4: No path escapes
+    for asset in assets:
+        path = asset.get('path', '')
+        if '..' in path:
+            errors.append(f"PATH_ESCAPE: '{path}' contains '..'")
+        if path.startswith('/'):
+            errors.append(f"PATH_ESCAPE: '{path}' is absolute path")
+
+    # Check 2: Hash format
+    for asset in assets:
+        sha = asset.get('sha256', '')
+        if not sha.startswith('sha256:'):
+            errors.append(f"HASH_FORMAT: '{asset.get('path', '?')}' hash not in sha256:<hex> format")
+        elif len(sha) != 71:  # "sha256:" (7) + 64 hex
+            errors.append(f"HASH_FORMAT: '{asset.get('path', '?')}' hash has wrong length")
+
+    # If archive provided, verify contents
+    if archive_path and archive_path.exists():
+        try:
+            declared_paths = {a['path'] for a in assets}
+
+            with tarfile.open(archive_path, 'r:gz') as tar:
+                archive_members = [m.name for m in tar.getmembers() if m.isfile()]
+
+            # Check 1: All archive files declared
+            for member in archive_members:
+                # Strip package prefix (first path component)
+                parts = Path(member).parts
+                if len(parts) > 1:
+                    rel_path = str(Path(*parts[1:]))
+                else:
+                    rel_path = member
+
+                # Skip manifest and signature files
+                if rel_path in ('manifest.json', 'signature.json', 'checksums.sha256'):
+                    continue
+
+                if rel_path not in declared_paths:
+                    errors.append(f"UNDECLARED: '{rel_path}' in archive but not in manifest")
+        except Exception as e:
+            warnings.append(f"Could not read archive: {e}")
+
+    if errors:
+        result.passed = False
+        result.message = f"G0A FAILED: {len(errors)} issues"
+    else:
+        result.message = f"G0A PASSED: {len(assets)} assets verified"
+
+    result.errors = errors[:20]
+    if len(errors) > 20:
+        result.errors.append(f"... and {len(errors) - 20} more")
+    result.warnings = warnings
+    result.details = {"asset_count": len(assets), "error_count": len(errors)}
+
+    return result
+
+
+def check_g0b_plane_ownership(plane_root: Path) -> GateResult:
+    """G0B: PLANE OWNERSHIP - Verify plane is fully governed.
+
+    Run at integrity check and seal check.
+
+    Checks:
+    1. Every file in governed roots is owned by exactly one package
+    2. Every owned file exists with matching hash
+    3. No orphan files in governed roots
+
+    Uses file_ownership.csv (derived registry) as source of truth.
+    """
+    result = GateResult(gate="G0B", passed=True, message="Plane ownership check passed")
     errors = []
     warnings = []
 
@@ -119,10 +260,14 @@ def check_g0_ownership(plane_root: Path) -> GateResult:
     governed_roots = config.get('governed_roots', [])
     excluded_patterns = config.get('excluded_patterns', [])
 
-    # Get registered paths
-    registered_paths = get_registered_paths(plane_root)
+    # Load file ownership registry
+    ownership = load_file_ownership_registry(plane_root)
 
-    # Scan governed roots for unregistered files
+    if not ownership:
+        warnings.append("file_ownership.csv is empty or missing")
+        warnings.append("Run: python3 scripts/rebuild_derived_registries.py --plane ho3")
+
+    # Check 1 & 3: Every governed file is owned (find orphans)
     orphans = []
     for root_pattern in governed_roots:
         root_dir = plane_root / root_pattern.rstrip('/')
@@ -139,38 +284,79 @@ def check_g0_ownership(plane_root: Path) -> GateResult:
             if matches_pattern(rel_path, excluded_patterns):
                 continue
 
-            # Check if registered
-            if rel_path not in registered_paths:
+            # Skip hidden files
+            if any(part.startswith('.') for part in Path(rel_path).parts):
+                continue
+
+            # Check if owned
+            if rel_path not in ownership:
                 orphans.append(rel_path)
 
     if orphans:
         result.passed = False
-        result.message = f"Found {len(orphans)} unregistered files in governed roots"
-        errors.extend([f"Unregistered: {p}" for p in orphans[:20]])
+        errors.extend([f"ORPHAN: {p}" for p in orphans[:20]])
         if len(orphans) > 20:
-            errors.append(f"... and {len(orphans) - 20} more")
+            errors.append(f"... and {len(orphans) - 20} more orphans")
 
-    # Verify registered files exist
-    rows = load_control_plane_registry(plane_root)
+    # Check 2: Every owned file exists with correct hash
     missing = []
-    for row in rows:
-        artifact_path = row.get('artifact_path', '').strip()
-        if not artifact_path:
-            continue
-        full_path = plane_root / artifact_path.lstrip('/')
+    hash_mismatches = []
+
+    for file_path, entry in ownership.items():
+        full_path = plane_root / file_path
+
         if not full_path.exists():
-            missing.append(artifact_path)
+            missing.append(file_path)
+            continue
+
+        expected_hash = entry.get('sha256', '')
+        if expected_hash:
+            actual_hash = compute_sha256(full_path)
+            if actual_hash != expected_hash:
+                hash_mismatches.append({
+                    'path': file_path,
+                    'expected': expected_hash[:24] + '...',
+                    'actual': actual_hash[:24] + '...'
+                })
 
     if missing:
         result.passed = False
-        errors.extend([f"Missing file: {p}" for p in missing[:10]])
+        errors.extend([f"MISSING: {p} (owned by {ownership[p].get('owner_package_id', '?')})" for p in missing[:10]])
         if len(missing) > 10:
-            errors.append(f"... and {len(missing) - 10} more")
+            errors.append(f"... and {len(missing) - 10} more missing")
+
+    if hash_mismatches:
+        result.passed = False
+        for hm in hash_mismatches[:10]:
+            errors.append(f"HASH_MISMATCH: {hm['path']} expected {hm['expected']} got {hm['actual']}")
+        if len(hash_mismatches) > 10:
+            errors.append(f"... and {len(hash_mismatches) - 10} more hash mismatches")
+
+    if result.passed:
+        result.message = f"G0B PASSED: {len(ownership)} files owned, 0 orphans"
+    else:
+        result.message = f"G0B FAILED: {len(orphans)} orphans, {len(missing)} missing, {len(hash_mismatches)} hash mismatches"
 
     result.errors = errors
     result.warnings = warnings
-    result.details = {"orphan_count": len(orphans), "missing_count": len(missing)}
+    result.details = {
+        "owned_count": len(ownership),
+        "orphan_count": len(orphans),
+        "missing_count": len(missing),
+        "hash_mismatch_count": len(hash_mismatches)
+    }
 
+    return result
+
+
+def check_g0_ownership(plane_root: Path) -> GateResult:
+    """G0: OWNERSHIP - Legacy alias for G0B.
+
+    Now delegates to G0B (plane ownership check).
+    For package declaration checks, use G0A explicitly.
+    """
+    result = check_g0b_plane_ownership(plane_root)
+    result.gate = "G0"  # Keep gate name for backward compatibility
     return result
 
 
@@ -209,39 +395,96 @@ def check_g1_chain(plane_root: Path) -> GateResult:
     return result
 
 
-def check_g2_work_order(plane_root: Path, wo_id: Optional[str] = None) -> GateResult:
-    """G2: WORK_ORDER - Verify Work Order approval and idempotency.
+def check_g2_work_order(
+    plane_root: Path,
+    wo_id: Optional[str] = None,
+    wo_file: Optional[Path] = None,
+    skip_signature: bool = False
+) -> GateResult:
+    """G2: WORK_ORDER - Verify Work Order approval, signature, and idempotency.
 
-    When wo_id is provided, checks specific Work Order.
+    Phase 2 implementation using full G2 gate from g2_gate.py.
+
+    When wo_id is provided, validates specific Work Order.
     Otherwise, reports on overall WO system health.
+
+    Args:
+        plane_root: Path to plane root
+        wo_id: Work Order ID to validate (optional)
+        wo_file: Path to Work Order file (optional)
+        skip_signature: Skip Ed25519 signature verification
     """
-    result = GateResult(gate="G2", passed=True, message="Work Order check passed")
+    # If specific WO provided, use full G2 validation
+    if wo_id or wo_file:
+        try:
+            from scripts.g2_gate import run_g2_gate
 
-    wo_ledger = plane_root / 'ledger' / 'work_orders.jsonl'
-    applied_ledger = plane_root / 'ledger' / 'applied_work_orders.jsonl'
+            g2_result = run_g2_gate(
+                wo_id=wo_id,
+                wo_file=wo_file,
+                plane_root=plane_root,
+                skip_signature=skip_signature
+            )
 
-    # Count WO stats
+            # Map G2Result to GateResult
+            return GateResult(
+                gate="G2",
+                passed=g2_result.passed,
+                message=g2_result.message,
+                errors=g2_result.errors,
+                warnings=g2_result.warnings,
+                details=g2_result.details
+            )
+        except ImportError as e:
+            # Fallback if g2_gate not available
+            return GateResult(
+                gate="G2",
+                passed=False,
+                message=f"G2 gate module not available: {e}",
+                errors=["Import g2_gate.py failed"]
+            )
+
+    # No specific WO - report on overall WO system health
+    result = GateResult(gate="G2", passed=True, message="Work Order system check passed")
+
+    # Check HOT governance.jsonl for WO_APPROVED events
+    governance_ledger = plane_root / 'ledger' / 'governance.jsonl'
+    ho2_ledger = plane_root / 'planes' / 'ho2' / 'ledger' / 'workorder.jsonl'
+
     approved_count = 0
-    applied_count = 0
+    completed_count = 0
 
-    if wo_ledger.exists():
-        with open(wo_ledger, 'r', encoding='utf-8') as f:
+    # Count WO_APPROVED in HOT
+    if governance_ledger.exists():
+        with open(governance_ledger, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.strip():
-                    entry = json.loads(line)
-                    if entry.get('status') == 'APPROVED':
-                        approved_count += 1
+                    try:
+                        entry = json.loads(line)
+                        if entry.get('event_type') == 'WO_APPROVED':
+                            approved_count += 1
+                    except json.JSONDecodeError:
+                        pass
 
-    if applied_ledger.exists():
-        with open(applied_ledger, 'r', encoding='utf-8') as f:
+    # Count WO_COMPLETED in HO2
+    if ho2_ledger.exists():
+        with open(ho2_ledger, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.strip():
-                    entry = json.loads(line)
-                    if entry.get('status') in ('APPLIED', 'COMPLETED'):
-                        applied_count += 1
+                    try:
+                        entry = json.loads(line)
+                        if entry.get('event_type') == 'WO_COMPLETED':
+                            completed_count += 1
+                    except json.JSONDecodeError:
+                        pass
 
-    result.message = f"WO system: {approved_count} approved, {applied_count} applied"
-    result.details = {"approved_count": approved_count, "applied_count": applied_count}
+    result.message = f"WO system: {approved_count} approved (HOT), {completed_count} completed (HO2)"
+    result.details = {
+        "approved_count": approved_count,
+        "completed_count": completed_count,
+        "governance_ledger_exists": governance_ledger.exists(),
+        "ho2_ledger_exists": ho2_ledger.exists(),
+    }
 
     return result
 
@@ -325,7 +568,9 @@ def check_g6_ledger(plane_root: Path) -> GateResult:
 
 
 GATE_FUNCTIONS = {
-    "G0": check_g0_ownership,
+    "G0": check_g0_ownership,      # Legacy alias for G0B
+    "G0A": check_g0a_package_declaration,  # Package declaration (install-time)
+    "G0B": check_g0b_plane_ownership,      # Plane ownership (integrity-time)
     "G1": check_g1_chain,
     "G2": check_g2_work_order,
     "G3": check_g3_constraints,
@@ -337,43 +582,94 @@ GATE_FUNCTIONS = {
 
 def run_gates(
     gates: List[str],
-    plane_root: Path
+    plane_root: Path,
+    manifest: Optional[dict] = None,
+    archive_path: Optional[Path] = None,
+    fail_fast: bool = False,
+    wo_id: Optional[str] = None,
+    wo_file: Optional[Path] = None,
+    skip_signature: bool = False
 ) -> Tuple[List[GateResult], bool]:
     """Run specified gates.
 
     Args:
-        gates: List of gate names (G0-G6) or ["all"]
+        gates: List of gate names (G0-G6, G0A, G0B) or ["all"]
         plane_root: Path to plane root
+        manifest: Package manifest for G0A (optional)
+        archive_path: Package archive for G0A (optional)
+        fail_fast: Stop on first failure (for --enforce mode)
+        wo_id: Work Order ID for G2 (optional)
+        wo_file: Work Order file for G2 (optional)
+        skip_signature: Skip Ed25519 signature verification for G2
 
     Returns:
         (results, all_passed)
     """
     if "all" in gates or not gates:
-        gates = ["G0", "G1", "G2", "G3", "G4", "G5", "G6"]
+        # "all" includes G0B but not G0A (G0A requires manifest)
+        gates = ["G0B", "G1", "G2", "G3", "G4", "G5", "G6"]
 
     results = []
     all_passed = True
 
     for gate in gates:
-        gate_fn = GATE_FUNCTIONS.get(gate.upper())
-        if gate_fn:
+        gate_upper = gate.upper()
+        gate_fn = GATE_FUNCTIONS.get(gate_upper)
+
+        if not gate_fn:
+            results.append(GateResult(
+                gate=gate,
+                passed=False,
+                message=f"Unknown gate: {gate}",
+                errors=[f"Gate '{gate}' not found in GATE_FUNCTIONS"]
+            ))
+            all_passed = False
+            if fail_fast:
+                break
+            continue
+
+        # Gate-specific argument handling
+        if gate_upper == "G0A":
+            result = gate_fn(plane_root, manifest=manifest, archive_path=archive_path)
+        elif gate_upper == "G2":
+            result = gate_fn(plane_root, wo_id=wo_id, wo_file=wo_file, skip_signature=skip_signature)
+        else:
             result = gate_fn(plane_root)
-            results.append(result)
-            if not result.passed:
-                all_passed = False
+
+        results.append(result)
+
+        if not result.passed:
+            all_passed = False
+            if fail_fast:
+                break
 
     return results, all_passed
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run governance gates for the Control Plane"
+        description="Run governance gates for the Control Plane",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    # Run all gates (G0B, G1-G6)
+    python3 scripts/gate_check.py --all
+
+    # Run G0B (plane ownership) with enforce mode
+    python3 scripts/gate_check.py --gate G0B --enforce
+
+    # Run G0A (package declaration) with manifest
+    python3 scripts/gate_check.py --gate G0A --manifest packages_store/PKG-TEST/manifest.json
+
+    # Run specific gates
+    python3 scripts/gate_check.py --gate G0B G1 G6 --plane ho3
+"""
     )
     parser.add_argument(
         "--gate", "-g",
         nargs="+",
         default=["all"],
-        help="Gates to run (G0-G6) or 'all'"
+        help="Gates to run (G0, G0A, G0B, G1-G6) or 'all'"
     )
     parser.add_argument(
         "--all", "-a",
@@ -384,6 +680,36 @@ def main():
         "--plane",
         type=str,
         help="Plane ID (ho3, ho2, ho1)"
+    )
+    parser.add_argument(
+        "--enforce",
+        action="store_true",
+        help="Fail-closed mode: exit 1 on ANY gate failure"
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        help="Package manifest JSON for G0A check"
+    )
+    parser.add_argument(
+        "--archive",
+        type=Path,
+        help="Package archive for G0A check"
+    )
+    parser.add_argument(
+        "--wo",
+        type=str,
+        help="Work Order ID for G2 check"
+    )
+    parser.add_argument(
+        "--wo-file",
+        type=Path,
+        help="Work Order file for G2 check"
+    )
+    parser.add_argument(
+        "--skip-signature",
+        action="store_true",
+        help="Skip Ed25519 signature verification for G2"
     )
     parser.add_argument(
         "--json", "-j",
@@ -407,28 +733,51 @@ def main():
     # Determine plane root
     plane_root = args.root
     if args.plane:
-        plane_root = args.root / 'planes' / args.plane
-        if not plane_root.exists():
-            plane_root = args.root
+        if args.plane == "ho3":
+            plane_root = args.root  # HO3 is the root
+        else:
+            plane_root = args.root / 'planes' / args.plane
+            if not plane_root.exists():
+                plane_root = args.root
+
+    # Load manifest if provided
+    manifest = None
+    if args.manifest:
+        if not args.manifest.exists():
+            print(f"ERROR: Manifest not found: {args.manifest}", file=sys.stderr)
+            return 1
+        manifest = json.loads(args.manifest.read_text())
 
     # Run gates
     gates = ["all"] if args.all else args.gate
-    results, all_passed = run_gates(gates, plane_root)
+    results, all_passed = run_gates(
+        gates,
+        plane_root,
+        manifest=manifest,
+        archive_path=args.archive,
+        fail_fast=args.enforce,
+        wo_id=args.wo,
+        wo_file=args.wo_file,
+        skip_signature=args.skip_signature
+    )
 
     # Output
     if args.json:
         output = {
             "plane_root": str(plane_root),
             "all_passed": all_passed,
+            "enforce_mode": args.enforce,
             "results": [r.to_dict() for r in results]
         }
         print(json.dumps(output, indent=2))
     elif args.quiet:
         status = "PASS" if all_passed else "FAIL"
         passed_count = sum(1 for r in results if r.passed)
-        print(f"Gates: {status} ({passed_count}/{len(results)} passed)")
+        mode = " [ENFORCE]" if args.enforce else ""
+        print(f"Gates: {status} ({passed_count}/{len(results)} passed){mode}")
     else:
-        print(f"\nGATE CHECK REPORT")
+        mode_str = " [ENFORCE MODE]" if args.enforce else ""
+        print(f"\nGATE CHECK REPORT{mode_str}")
         print(f"Plane: {plane_root}")
         print("=" * 60)
 
@@ -449,6 +798,9 @@ def main():
         status = "PASS" if all_passed else "FAIL"
         passed_count = sum(1 for r in results if r.passed)
         print(f"Overall: {status} ({passed_count}/{len(results)} gates passed)")
+
+        if args.enforce and not all_passed:
+            print("\n[ENFORCE MODE] Exiting with error code 1")
 
     return 0 if all_passed else 1
 

@@ -2,13 +2,18 @@
 
 Provides factory methods for creating LedgerClient instances,
 either with defaults (backward compatible) or from tier manifests.
+
+Phase 2 additions:
+- create_work_order_instance_with_linkage(): Create HO2 WO instance with HOT linkage
+- create_session_instance_with_linkage(): Create HO1 session with WO instance linkage
+- write_wo_events(): Write WO lifecycle events (WO_STARTED, WO_COMPLETED, etc.)
 """
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from lib.ledger_client import LedgerClient, TierContext
+from lib.ledger_client import LedgerClient, LedgerEntry, TierContext
 from lib.tier_manifest import TierManifest, TierType, migrate_tier_name
 
 
@@ -367,3 +372,245 @@ class LedgerFactory:
             TierManifest if path is within a tier, None otherwise
         """
         return TierManifest.find_for_path(path)
+
+    # =========================================================================
+    # Phase 2: Cross-Tier Provenance Support
+    # =========================================================================
+
+    @staticmethod
+    def create_work_order_instance_with_linkage(
+        ho2_base_root: Path,
+        work_order_id: str,
+        wo_payload_hash: str,
+        hot_approval_entry_id: Optional[str] = None,
+        hot_approval_hash: Optional[str] = None,
+    ) -> Tuple[TierManifest, LedgerClient]:
+        """Create HO2 WO instance with cross-tier linkage to HOT.
+
+        Creates:
+        - planes/ho2/work_orders/{work_order_id}/ directory
+        - Ledger with GENESIS linking to HO2 base
+        - WO_STARTED event with HOT approval reference
+
+        Args:
+            ho2_base_root: Path to HO2 base plane root
+            work_order_id: Work Order ID
+            wo_payload_hash: Hash of WO payload (for verification)
+            hot_approval_entry_id: Entry ID of WO_APPROVED in HOT
+            hot_approval_hash: Hash of WO_APPROVED entry
+
+        Returns:
+            Tuple of (TierManifest, LedgerClient) for the new instance
+        """
+        # Create the base instance
+        manifest, client = LedgerFactory.create_work_order_instance(
+            ho2_base_root, work_order_id
+        )
+
+        # Write WO_STARTED event with linkage
+        wo_started = LedgerEntry(
+            event_type='WO_STARTED',
+            submission_id=work_order_id,
+            decision='EXECUTION_STARTED',
+            reason='Work Order execution started',
+            metadata={
+                'wo_id': work_order_id,
+                'wo_payload_hash': wo_payload_hash,
+                'hot_approval_entry_id': hot_approval_entry_id,
+                'hot_approval_hash': hot_approval_hash,
+                'started_at': datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        client.write(wo_started)
+        client.flush()
+
+        return manifest, client
+
+    @staticmethod
+    def create_session_instance_with_linkage(
+        ho1_base_root: Path,
+        session_id: str,
+        work_order_id: str,
+        wo_instance_ledger_path: str,
+        wo_instance_hash: Optional[str] = None,
+    ) -> Tuple[TierManifest, LedgerClient]:
+        """Create HO1 session instance with cross-tier linkage to WO instance.
+
+        Creates:
+        - planes/ho1/sessions/{session_id}/ directory
+        - Ledger with GENESIS linking to HO1 base
+        - SESSION_START event with WO instance reference
+
+        Args:
+            ho1_base_root: Path to HO1 base plane root
+            session_id: Session ID
+            work_order_id: Associated Work Order ID
+            wo_instance_ledger_path: Path to WO instance ledger
+            wo_instance_hash: Hash of WO instance ledger (for verification)
+
+        Returns:
+            Tuple of (TierManifest, LedgerClient) for the new instance
+        """
+        # Create the base instance
+        manifest, client = LedgerFactory.create_session_instance(
+            ho1_base_root, session_id
+        )
+
+        # Write SESSION_START event with WO linkage
+        session_start = LedgerEntry(
+            event_type='SESSION_START',
+            submission_id=session_id,
+            decision='SESSION_STARTED',
+            reason='Session started for Work Order execution',
+            metadata={
+                'session_id': session_id,
+                'wo_id': work_order_id,
+                'wo_instance_ledger_path': wo_instance_ledger_path,
+                'wo_instance_hash': wo_instance_hash,
+                'started_at': datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        client.write(session_start)
+        client.flush()
+
+        return manifest, client
+
+    @staticmethod
+    def write_gate_event(
+        client: LedgerClient,
+        gate_id: str,
+        passed: bool,
+        message: str = '',
+        details: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Write a gate pass/fail event to a WO instance ledger.
+
+        Args:
+            client: LedgerClient for WO instance
+            gate_id: Gate identifier (G0, G1, G2, etc.)
+            passed: Whether gate passed
+            message: Gate result message
+            details: Additional gate result details
+
+        Returns:
+            Entry ID
+        """
+        event_type = 'GATE_PASSED' if passed else 'GATE_FAILED'
+
+        entry = LedgerEntry(
+            event_type=event_type,
+            submission_id=gate_id,
+            decision='PASSED' if passed else 'FAILED',
+            reason=message,
+            metadata={
+                'gate_id': gate_id,
+                'passed': passed,
+                'details': details or {},
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        entry_id = client.write(entry)
+        client.flush()
+        return entry_id
+
+    @staticmethod
+    def write_session_spawned(
+        wo_client: LedgerClient,
+        session_id: str,
+        session_ledger_path: str,
+    ) -> str:
+        """Write SESSION_SPAWNED event to WO instance ledger.
+
+        Args:
+            wo_client: LedgerClient for WO instance
+            session_id: Spawned session ID
+            session_ledger_path: Path to session ledger
+
+        Returns:
+            Entry ID
+        """
+        entry = LedgerEntry(
+            event_type='SESSION_SPAWNED',
+            submission_id=session_id,
+            decision='SPAWNED',
+            reason='HO1 session spawned for task execution',
+            metadata={
+                'session_id': session_id,
+                'session_ledger_path': session_ledger_path,
+                'spawned_at': datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        entry_id = wo_client.write(entry)
+        wo_client.flush()
+        return entry_id
+
+    @staticmethod
+    def write_wo_exec_complete(
+        wo_client: LedgerClient,
+        work_order_id: str,
+        result_status: str,
+        changes_hash: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """Write WO_EXEC_COMPLETE event to WO instance ledger.
+
+        Args:
+            wo_client: LedgerClient for WO instance
+            work_order_id: Work Order ID
+            result_status: Execution result status (success, failed, etc.)
+            changes_hash: Hash of applied changes
+            session_id: Associated session ID
+
+        Returns:
+            Entry ID
+        """
+        entry = LedgerEntry(
+            event_type='WO_EXEC_COMPLETE',
+            submission_id=work_order_id,
+            decision=result_status.upper(),
+            reason=f'Work Order execution completed with status: {result_status}',
+            metadata={
+                'wo_id': work_order_id,
+                'result_status': result_status,
+                'changes_hash': changes_hash,
+                'session_id': session_id,
+                'completed_at': datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        entry_id = wo_client.write(entry)
+        wo_client.flush()
+        return entry_id
+
+    @staticmethod
+    def write_session_end(
+        session_client: LedgerClient,
+        session_id: str,
+        result_status: str,
+        final_hash: Optional[str] = None,
+    ) -> str:
+        """Write SESSION_END event to session ledger.
+
+        Args:
+            session_client: LedgerClient for session
+            session_id: Session ID
+            result_status: Session result status
+            final_hash: Final state hash
+
+        Returns:
+            Entry ID
+        """
+        entry = LedgerEntry(
+            event_type='SESSION_END',
+            submission_id=session_id,
+            decision=result_status.upper(),
+            reason=f'Session ended with status: {result_status}',
+            metadata={
+                'session_id': session_id,
+                'result_status': result_status,
+                'final_hash': final_hash,
+                'ended_at': datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        entry_id = session_client.write(entry)
+        session_client.flush()
+        return entry_id

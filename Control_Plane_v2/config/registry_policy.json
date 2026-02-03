@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "description": "Registry mutation policy - classifies registries as curated (WO-only) or derived (rebuild-only)",
+  "curated": [
+    "registries/control_plane_registry.csv",
+    "registries/specs_registry.csv",
+    "registries/frameworks_registry.csv",
+    "registries/packages_state.csv",
+    "registries/file_ownership.csv"
+  ],
+  "derived": [
+    "registries/compiled/packages.json",
+    "registries/compiled/file_ownership.json"
+  ],
+  "rules": {
+    "curated": {
+      "description": "WO-only mutation via approved registry_change Work Order",
+      "enforcement": "G2 gate validates WO type=registry_change for curated registry modifications",
+      "exceptions": "Genesis bootstrap may initialize without WO"
+    },
+    "derived": {
+      "description": "Rebuild-only from authoritative sources",
+      "enforcement": "rebuild_derived.py regenerates from ledger and manifests",
+      "direct_mutation": "FORBIDDEN - direct edits rejected by integrity check"
+    }
+  },
+  "rebuild_sources": {
+    "registries/compiled/packages.json": {
+      "source": "ledger/packages.jsonl + packages_state.csv",
+      "script": "scripts/rebuild_derived.py --registry packages"
+    },
+    "registries/compiled/file_ownership.json": {
+      "source": "registries/file_ownership.csv",
+      "script": "scripts/rebuild_derived.py --registry file_ownership"
+    }
+  },
+  "notes": {
+    "phase_2_scope": "Enforces curated vs derived distinction for registry hygiene",
+    "sunset": "Legacy manual registry edits sunset MVP-3 when cp-registry CLI delivered"
+  }
+}
