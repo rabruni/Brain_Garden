@@ -1,0 +1,36 @@
+# {{ package_id }} Agent Capabilities
+#
+# This file declares the agent's capabilities, inputs/outputs, and constraints.
+# Referenced by the runner to enforce path restrictions and validate outputs.
+
+agent_id: {{ package_id }}
+name: "{{ agent_name | default(package_id | replace('PKG-', '') | replace('-', ' ') | title) }}"
+version: "0.1.0"
+framework_id: {{ framework_id }}
+
+capabilities:
+{% for cap in capabilities | default(['example_capability']) %}
+  - id: {{ cap }}
+    description: "TODO: Describe {{ cap }}"
+    inputs:
+      # param_name: {type: string, required: true}
+    outputs:
+      # result: {type: object}
+    read_paths:
+      - "installed/*/manifest.json"
+      - "installed/*/receipt.json"
+    write_paths: []
+{% endfor %}
+
+constraints:
+  network: false
+  max_runtime_seconds: 60
+  allowed_imports:
+    - lib.plane
+    - lib.registry
+    - lib.ledger_client
+
+memory:
+  fast: ephemeral           # Per-turn scratch (not persisted)
+  slow: ho1_replay          # Replay from HO1 ledger
+  checkpoint_tier: ho2      # HO2 stores session boundaries

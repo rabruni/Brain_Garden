@@ -72,6 +72,15 @@ from lib.provenance import (
     AttestationDigestMismatch,
 )
 from lib.ledger_client import LedgerClient, LedgerEntry, TierContext
+# Import shared preflight validators (single source of truth)
+from lib.preflight import (
+    PackageDeclarationValidator,
+    ChainValidator,
+    OwnershipValidator,
+    SignatureValidator,
+    load_file_ownership as preflight_load_file_ownership,
+    compute_sha256 as preflight_compute_sha256,
+)
 
 
 # === Constants ===
@@ -132,18 +141,11 @@ def load_manifest_from_archive(archive_path: Path) -> dict | None:
 
 
 def load_file_ownership() -> Dict[str, dict]:
-    """Load file ownership registry as dict keyed by file_path."""
-    if not FILE_OWNERSHIP_CSV.exists():
-        return {}
+    """Load file ownership registry as dict keyed by file_path.
 
-    ownership = {}
-    with open(FILE_OWNERSHIP_CSV, 'r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            file_path = row.get('file_path', '').strip()
-            if file_path:
-                ownership[file_path] = row
-    return ownership
+    Uses shared lib/preflight.py implementation for consistency.
+    """
+    return preflight_load_file_ownership(CONTROL_PLANE)
 
 
 def get_ledger_client() -> LedgerClient:
@@ -205,8 +207,15 @@ def write_ledger_entry(
 
 
 # =============================================================================
-# Gate Implementations (inline for fail-closed enforcement)
+# Gate Implementations (using shared lib/preflight.py validators)
 # =============================================================================
+
+# Shared validator instances
+_g0a_validator = PackageDeclarationValidator()
+_g1_validator = ChainValidator(CONTROL_PLANE)
+_ownership_validator = OwnershipValidator()
+_g5_validator = SignatureValidator()
+
 
 def check_g0a_package_declaration(
     manifest: dict,
@@ -215,71 +224,28 @@ def check_g0a_package_declaration(
     """
     G0A: PACKAGE DECLARATION - Verify package is internally consistent.
 
-    Checks:
-    1. Every file in workspace is declared in manifest.assets[]
-    2. Every declared asset hash matches workspace file hash
-    3. No path escapes (no "..", no absolute paths)
+    Uses shared lib/preflight.py validator for consistency with pkgutil preflight.
 
     Returns (passed, errors)
     """
-    errors = []
-
-    assets = manifest.get('assets', [])
-    assets_by_path = {a['path']: a for a in assets}
-
-    # Check all workspace files are declared
-    for rel_path, workspace_path in workspace_files.items():
-        if rel_path not in assets_by_path:
-            errors.append(f"G0A: UNDECLARED: '{rel_path}' in package but not in manifest")
-            continue
-
-        # Check hash
-        asset = assets_by_path[rel_path]
-        expected_hash = asset.get('sha256', '')
-        actual_hash = compute_sha256(workspace_path)
-
-        if expected_hash != actual_hash:
-            errors.append(
-                f"G0A: HASH_MISMATCH: '{rel_path}'\n"
-                f"    expected: {expected_hash}\n"
-                f"    actual:   {actual_hash}"
-            )
-
-    # Check for path escapes in manifest
-    for asset in assets:
-        path = asset.get('path', '')
-        if '..' in path:
-            errors.append(f"G0A: PATH_ESCAPE: '{path}' contains '..'")
-        if path.startswith('/'):
-            errors.append(f"G0A: PATH_ESCAPE: '{path}' is absolute path")
-
-        # Check hash format
-        sha = asset.get('sha256', '')
-        if not sha.startswith('sha256:'):
-            errors.append(f"G0A: HASH_FORMAT: '{path}' hash not in sha256:<hex> format")
-        elif len(sha) != 71:  # "sha256:" (7) + 64 hex
-            errors.append(f"G0A: HASH_FORMAT: '{path}' hash has wrong length ({len(sha)} != 71)")
-
-    return len(errors) == 0, errors
+    result = _g0a_validator.validate(manifest, workspace_files)
+    # Prepend "G0A: " to errors for backward compatibility with existing code
+    errors = [f"G0A: {e}" if not e.startswith("G0A") else e for e in result.errors]
+    return result.passed, errors
 
 
 def check_g1_chain(manifest: dict, plane_root: Path) -> Tuple[bool, List[str]]:
     """
     G1: CHAIN - Verify package dependencies exist.
 
-    For v1.2 packages, checks that any spec dependencies are valid.
+    Uses shared lib/preflight.py validator for consistency with pkgutil preflight.
+
+    Returns (passed, errors)
     """
-    errors = []
-
-    # Check deps field (legacy) or dependencies
-    deps = manifest.get('deps', [])
-
-    # For now, just validate the dependency format
-    for dep in deps:
-        if not dep.startswith('PKG-'):
-            errors.append(f"G1: INVALID_DEP: '{dep}' is not a valid package ID")
-
-    return len(errors) == 0, errors
+    validator = ChainValidator(plane_root)
+    result = validator.validate(manifest)
+    errors = [f"G1: {e}" if not e.startswith("G1") else e for e in result.errors]
+    return result.passed, errors
 
 
 def check_g5_signature(
@@ -290,23 +256,13 @@ def check_g5_signature(
     """
     G5: SIGNATURE - Verify package signature.
 
+    Uses shared lib/preflight.py validator for consistency with pkgutil preflight.
+
     Returns (passed, errors)
     """
-    errors = []
-
-    if has_signature(archive_path):
-        try:
-            verify_detached(archive_path)
-        except SignatureVerificationFailed as e:
-            errors.append(f"G5: SIGNATURE_INVALID: {e}")
-    else:
-        if allow_unsigned:
-            # Log waiver (done separately)
-            pass
-        else:
-            errors.append("G5: SIGNATURE_MISSING: Package is not signed")
-
-    return len(errors) == 0, errors
+    result = _g5_validator.validate(archive_path, manifest, allow_unsigned)
+    errors = [f"G5: {e}" if not e.startswith("G5") else e for e in result.errors]
+    return result.passed, errors
 
 
 def check_ownership_conflicts(
@@ -317,24 +273,12 @@ def check_ownership_conflicts(
     """
     Check for ownership conflicts (no last-write-wins).
 
-    A conflict occurs if a file is owned by a different package.
-    Same package reinstalling = ok (idempotent).
+    Uses shared lib/preflight.py validator for consistency with pkgutil preflight.
+
+    Returns (passed, errors)
     """
-    errors = []
-
-    assets = manifest.get('assets', [])
-
-    for asset in assets:
-        path = asset['path']
-        if path in existing_ownership:
-            owner = existing_ownership[path].get('owner_package_id', '')
-            if owner and owner != package_id:
-                errors.append(
-                    f"OWNERSHIP_CONFLICT: '{path}' already owned by '{owner}', "
-                    f"cannot assign to '{package_id}'"
-                )
-
-    return len(errors) == 0, errors
+    result = _ownership_validator.validate(manifest, existing_ownership, package_id)
+    return result.passed, result.errors
 
 
 # =============================================================================
