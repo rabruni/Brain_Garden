@@ -1020,10 +1020,15 @@ Examples:
         action="store_true",
         help="Output as JSON instead of Markdown",
     )
+    parser.add_argument(
+        "--agent-context",
+        action="store_true",
+        help="Return structured context for agent prompt headers",
+    )
 
     args = parser.parse_args()
 
-    if not any([args.explain, args.inventory, args.installed, args.verify]):
+    if not any([args.explain, args.inventory, args.installed, args.verify, args.agent_context]):
         parser.print_help()
         sys.exit(0)
 
@@ -1079,6 +1084,56 @@ Examples:
             print(formatter.format_verify(result))
 
         sys.exit(0 if result.passed else 1)
+
+    elif args.agent_context:
+        # Return structured context for agent prompt headers
+        from datetime import datetime, timezone
+
+        installed = engine.list_installed()
+        verify_result = engine.verify()
+
+        # Get recent governance entries (last 10)
+        recent_governance = []
+        ledger_path = engine.root / "ledger" / "governance.jsonl"
+        if ledger_path.exists():
+            with open(ledger_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            for line in lines[-10:]:
+                if line.strip():
+                    try:
+                        entry = json.loads(line.strip())
+                        recent_governance.append({
+                            "event_type": entry.get("event_type", "unknown"),
+                            "timestamp": entry.get("timestamp", ""),
+                            "decision": entry.get("decision", ""),
+                            "submission_id": entry.get("submission_id", ""),
+                        })
+                    except json.JSONDecodeError:
+                        pass
+
+        context = {
+            "tier": "HO1",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "installed_packages": [
+                {
+                    "package_id": p.package_id,
+                    "version": p.version,
+                    "file_count": p.file_count,
+                }
+                for p in installed
+            ],
+            "recent_governance": recent_governance,
+            "integrity_status": {
+                "passed": verify_result.passed,
+                "checks": [
+                    {"name": c["name"], "passed": c["passed"]}
+                    for c in verify_result.checks
+                ],
+            },
+            "governed_roots": engine._load_governed_config().get("governed_roots", []),
+        }
+
+        print(json.dumps(context, indent=2, default=str))
 
 
 if __name__ == "__main__":

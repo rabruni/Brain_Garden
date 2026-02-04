@@ -408,7 +408,8 @@ class TestPreflightValidator:
 
         workspace_files = {"lib/test.py": test_file}
 
-        validator = PreflightValidator(tmp_path)
+        # Use strict=False for isolated testing without full registries
+        validator = PreflightValidator(tmp_path, strict=False)
         results = validator.run_all(
             manifest=manifest,
             workspace_files=workspace_files,

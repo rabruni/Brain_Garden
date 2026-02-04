@@ -234,15 +234,20 @@ def check_g0a_package_declaration(
     return result.passed, errors
 
 
-def check_g1_chain(manifest: dict, plane_root: Path) -> Tuple[bool, List[str]]:
+def check_g1_chain(manifest: dict, plane_root: Path, strict: bool = True) -> Tuple[bool, List[str]]:
     """
     G1: CHAIN - Verify package dependencies exist.
 
     Uses shared lib/preflight.py validator for consistency with pkgutil preflight.
 
+    Args:
+        manifest: Package manifest dict
+        plane_root: Path to plane root
+        strict: If True (default), require spec_id. Set False for isolated testing.
+
     Returns (passed, errors)
     """
-    validator = ChainValidator(plane_root)
+    validator = ChainValidator(plane_root, strict=strict)
     result = validator.validate(manifest)
     errors = [f"G1: {e}" if not e.startswith("G1") else e for e in result.errors]
     return result.passed, errors

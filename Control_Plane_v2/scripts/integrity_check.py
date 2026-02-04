@@ -315,7 +315,8 @@ def verify_chain_links() -> List[Tuple[str, str, str]]:
 
     # Build lookup dicts (O(1) lookups)
     artifacts_by_id = {row['id']: row for row in artifacts}
-    specs_by_id = {row['id']: row for row in specs}
+    # specs_registry uses 'spec_id' field, not 'id'
+    specs_by_id = {row.get('spec_id', row.get('id', '')): row for row in specs}
 
     # 1. Verify artifact -> spec links
     for row in artifacts:
@@ -327,16 +328,21 @@ def verify_chain_links() -> List[Tuple[str, str, str]]:
             if source_spec not in specs_by_id:
                 errors.append((item_id, 'source_spec_id', source_spec))
             else:
-                # Check spec path exists on disk
+                # Check spec directory exists on disk (specs are directories, not files)
                 spec = specs_by_id[source_spec]
-                spec_path = _plane_root / spec.get('artifact_path', '').lstrip('/')
+                spec_id_val = spec.get('spec_id', spec.get('id', ''))
+                spec_path = _plane_root / "specs" / spec_id_val / "manifest.yaml"
                 if not spec_path.exists():
-                    errors.append((item_id, 'source_spec_path', str(spec_path)))
+                    # Also check if it's an old-style spec (just YAML file)
+                    alt_path = _plane_root / "specs" / f"{spec_id_val}.yaml"
+                    if not alt_path.exists():
+                        errors.append((item_id, 'source_spec_path', str(spec_path)))
 
     # 2. Verify spec -> framework links
     for spec in specs:
-        spec_id = spec.get('id', '')
-        complies_with = spec.get('complies_with', '').strip()
+        spec_id = spec.get('spec_id', spec.get('id', ''))
+        # specs_registry uses 'framework_id', not 'complies_with'
+        complies_with = spec.get('framework_id', spec.get('complies_with', '')).strip()
 
         if complies_with:
             for fmwk_id in complies_with.split(','):

@@ -13,7 +13,8 @@
     "tests/",
     "specs/",
     "config/",
-    "docs/"
+    "docs/",
+    "governed_prompts/"
   ],
   "excluded_patterns": [
     "**/__pycache__/**",

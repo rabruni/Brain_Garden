@@ -215,24 +215,29 @@ class PackageDeclarationValidator:
 
 
 class ChainValidator:
-    """G1: CHAIN - Verify dependency chains exist.
+    """G1: CHAIN - Verify governance chain integrity.
 
-    Checks:
-    1. Package dependencies (deps field) reference valid packages
-    2. Framework references exist in frameworks_registry
-    3. Spec references exist in specs_registry
+    Enforces:
+    1. Package MUST have spec_id (registered in specs_registry)
+    2. Spec MUST have framework_id (registered in frameworks_registry)
+    3. Package framework_id (if set) MUST match spec's framework_id
+    4. Spec pack MUST exist with manifest.yaml
+    5. Package assets SHOULD be subset of spec's declared assets
+    6. Package dependencies MUST be valid package IDs
     """
 
-    def __init__(self, plane_root: Optional[Path] = None):
+    def __init__(self, plane_root: Optional[Path] = None, strict: bool = True):
         """Initialize chain validator.
 
         Args:
             plane_root: Plane root path (defaults to CONTROL_PLANE)
+            strict: If True, require spec_id and framework chain (default: True)
         """
         self.plane_root = plane_root or CONTROL_PLANE
+        self.strict = strict
 
     def validate(self, manifest: dict) -> PreflightResult:
-        """Validate dependency chain.
+        """Validate governance chain.
 
         Args:
             manifest: Package manifest dict
@@ -243,29 +248,64 @@ class ChainValidator:
         errors = []
         warnings = []
 
-        # Check deps field (package dependencies)
+        package_id = manifest.get('package_id', 'UNKNOWN')
+        spec_id = manifest.get('spec_id')
+        framework_id = manifest.get('framework_id')
+
+        # 1. Check spec_id is present and registered
+        if not spec_id:
+            if self.strict:
+                errors.append("SPEC_MISSING: Package must have 'spec_id' field")
+            else:
+                warnings.append("SPEC_MISSING: Package has no 'spec_id' - governance chain incomplete")
+        elif not self._spec_exists(spec_id):
+            errors.append(f"SPEC_NOT_FOUND: '{spec_id}' not in specs_registry.csv")
+            errors.append(f"  Register first: pkgutil register-spec {spec_id}")
+        else:
+            # 2. Get spec's framework and verify chain
+            spec_framework = self._get_spec_framework(spec_id)
+            if spec_framework:
+                # 3. If package has framework_id, it must match spec's
+                if framework_id and framework_id != spec_framework:
+                    errors.append(
+                        f"FRAMEWORK_MISMATCH: Package framework_id '{framework_id}' "
+                        f"doesn't match spec's framework '{spec_framework}'"
+                    )
+                elif not framework_id:
+                    # Auto-derive from spec (warning only)
+                    warnings.append(
+                        f"FRAMEWORK_DERIVED: Using framework '{spec_framework}' from spec"
+                    )
+
+                # Verify framework is registered
+                if not self._framework_exists(spec_framework):
+                    errors.append(f"FRAMEWORK_NOT_FOUND: '{spec_framework}' not in frameworks_registry.csv")
+
+            # 4. Check spec pack exists with manifest.yaml
+            spec_pack_path = self.plane_root / "specs" / spec_id / "manifest.yaml"
+            if not spec_pack_path.exists():
+                warnings.append(
+                    f"SPEC_PACK_MISSING: No manifest.yaml at specs/{spec_id}/"
+                )
+            else:
+                # 5. Verify package assets are declared in spec
+                self._check_assets_in_spec(manifest, spec_id, errors, warnings)
+
+        # Check framework_id if provided but no spec
+        if framework_id and not spec_id:
+            if not self._framework_exists(framework_id):
+                errors.append(f"FRAMEWORK_NOT_FOUND: '{framework_id}' not in frameworks_registry.csv")
+
+        # 6. Check deps field (package dependencies)
         deps = manifest.get('deps', []) or manifest.get('dependencies', [])
         for dep in deps:
             if isinstance(dep, str):
                 if not dep.startswith('PKG-'):
-                    errors.append(f"INVALID_DEP: '{dep}' is not a valid package ID")
-                # TODO: Check if package exists in installed/
+                    errors.append(f"INVALID_DEP: '{dep}' is not a valid package ID (must start with PKG-)")
             elif isinstance(dep, dict):
                 dep_id = dep.get('package_id', '')
                 if dep_id and not dep_id.startswith('PKG-'):
                     errors.append(f"INVALID_DEP: '{dep_id}' is not a valid package ID")
-
-        # Check framework_id reference
-        framework_id = manifest.get('framework_id')
-        if framework_id:
-            if not self._framework_exists(framework_id):
-                errors.append(f"FRAMEWORK_NOT_FOUND: '{framework_id}' not in frameworks_registry")
-
-        # Check spec_id reference
-        spec_id = manifest.get('spec_id')
-        if spec_id:
-            if not self._spec_exists(spec_id):
-                errors.append(f"SPEC_NOT_FOUND: '{spec_id}' not in specs_registry")
 
         passed = len(errors) == 0
         message = "Dependency chain valid" if passed else f"{len(errors)} chain errors"
@@ -303,6 +343,73 @@ class ChainValidator:
                 if row.get('spec_id') == spec_id:
                     return True
         return False
+
+    def _get_spec_framework(self, spec_id: str) -> Optional[str]:
+        """Get framework_id for a spec from registry."""
+        reg_path = self.plane_root / "registries" / "specs_registry.csv"
+        if not reg_path.exists():
+            return None
+
+        with open(reg_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('spec_id') == spec_id:
+                    return row.get('framework_id')
+        return None
+
+    def _check_assets_in_spec(self, manifest: dict, spec_id: str,
+                              errors: List[str], warnings: List[str]) -> None:
+        """Verify package assets are declared in spec's manifest.yaml."""
+        spec_manifest_path = self.plane_root / "specs" / spec_id / "manifest.yaml"
+        if not spec_manifest_path.exists():
+            return
+
+        # Parse spec manifest
+        try:
+            spec_content = spec_manifest_path.read_text()
+            spec_assets = self._parse_spec_assets(spec_content)
+        except Exception:
+            warnings.append(f"SPEC_PARSE_ERROR: Could not parse specs/{spec_id}/manifest.yaml")
+            return
+
+        if not spec_assets:
+            warnings.append(f"SPEC_NO_ASSETS: Spec {spec_id} has no declared assets")
+            return
+
+        # Check each package asset is in spec
+        package_assets = manifest.get('assets', [])
+        for asset in package_assets:
+            path = asset.get('path', '')
+            if path and path not in spec_assets:
+                warnings.append(
+                    f"ASSET_NOT_IN_SPEC: '{path}' not declared in spec {spec_id}"
+                )
+
+    def _parse_spec_assets(self, content: str) -> set:
+        """Parse assets from spec manifest.yaml content."""
+        assets = set()
+        in_assets = False
+
+        for line in content.split('\n'):
+            stripped = line.strip()
+
+            # Detect assets section
+            if stripped == 'assets:':
+                in_assets = True
+                continue
+
+            # Exit assets section on new top-level key
+            if in_assets and stripped and not stripped.startswith('-') and ':' in stripped:
+                in_assets = False
+                continue
+
+            # Collect asset paths
+            if in_assets and stripped.startswith('- '):
+                asset_path = stripped[2:].strip()
+                if asset_path:
+                    assets.add(asset_path)
+
+        return assets
 
 
 class OwnershipValidator:
@@ -483,16 +590,19 @@ class PreflightValidator:
     - G5: Signature policy
     """
 
-    def __init__(self, plane_root: Optional[Path] = None):
+    def __init__(self, plane_root: Optional[Path] = None, strict: bool = True):
         """Initialize preflight validator.
 
         Args:
             plane_root: Plane root path (defaults to CONTROL_PLANE)
+            strict: If True, require spec_id and full governance chain (default: True)
+                   Set to False for isolated testing without registries.
         """
         self.plane_root = plane_root or CONTROL_PLANE
+        self.strict = strict
         self.manifest_validator = ManifestValidator()
         self.g0a = PackageDeclarationValidator()
-        self.g1 = ChainValidator(plane_root)
+        self.g1 = ChainValidator(plane_root, strict=strict)
         self.ownership = OwnershipValidator()
         self.g5 = SignatureValidator()
 

@@ -911,3 +911,152 @@ class LedgerClient:
         """
         entries = self.read_all()
         return entries[start:end]
+
+    def read_recent(self, limit: int = 10) -> List[LedgerEntry]:
+        """Read the most recent entries from the ledger.
+
+        Args:
+            limit: Maximum number of entries to return (default 10)
+
+        Returns:
+            List of most recent entries, newest last
+        """
+        entries = self.read_all()
+        return entries[-limit:] if len(entries) > limit else entries
+
+
+def get_session_ledger_path(
+    tier: str,
+    session_id: str,
+    ledger_type: str = "exec",
+    root: Optional[Path] = None
+) -> Path:
+    """Get path to session-specific ledger file.
+
+    Session ledgers follow the path pattern:
+    planes/<tier>/sessions/<session_id>/ledger/<type>.jsonl
+
+    Args:
+        tier: Tier name (ho1, ho2, ho3)
+        session_id: Session identifier (SES-...)
+        ledger_type: Ledger type - "exec" or "evidence"
+        root: Control plane root directory (default: parent of lib/)
+
+    Returns:
+        Path to the session ledger file
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent
+    return root / "planes" / tier / "sessions" / session_id / "ledger" / f"{ledger_type}.jsonl"
+
+
+def create_session_ledger_client(
+    tier: str,
+    session_id: str,
+    ledger_type: str = "exec",
+    root: Optional[Path] = None,
+    **kwargs
+) -> LedgerClient:
+    """Create a LedgerClient for a session-specific ledger.
+
+    Creates the client configured for the session ledger path:
+    planes/<tier>/sessions/<session_id>/ledger/<type>.jsonl
+
+    Args:
+        tier: Tier name (ho1, ho2, ho3)
+        session_id: Session identifier (SES-...)
+        ledger_type: Ledger type - "exec" or "evidence"
+        root: Control plane root directory
+        **kwargs: Additional arguments passed to LedgerClient
+
+    Returns:
+        Configured LedgerClient instance
+    """
+    ledger_path = get_session_ledger_path(tier, session_id, ledger_type, root)
+    tier_context = TierContext(
+        tier=tier,
+        plane_root=root or Path(__file__).resolve().parent.parent,
+        session_id=session_id
+    )
+    return LedgerClient(
+        ledger_path=ledger_path,
+        tier_context=tier_context,
+        **kwargs
+    )
+
+
+def read_recent_from_tier(
+    tier: str,
+    limit: int = 10,
+    root: Optional[Path] = None
+) -> List[LedgerEntry]:
+    """Read recent entries from a tier's governance ledger.
+
+    Args:
+        tier: Tier name (ho1, ho2, ho3 or HO1, HO2, HO3)
+        limit: Maximum number of entries to return
+        root: Control plane root directory
+
+    Returns:
+        List of most recent entries from the tier's ledger
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent
+
+    # Normalize tier name
+    tier_lower = tier.lower()
+
+    # Determine ledger path based on tier
+    if tier_lower == "ho3" or tier_lower == "hot":
+        # HO3/HOT uses the main governance ledger
+        ledger_path = root / "ledger" / "governance.jsonl"
+    else:
+        # HO1, HO2 use plane-specific ledgers
+        ledger_path = root / "planes" / tier_lower / "ledger" / "governance.jsonl"
+
+    if not ledger_path.exists():
+        return []
+
+    client = LedgerClient(ledger_path=ledger_path)
+    return client.read_recent(limit)
+
+
+def list_session_ledgers(
+    tier: str,
+    root: Optional[Path] = None
+) -> List[Dict[str, Any]]:
+    """List all session ledgers for a tier.
+
+    Args:
+        tier: Tier name (ho1, ho2, ho3)
+        root: Control plane root directory
+
+    Returns:
+        List of session info dicts with keys: session_id, exec_path, evidence_path, exists
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent
+
+    sessions_dir = root / "planes" / tier / "sessions"
+    if not sessions_dir.exists():
+        return []
+
+    result = []
+    for session_dir in sorted(sessions_dir.iterdir()):
+        if not session_dir.is_dir():
+            continue
+        if not session_dir.name.startswith("SES-"):
+            continue
+
+        exec_path = session_dir / "ledger" / "exec.jsonl"
+        evidence_path = session_dir / "ledger" / "evidence.jsonl"
+
+        result.append({
+            "session_id": session_dir.name,
+            "exec_path": exec_path,
+            "evidence_path": evidence_path,
+            "exec_exists": exec_path.exists(),
+            "evidence_exists": evidence_path.exists(),
+        })
+
+    return result

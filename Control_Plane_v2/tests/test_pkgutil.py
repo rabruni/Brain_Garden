@@ -149,7 +149,8 @@ class TestPreflightCommand:
 
         result = run_pkgutil(
             "preflight", "PKG-VALID-001",
-            "--src", str(pkg_dir)
+            "--src", str(pkg_dir),
+            "--no-strict"
         )
 
         # Should pass (manifest will be updated with assets)
@@ -169,7 +170,8 @@ class TestPreflightCommand:
         result = run_pkgutil(
             "preflight", "PKG-JSON-001",
             "--src", str(pkg_dir),
-            "--json"
+            "--json",
+            "--no-strict"
         )
 
         # Should produce valid JSON
@@ -266,7 +268,8 @@ class TestStageCommand:
         result = run_pkgutil(
             "stage", "PKG-STAGE-001",
             "--src", str(pkg_dir),
-            "--staging-dir", str(staging_dir)
+            "--staging-dir", str(staging_dir),
+            "--no-strict"
         )
 
         assert result.returncode == 0, f"Error: {result.stderr}"
@@ -336,24 +339,25 @@ class TestEndToEndWorkflow:
         pkg_dir = tmp_path / "PKG-E2E-AGENT-001"
         assert pkg_dir.exists()
 
-        # 2. Preflight
+        # 2. Preflight (use --no-strict for isolated testing)
         result = run_pkgutil(
             "preflight", "PKG-E2E-AGENT-001",
-            "--src", str(pkg_dir)
+            "--src", str(pkg_dir),
+            "--no-strict"
         )
-        # May have warnings but should not hard fail
-        assert result.returncode in (0, 1)
+        # Should pass with --no-strict
+        assert result.returncode == 0, f"Preflight failed: {result.stderr}"
 
-        # 3. Stage
+        # 3. Stage (use --no-strict for isolated testing)
         result = run_pkgutil(
             "stage", "PKG-E2E-AGENT-001",
             "--src", str(pkg_dir),
-            "--staging-dir", str(staging_dir)
+            "--staging-dir", str(staging_dir),
+            "--no-strict"
         )
-        # May fail due to validation, but command should run
-        # Check archive was at least attempted
-        if result.returncode == 0:
-            assert (staging_dir / "PKG-E2E-AGENT-001.tar.gz").exists()
+        # Should pass with --no-strict
+        assert result.returncode == 0, f"Stage failed: {result.stderr}"
+        assert (staging_dir / "PKG-E2E-AGENT-001.tar.gz").exists()
 
 
 if __name__ == "__main__":

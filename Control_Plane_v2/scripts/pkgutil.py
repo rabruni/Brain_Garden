@@ -3,12 +3,15 @@
 pkgutil.py - Package authoring utilities for Control Plane v2.
 
 Commands:
-    init-agent  Generate agent package skeleton
-    init        Generate standard package skeleton
-    preflight   Run install-equivalent validation (no install)
-    delta       Generate reviewable registry rows
-    stage       Stage package for later install
-    check-framework  Validate framework governance readiness (Phase 1B)
+    init-agent       Generate agent package skeleton
+    init             Generate standard package skeleton
+    preflight        Run install-equivalent validation (no install)
+    delta            Generate reviewable registry rows
+    stage            Stage package for later install
+    check-framework  Validate framework governance readiness
+    register-framework  Register a framework in frameworks_registry.csv
+    register-spec    Register a spec in specs_registry.csv
+    compliance       Query package compliance requirements (for agents)
 
 Usage:
     python3 scripts/pkgutil.py init-agent PKG-ADMIN-001 --framework FMWK-100
@@ -16,6 +19,16 @@ Usage:
     python3 scripts/pkgutil.py preflight PKG-ADMIN-001 --src _staging/PKG-ADMIN-001
     python3 scripts/pkgutil.py delta PKG-ADMIN-001 --src _staging/PKG-ADMIN-001
     python3 scripts/pkgutil.py stage PKG-ADMIN-001 --src _staging/PKG-ADMIN-001
+    python3 scripts/pkgutil.py compliance summary --json
+
+Agent API:
+    The 'compliance' command provides a queryable API for agents to understand
+    packaging requirements. Use --json for machine-readable output.
+
+    Example queries:
+        compliance summary     - Complete compliance overview
+        compliance gates       - Gate validations explained
+        compliance troubleshoot --error G1  - Fix G1 errors
 """
 from __future__ import annotations
 
@@ -480,7 +493,8 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     allow_unsigned = os.getenv("CONTROL_PLANE_ALLOW_UNSIGNED", "0") == "1"
 
     # Run preflight
-    validator = PreflightValidator(CONTROL_PLANE)
+    strict = not getattr(args, 'no_strict', False)
+    validator = PreflightValidator(CONTROL_PLANE, strict=strict)
     results = validator.run_all(
         manifest=manifest,
         workspace_files=workspace_files,
@@ -668,7 +682,8 @@ def cmd_stage(args: argparse.Namespace) -> int:
     # Run preflight
     print(f"[stage] Running preflight validation...", file=sys.stderr)
     allow_unsigned = os.getenv("CONTROL_PLANE_ALLOW_UNSIGNED", "0") == "1"
-    validator = PreflightValidator(CONTROL_PLANE)
+    strict = not getattr(args, 'no_strict', False)
+    validator = PreflightValidator(CONTROL_PLANE, strict=strict)
     results = validator.run_all(
         manifest=manifest,
         workspace_files={k: v for k, v in workspace_files.items() if k != "manifest.json"},
@@ -868,6 +883,502 @@ def _print_check_results(framework_id: str, errors: List[str], warnings: List[st
 
 
 # =============================================================================
+# register-framework Command
+# =============================================================================
+
+def cmd_register_framework(args: argparse.Namespace) -> int:
+    """Register a framework in frameworks_registry.csv.
+
+    Validates:
+    1. Framework file exists
+    2. Framework ID matches filename pattern
+    3. Framework not already registered
+    4. Framework file has required sections
+
+    Then adds to registries/frameworks_registry.csv.
+    """
+    framework_id = args.framework_id
+    src_path = Path(args.src) if args.src else CONTROL_PLANE / "frameworks"
+
+    # Find framework file
+    if src_path.is_file():
+        framework_file = src_path
+    else:
+        framework_file = src_path / f"{framework_id}_*.md"
+        matches = list(src_path.glob(f"{framework_id}_*.md"))
+        if not matches:
+            matches = list(src_path.glob(f"{framework_id}.md"))
+        if not matches:
+            print(f"Error: Framework file not found for {framework_id} in {src_path}", file=sys.stderr)
+            return 1
+        framework_file = matches[0]
+
+    if not framework_file.exists():
+        print(f"Error: Framework file not found: {framework_file}", file=sys.stderr)
+        return 1
+
+    # Validate framework ID format
+    if not framework_id.startswith("FMWK-"):
+        print(f"Error: Framework ID must start with 'FMWK-': {framework_id}", file=sys.stderr)
+        return 1
+
+    # Check if already registered
+    registry_path = CONTROL_PLANE / "registries" / "frameworks_registry.csv"
+    if registry_path.exists():
+        with open(registry_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('framework_id') == framework_id:
+                    print(f"Error: Framework '{framework_id}' already registered", file=sys.stderr)
+                    return 1
+
+    # Parse framework file for metadata
+    content = framework_file.read_text()
+    title = _extract_framework_title(content, framework_id)
+    version = _extract_metadata(content, 'version') or "1.0.0"
+    status = _extract_metadata(content, 'status') or "active"
+    plane_id = _extract_metadata(content, 'plane') or "ho3"
+
+    # Validate required sections
+    errors = []
+    if '## Invariants' not in content and '## invariants' not in content.lower():
+        errors.append("Missing '## Invariants' section")
+    if 'MUST' not in content:
+        errors.append("No MUST requirements found")
+
+    if errors and not args.force:
+        print(f"Error: Framework validation failed:", file=sys.stderr)
+        for e in errors:
+            print(f"  - {e}", file=sys.stderr)
+        print(f"\nUse --force to register anyway", file=sys.stderr)
+        return 1
+
+    # Add to registry
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    new_row = {
+        'framework_id': framework_id,
+        'title': title,
+        'status': status,
+        'version': version,
+        'plane_id': plane_id,
+        'created_at': timestamp,
+    }
+
+    # Read existing rows
+    rows = []
+    fieldnames = ['framework_id', 'title', 'status', 'version', 'plane_id', 'created_at']
+    if registry_path.exists():
+        with open(registry_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or fieldnames
+            rows = list(reader)
+
+    rows.append(new_row)
+
+    # Write back
+    with open(registry_path, 'w', encoding='utf-8', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    if args.json:
+        print(json.dumps({
+            "action": "register-framework",
+            "framework_id": framework_id,
+            "source": str(framework_file),
+            "registry": str(registry_path),
+            "success": True,
+        }, indent=2))
+    else:
+        print(f"Registered framework: {framework_id}")
+        print(f"  Title: {title}")
+        print(f"  Version: {version}")
+        print(f"  Source: {framework_file}")
+        print(f"  Registry: {registry_path}")
+
+    return 0
+
+
+def _extract_framework_title(content: str, framework_id: str) -> str:
+    """Extract title from framework markdown."""
+    lines = content.split('\n')
+    for line in lines:
+        if line.startswith('# '):
+            # Extract title, removing framework ID prefix if present
+            title = line[2:].strip()
+            if ':' in title:
+                title = title.split(':', 1)[1].strip()
+            return title
+    return framework_id
+
+
+def _extract_metadata(content: str, key: str) -> Optional[str]:
+    """Extract metadata value from markdown content."""
+    import re
+    # Look for patterns like "- version: 1.0.0" or "version: 1.0.0"
+    pattern = rf'[-*]?\s*{key}\s*:\s*([^\n]+)'
+    match = re.search(pattern, content, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
+# =============================================================================
+# register-spec Command
+# =============================================================================
+
+def cmd_register_spec(args: argparse.Namespace) -> int:
+    """Register a spec in specs_registry.csv.
+
+    Validates:
+    1. Spec directory exists with manifest.yaml
+    2. Spec ID matches directory name
+    3. Spec not already registered
+    4. Referenced framework_id exists in frameworks_registry
+    5. Spec has required fields (assets, interfaces)
+
+    Then adds to registries/specs_registry.csv.
+    """
+    spec_id = args.spec_id
+    src_path = Path(args.src) if args.src else CONTROL_PLANE / "specs" / spec_id
+
+    # Find spec directory
+    if src_path.is_file():
+        print(f"Error: --src must be a directory, not a file: {src_path}", file=sys.stderr)
+        return 1
+
+    if not src_path.exists():
+        # Try specs/<spec_id>
+        alt_path = CONTROL_PLANE / "specs" / spec_id
+        if alt_path.exists():
+            src_path = alt_path
+        else:
+            print(f"Error: Spec directory not found: {src_path}", file=sys.stderr)
+            return 1
+
+    # Check for manifest.yaml
+    manifest_path = src_path / "manifest.yaml"
+    if not manifest_path.exists():
+        print(f"Error: manifest.yaml not found in {src_path}", file=sys.stderr)
+        return 1
+
+    # Validate spec ID format
+    if not spec_id.startswith("SPEC-"):
+        print(f"Error: Spec ID must start with 'SPEC-': {spec_id}", file=sys.stderr)
+        return 1
+
+    # Check if already registered
+    registry_path = CONTROL_PLANE / "registries" / "specs_registry.csv"
+    if registry_path.exists():
+        with open(registry_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('spec_id') == spec_id:
+                    print(f"Error: Spec '{spec_id}' already registered", file=sys.stderr)
+                    return 1
+
+    # Parse manifest.yaml
+    try:
+        import yaml
+        manifest = yaml.safe_load(manifest_path.read_text())
+    except ImportError:
+        # Fallback: simple YAML parsing for basic fields
+        manifest = _parse_simple_yaml(manifest_path.read_text())
+    except Exception as e:
+        print(f"Error: Failed to parse manifest.yaml: {e}", file=sys.stderr)
+        return 1
+
+    # Extract metadata
+    manifest_spec_id = manifest.get('spec_id', '')
+    if manifest_spec_id and manifest_spec_id != spec_id:
+        print(f"Error: Spec ID mismatch - argument: {spec_id}, manifest: {manifest_spec_id}", file=sys.stderr)
+        return 1
+
+    title = manifest.get('title', spec_id)
+    framework_id = manifest.get('framework_id', '')
+    version = manifest.get('version', '1.0.0')
+    status = manifest.get('status', 'draft')
+    plane_id = manifest.get('plane_id', 'ho3')
+
+    # Validate framework_id exists
+    if not framework_id:
+        print(f"Error: manifest.yaml missing required 'framework_id' field", file=sys.stderr)
+        return 1
+
+    frameworks_registry = CONTROL_PLANE / "registries" / "frameworks_registry.csv"
+    framework_found = False
+    if frameworks_registry.exists():
+        with open(frameworks_registry, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('framework_id') == framework_id:
+                    framework_found = True
+                    break
+
+    if not framework_found:
+        print(f"Error: Framework '{framework_id}' not found in frameworks_registry.csv", file=sys.stderr)
+        print(f"  Register the framework first: pkgutil register-framework {framework_id}", file=sys.stderr)
+        return 1
+
+    # Validate required fields
+    errors = []
+    if not manifest.get('assets'):
+        errors.append("Missing 'assets' field (list of owned files)")
+
+    if errors and not args.force:
+        print(f"Error: Spec validation failed:", file=sys.stderr)
+        for e in errors:
+            print(f"  - {e}", file=sys.stderr)
+        print(f"\nUse --force to register anyway", file=sys.stderr)
+        return 1
+
+    # Add to registry
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    new_row = {
+        'spec_id': spec_id,
+        'title': title,
+        'framework_id': framework_id,
+        'status': status,
+        'version': version,
+        'plane_id': plane_id,
+        'created_at': timestamp,
+    }
+
+    # Read existing rows
+    rows = []
+    fieldnames = ['spec_id', 'title', 'framework_id', 'status', 'version', 'plane_id', 'created_at']
+    if registry_path.exists():
+        with open(registry_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or fieldnames
+            rows = list(reader)
+
+    rows.append(new_row)
+
+    # Write back
+    with open(registry_path, 'w', encoding='utf-8', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    if args.json:
+        print(json.dumps({
+            "action": "register-spec",
+            "spec_id": spec_id,
+            "framework_id": framework_id,
+            "source": str(src_path),
+            "registry": str(registry_path),
+            "success": True,
+        }, indent=2))
+    else:
+        print(f"Registered spec: {spec_id}")
+        print(f"  Title: {title}")
+        print(f"  Framework: {framework_id}")
+        print(f"  Version: {version}")
+        print(f"  Assets: {len(manifest.get('assets', []))} files")
+        print(f"  Source: {src_path}")
+        print(f"  Registry: {registry_path}")
+
+    return 0
+
+
+def _parse_simple_yaml(content: str) -> dict:
+    """Simple YAML parser for basic key: value pairs."""
+    result = {}
+    current_key = None
+    current_list = None
+
+    for line in content.split('\n'):
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        # Check for list item
+        if stripped.startswith('- ') and current_key:
+            if current_list is None:
+                current_list = []
+                result[current_key] = current_list
+            current_list.append(stripped[2:].strip())
+            continue
+
+        # Check for key: value
+        if ':' in stripped:
+            key, _, value = stripped.partition(':')
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+
+            if value:
+                result[key] = value
+                current_key = None
+                current_list = None
+            else:
+                current_key = key
+                current_list = None
+
+    return result
+
+
+# =============================================================================
+# compliance Command - Queryable Package Compliance API
+# =============================================================================
+
+def cmd_compliance(args: argparse.Namespace) -> int:
+    """Query package compliance requirements.
+
+    Provides agents and developers with programmatic access to:
+    - Governance chain requirements
+    - Gate validations and what they check
+    - Manifest field requirements
+    - Packaging workflow steps
+    - Available frameworks and specs
+    - Troubleshooting guidance
+    """
+    from lib.agent_helpers import CPInspector
+
+    inspector = CPInspector(CONTROL_PLANE)
+    query = args.query
+
+    # Map query types to inspector methods
+    if query == "summary":
+        result, evidence = inspector.get_compliance_summary()
+    elif query == "chain":
+        result, evidence = inspector.get_governance_chain()
+    elif query == "gates":
+        result, evidence = inspector.get_gate_requirements()
+    elif query == "manifest":
+        result, evidence = inspector.get_manifest_requirements()
+    elif query == "workflow":
+        result, evidence = inspector.get_packaging_workflow()
+    elif query == "frameworks":
+        result, evidence = inspector.list_available_frameworks()
+    elif query == "specs":
+        framework_filter = getattr(args, 'framework', None)
+        result, evidence = inspector.list_available_specs(framework_filter)
+    elif query == "troubleshoot":
+        error_filter = getattr(args, 'error', None)
+        result, evidence = inspector.get_troubleshooting_guide(error_filter)
+    elif query == "example":
+        pkg_type = getattr(args, 'type', 'library')
+        result, evidence = inspector.get_example_manifest(pkg_type)
+    else:
+        print(f"Unknown query type: {query}", file=sys.stderr)
+        print("Available queries: summary, chain, gates, manifest, workflow, frameworks, specs, troubleshoot, example", file=sys.stderr)
+        return 1
+
+    # Output
+    if args.json:
+        output = {
+            "query": query,
+            "result": result if isinstance(result, (dict, list)) else [r.to_dict() if hasattr(r, 'to_dict') else r for r in result],
+            "evidence": evidence.to_dict(),
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        _print_compliance_result(query, result, evidence)
+
+    return 0
+
+
+def _print_compliance_result(query: str, result: Any, evidence) -> None:
+    """Pretty-print compliance query result."""
+    print(f"COMPLIANCE QUERY: {query}")
+    print("═" * 60)
+
+    if query == "summary":
+        print("\n📋 GOVERNANCE CHAIN:")
+        for item in result.get("governance_chain", {}).get("chain", []):
+            id_pattern = item.get('id_pattern', item.get('declaration', ''))
+            print(f"  Level {item['level']}: {item['name']} ({id_pattern})")
+
+        print("\n🚦 GATES:")
+        for gate_id, gate in result.get("gates", {}).items():
+            status = "✓" if gate.get("phase") == "preflight" else "⚡"
+            print(f"  {status} {gate_id}: {gate['description']}")
+
+        print("\n📦 QUICK REFERENCE:")
+        for cmd, usage in result.get("quick_reference", {}).items():
+            print(f"  {cmd}: {usage}")
+
+        print(f"\n🔧 Available Frameworks: {len(result.get('available_frameworks', []))}")
+        print(f"📑 Available Specs: {len(result.get('available_specs', []))}")
+
+    elif query == "chain":
+        print(f"\n{result.get('overview', '')}\n")
+        for item in result.get("chain", []):
+            indent = "  " * (item["level"] - 1)
+            print(f"{indent}↓ {item['name']} ({item['id_pattern']})")
+            print(f"{indent}  {item['description']}")
+        print(f"\n⚠️  {result.get('failure_consequence', '')}")
+
+    elif query == "gates":
+        for gate_id, gate in result.get("gates", {}).items():
+            print(f"\n{gate_id} [{gate.get('phase', 'unknown')}]")
+            print(f"  {gate['description']}")
+            print("  Checks:")
+            for check in gate.get("checks", []):
+                print(f"    • {check}")
+            if gate.get("common_failures"):
+                print("  Common failures:")
+                for fail in gate.get("common_failures", [])[:2]:
+                    print(f"    ✗ {fail}")
+
+    elif query == "manifest":
+        print("\n📝 REQUIRED FIELDS:")
+        for field, info in result.get("required_fields", {}).items():
+            print(f"  {field}: {info.get('format', '')} (e.g., {info.get('example', '')})")
+            if info.get("note"):
+                print(f"    ⚠️  {info['note']}")
+
+        print("\n📎 ASSET CLASSIFICATIONS:")
+        for cls, info in result.get("asset_classifications", {}).items():
+            print(f"  {cls}: {info.get('use_for', '')} [{info.get('pattern', '')}]")
+
+    elif query == "workflow":
+        print("\n📋 PACKAGING WORKFLOW:\n")
+        for step in result.get("steps", []):
+            print(f"Step {step['step']}: {step['name']}")
+            if step.get("command"):
+                print(f"  $ {step['command']}")
+            if step.get("result"):
+                print(f"  → {step['result']}")
+            if step.get("skip_if"):
+                print(f"  (Skip if: {step['skip_if']})")
+            print()
+
+    elif query == "frameworks":
+        print("\n📚 AVAILABLE FRAMEWORKS:\n")
+        for fw in result:
+            print(f"  {fw['framework_id']}: {fw['title']} [{fw['status']}]")
+
+    elif query == "specs":
+        print("\n📑 AVAILABLE SPECS:\n")
+        for spec in result:
+            print(f"  {spec['spec_id']}: {spec['title']}")
+            print(f"    Framework: {spec['framework_id']} | Status: {spec['status']}")
+
+    elif query == "troubleshoot":
+        print("\n🔧 TROUBLESHOOTING GUIDE:\n")
+        for key, item in result.get("troubleshooting", {}).items():
+            print(f"  {item.get('symptom', key)}")
+            print(f"  Cause: {item.get('cause', 'Unknown')}")
+            print(f"  Fix:")
+            for fix in item.get("fix", []):
+                print(f"    • {fix}")
+            print()
+
+    elif query == "example":
+        print("\n📄 EXAMPLE MANIFEST:\n")
+        print(json.dumps(result.get("example", {}), indent=2))
+        if result.get("note"):
+            print(f"\n⚠️  {result['note']}")
+
+    print(f"\n─────────────────────────────────────────────────────────────")
+    print(f"Evidence: {evidence.source}:{evidence.path}")
+    if evidence.hash:
+        print(f"Hash: {evidence.hash[:50]}...")
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -877,19 +1388,43 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Commands:
-    init-agent  Generate agent package skeleton
-    init        Generate standard package skeleton
-    preflight   Run install-equivalent validation (no install)
-    delta       Generate reviewable registry rows
-    stage       Stage package for later install
-    check-framework  Validate framework governance readiness
+    init-agent         Generate agent package skeleton
+    init               Generate standard package skeleton
+    preflight          Run install-equivalent validation (no install)
+    delta              Generate reviewable registry rows
+    stage              Stage package for later install
+    check-framework    Validate framework governance readiness
+    register-framework Register a framework in frameworks_registry.csv
+    register-spec      Register a spec in specs_registry.csv
+    compliance         Query package compliance requirements (for agents)
+
+Workflow (in order):
+    1. register-framework  - Register framework first
+    2. register-spec       - Register spec (must reference existing framework)
+    3. init/init-agent     - Create package skeleton
+    4. preflight           - Validate package (must reference registered spec)
+    5. stage               - Stage for install
+
+Compliance Queries (for agents):
+    compliance summary     - Full compliance requirements overview
+    compliance chain       - Governance chain (Framework→Spec→Package→Files)
+    compliance gates       - Gate validations and what they check
+    compliance manifest    - Required manifest.json fields
+    compliance workflow    - Step-by-step packaging workflow
+    compliance frameworks  - List available frameworks
+    compliance specs       - List available specs
+    compliance troubleshoot - Troubleshooting guidance
+    compliance example     - Example manifest.json
 
 Examples:
+    # Register a new framework
+    python3 scripts/pkgutil.py register-framework FMWK-200 --src frameworks/FMWK-200_ledger.md
+
+    # Register a new spec (framework must exist first)
+    python3 scripts/pkgutil.py register-spec SPEC-LEDGER-001 --src specs/SPEC-LEDGER-001
+
     # Create an agent package skeleton
     python3 scripts/pkgutil.py init-agent PKG-ADMIN-001 --framework FMWK-100
-
-    # Create a standard package skeleton
-    python3 scripts/pkgutil.py init PKG-LIB-001 --spec SPEC-CORE-001
 
     # Validate a package before install
     python3 scripts/pkgutil.py preflight PKG-ADMIN-001 --src _staging/PKG-ADMIN-001
@@ -897,8 +1432,10 @@ Examples:
     # Stage a package for install
     python3 scripts/pkgutil.py stage PKG-ADMIN-001 --src _staging/PKG-ADMIN-001
 
-    # Validate framework governance
-    python3 scripts/pkgutil.py check-framework FMWK-100 --src frameworks/
+    # Query compliance requirements (for agents)
+    python3 scripts/pkgutil.py compliance summary --json
+    python3 scripts/pkgutil.py compliance gates
+    python3 scripts/pkgutil.py compliance troubleshoot --error G1
 """
     )
 
@@ -923,6 +1460,7 @@ Examples:
     preflight_parser.add_argument("--src", required=True, help="Source directory containing package files")
     preflight_parser.add_argument("--plane", choices=["ho1", "ho2", "ho3"], help="Target plane")
     preflight_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    preflight_parser.add_argument("--no-strict", action="store_true", help="Skip spec_id requirement (testing only)")
 
     # delta command
     delta_parser = subparsers.add_parser("delta", help="Generate reviewable registry rows")
@@ -935,6 +1473,7 @@ Examples:
     stage_parser.add_argument("package_id", help="Package ID")
     stage_parser.add_argument("--src", required=True, help="Source directory")
     stage_parser.add_argument("--staging-dir", help="Staging directory (default: _staging)")
+    stage_parser.add_argument("--no-strict", action="store_true", help="Skip spec_id requirement (testing only)")
 
     # check-framework command
     check_fw_parser = subparsers.add_parser("check-framework", help="Validate framework governance")
@@ -942,6 +1481,31 @@ Examples:
     check_fw_parser.add_argument("--src", help="Source directory for framework files")
     check_fw_parser.add_argument("--old", help="Old framework file for breaking change detection")
     check_fw_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # register-framework command
+    reg_fw_parser = subparsers.add_parser("register-framework", help="Register framework in registry")
+    reg_fw_parser.add_argument("framework_id", help="Framework ID (e.g., FMWK-100)")
+    reg_fw_parser.add_argument("--src", help="Source file or directory (default: frameworks/)")
+    reg_fw_parser.add_argument("--force", action="store_true", help="Register even if validation warnings")
+    reg_fw_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # register-spec command
+    reg_spec_parser = subparsers.add_parser("register-spec", help="Register spec in registry")
+    reg_spec_parser.add_argument("spec_id", help="Spec ID (e.g., SPEC-CORE-001)")
+    reg_spec_parser.add_argument("--src", help="Source directory (default: specs/<SPEC-ID>)")
+    reg_spec_parser.add_argument("--force", action="store_true", help="Register even if validation warnings")
+    reg_spec_parser.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # compliance command - Queryable compliance API for agents
+    compliance_parser = subparsers.add_parser("compliance", help="Query package compliance requirements")
+    compliance_parser.add_argument("query", nargs="?", default="summary",
+        choices=["summary", "chain", "gates", "manifest", "workflow", "frameworks", "specs", "troubleshoot", "example"],
+        help="Query type (default: summary)")
+    compliance_parser.add_argument("--framework", help="Filter specs by framework ID")
+    compliance_parser.add_argument("--error", help="Filter troubleshooting by error type (G1, G0A, OWN, etc.)")
+    compliance_parser.add_argument("--type", default="library", choices=["library", "agent"],
+        help="Package type for example manifest (default: library)")
+    compliance_parser.add_argument("--json", action="store_true", help="Output as JSON (for agent consumption)")
 
     args = parser.parse_args()
 
@@ -956,6 +1520,9 @@ Examples:
         "delta": cmd_delta,
         "stage": cmd_stage,
         "check-framework": cmd_check_framework,
+        "register-framework": cmd_register_framework,
+        "register-spec": cmd_register_spec,
+        "compliance": cmd_compliance,
     }
 
     return commands[args.command](args)
