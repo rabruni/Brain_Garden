@@ -1,7 +1,7 @@
 """Route Decision Logic.
 
-Makes routing decisions based on classification and capabilities.
-Enforces fail-closed behavior: no LLM capability = TOOLS_FIRST.
+Makes routing decisions based on LLM classification and capabilities.
+Uses PRM-ROUTER-001 governed prompt for intelligent query routing.
 
 Example:
     from modules.router.decision import route_query, RouteMode
@@ -15,12 +15,44 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Any, Optional, List
 
-from modules.router.classifier import (
-    classify_query,
-    QueryClassification,
-    QueryType,
-    needs_llm_classification,
-)
+
+class QueryType(str, Enum):
+    """Types of queries."""
+    LIST = "list"
+    EXPLAIN = "explain"
+    STATUS = "status"
+    INVENTORY = "inventory"
+    VALIDATE = "validate"
+    SUMMARIZE = "summarize"
+    LEDGER = "ledger"
+    PROMPTS = "prompts"
+    SESSION_LEDGER = "session_ledger"
+    READ_FILE = "read_file"
+    LIST_FRAMEWORKS = "list_frameworks"
+    LIST_SPECS = "list_specs"
+    LIST_FILES = "list_files"
+    GENERAL = "general"
+
+
+@dataclass
+class QueryClassification:
+    """Result of query classification."""
+
+    type: QueryType
+    confidence: float
+    pattern_matched: bool
+    matched_pattern: Optional[str] = None
+    extracted_args: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary."""
+        return {
+            "type": self.type.value,
+            "confidence": self.confidence,
+            "pattern_matched": self.pattern_matched,
+            "matched_pattern": self.matched_pattern,
+            "extracted_args": self.extracted_args,
+        }
 
 
 class RouteMode(str, Enum):
@@ -113,14 +145,38 @@ def _check_llm_capability(
     return False, ""
 
 
+# Mapping from router intent to handler names
+INTENT_HANDLER_MAP: Dict[str, str] = {
+    "list_packages": "list_installed",
+    "list_frameworks": "list_frameworks",
+    "list_specs": "list_specs",
+    "explain_artifact": "explain",
+    "health_check": "check_health",
+    "show_ledger": "show_ledger",
+    "show_session": "show_session_ledger",
+    "read_file": "read_file",
+    "validate": "validate_document",
+    "summarize": "summarize",
+    "general": "general",
+}
+
+# Mapping from router intent to prompt pack IDs
+INTENT_PROMPT_MAP: Dict[str, str] = {
+    "explain_artifact": "PRM-ADMIN-EXPLAIN-001",
+    "validate": "PRM-ADMIN-VALIDATE-001",
+    "summarize": "PRM-ADMIN-EXPLAIN-001",
+    "general": "PRM-ADMIN-GENERAL-001",
+}
+
+
 def route_query(
     query: str,
     capabilities: Optional[Dict[str, Any]] = None,
 ) -> RouteResult:
-    """Route a query to the appropriate handler.
+    """Route a query using PC-C prompt contract.
 
-    Currently: All queries go to LLM for intelligent routing.
-    Pattern matching disabled - will be re-implemented later.
+    Uses PRM-ROUTER-001 governed prompt to classify the query intent,
+    then maps to the appropriate handler and routing mode.
 
     Args:
         query: User query string
@@ -129,23 +185,43 @@ def route_query(
     Returns:
         RouteResult with mode, handler, and metadata
     """
+    from modules.router.prompt_router import classify_intent
+
     capabilities = capabilities or {}
 
-    # Create a general classification (pattern matching disabled)
+    # Classify query via governed prompt (one-shot LLM call)
+    intent = classify_intent(query)
+
+    # Map intent to handler
+    handler = INTENT_HANDLER_MAP.get(intent.intent, "general")
+
+    # Determine routing mode based on confidence
+    if intent.confidence >= 0.8:
+        mode = RouteMode.TOOLS_FIRST
+    else:
+        mode = RouteMode.LLM_ASSISTED
+
+    # Build classification for compatibility with existing code
     classification = QueryClassification(
-        type=QueryType.GENERAL,
-        confidence=1.0,
+        type=QueryType.GENERAL,  # Default; exact type not critical
+        confidence=intent.confidence,
         pattern_matched=False,
+        extracted_args={
+            "artifact_id": intent.artifact_id,
+            "file_path": intent.file_path,
+        },
     )
 
-    # All queries go to LLM general handler
+    # Get prompt pack for LLM-assisted handlers
+    prompt_pack_id = INTENT_PROMPT_MAP.get(intent.intent, "PRM-ADMIN-GENERAL-001")
+
     return RouteResult(
-        mode=RouteMode.LLM_ASSISTED,
-        handler="general",
+        mode=mode,
+        handler=handler,
         classification=classification,
-        prompt_pack_id="PRM-ADMIN-GENERAL-001",
-        reason="LLM-first routing (pattern matching disabled)",
-        capabilities_used=["llm_assisted.general"],
+        prompt_pack_id=prompt_pack_id,
+        reason=intent.reasoning or "PC-C classification via PRM-ROUTER-001",
+        capabilities_used=["llm_assisted.router"],
     )
 
 

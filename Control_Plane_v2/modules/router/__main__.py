@@ -5,11 +5,10 @@ Implements the pipe-first contract: reads JSON from stdin, writes JSON to stdout
 
 Usage:
     echo '{"operation": "route", "query": "What packages are installed?"}' | python3 -m modules.router
-    echo '{"operation": "classify", "query": "Explain FMWK-000"}' | python3 -m modules.router
+    echo '{"operation": "list_handlers"}' | python3 -m modules.router
 
 Operations:
-    - route: Route query to handler (with capability check)
-    - classify: Classify query (pattern matching only)
+    - route: Route query to handler (uses LLM-based classification)
     - list_handlers: List available handlers
 """
 
@@ -19,7 +18,6 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict
 
-from modules.router.classifier import classify_query
 from modules.router.decision import route_query, get_route_evidence, RouteMode
 from modules.router.policy import load_policy, enforce_policy
 
@@ -51,30 +49,6 @@ def make_error(code: str, message: str, details: Any = None) -> Dict[str, Any]:
     if details is not None:
         error["details"] = details
     return error
-
-
-def handle_classify(request: Dict[str, Any]) -> Dict[str, Any]:
-    """Handle classify operation."""
-    query = request.get("query")
-
-    if not query:
-        return make_response(
-            "error",
-            error=make_error("MISSING_FIELD", "query is required"),
-        )
-
-    classification = classify_query(query)
-
-    evidence = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "classification": classification.to_dict(),
-    }
-
-    return make_response(
-        "ok",
-        result=classification.to_dict(),
-        evidence=evidence,
-    )
 
 
 def handle_route(request: Dict[str, Any]) -> Dict[str, Any]:
@@ -177,8 +151,6 @@ def main():
 
     if operation == "route":
         response = handle_route(request)
-    elif operation == "classify":
-        response = handle_classify(request)
     elif operation == "list_handlers":
         response = handle_list_handlers(request)
     else:
@@ -187,7 +159,7 @@ def main():
             error=make_error(
                 "UNKNOWN_OPERATION",
                 f"Unknown operation: {operation}",
-                details={"valid_operations": ["route", "classify", "list_handlers"]},
+                details={"valid_operations": ["route", "list_handlers"]},
             ),
         )
 
