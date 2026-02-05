@@ -11,6 +11,8 @@
 | **Create a package** | [AGENT_PACKAGE_GUIDE.md](AGENT_PACKAGE_GUIDE.md) |
 | **Understand compliance** | [PACKAGE_COMPLIANCE.md](PACKAGE_COMPLIANCE.md) |
 | **Query compliance programmatically** | `python3 scripts/pkgutil.py compliance --help` |
+| **Operate the Control Plane (agents)** | [AGENT_OPERATIONS_GUIDE.md](AGENT_OPERATIONS_GUIDE.md) |
+| **Script reference for Admin Agent** | [ADMIN_AGENT_SCRIPT_REF.md](ADMIN_AGENT_SCRIPT_REF.md) |
 | **Understand architecture** | [CP-ARCH-001_control_plane_overview.md](CP-ARCH-001_control_plane_overview.md) |
 
 ---
@@ -70,6 +72,7 @@ guide, _ = inspector.get_troubleshooting_guide(error_type="G1")
 | [CP-LEDGER-001_tiered_ledger_model.md](CP-LEDGER-001_tiered_ledger_model.md) | Ledger system and memory model |
 | [CP-PKG-001_framework_and_package_spec.md](CP-PKG-001_framework_and_package_spec.md) | Package and framework specifications |
 | [CP-FIREWALL-001_builder_vs_built.md](CP-FIREWALL-001_builder_vs_built.md) | Builder vs built separation |
+| [AGENT_OPERATIONS_GUIDE.md](AGENT_OPERATIONS_GUIDE.md) | Operational playbook for LLM agents |
 
 ### Frameworks (Governance Rules)
 

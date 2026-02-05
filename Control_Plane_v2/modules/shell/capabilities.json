@@ -1,0 +1,45 @@
+{
+  "package_id": "PKG-SHELL-001",
+  "name": "Universal Shell",
+  "tier": "T3",
+  "capabilities": {
+    "read": [
+      "registries/*.csv",
+      "registries/compiled/*.json",
+      "installed/*/manifest.json",
+      "installed/*/receipt.json",
+      "ledger/*.jsonl",
+      "config/*.json",
+      "governed_prompts/*.md",
+      "planes/*/sessions/*/ledger/*.jsonl",
+      "planes/*/ledger/*.jsonl"
+    ],
+    "execute": [
+      "scripts/trace.py --*",
+      "scripts/integrity_check.py --json",
+      "scripts/pkgutil.py compliance *"
+    ],
+    "write": [
+      "planes/ho1/sessions/<session_id>/ledger/*",
+      "tmp/<session_id>/*"
+    ],
+    "forbidden": [
+      "lib/*",
+      "scripts/package_install.py",
+      "scripts/package_uninstall.py",
+      "scripts/cp_version_rollback.py"
+    ],
+    "llm_assisted": {
+      "explain": true,
+      "summarize": true,
+      "validate": false
+    }
+  },
+  "metadata": {
+    "description": "Universal Shell for Control Plane interaction",
+    "version": "1.0.0",
+    "author": "Control Plane System",
+    "frameworks": ["FMWK-SHELL-001", "FMWK-100"],
+    "spec_id": "SPEC-SHELL-001"
+  }
+}

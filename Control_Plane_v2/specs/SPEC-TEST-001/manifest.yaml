@@ -1,0 +1,38 @@
+spec_id: SPEC-TEST-001
+title: "Test Infrastructure"
+framework_id: FMWK-100
+status: active
+version: 1.0.0
+plane_id: ho3
+
+assets:
+  - modules/hello_module/hello.py
+  - tests/test_phase3_summary.py
+  - tests/test_chain_genesis.py
+  - tests/test_chain.py
+  - scripts/verify_integrity.sh
+  - scripts/pristine_rebuild_drill.sh
+  - scripts/test_install.sh
+  - scripts/test_uninstall.sh
+  - scripts/test_pack.sh
+
+interfaces:
+  - name: run_canary_tests
+    description: Run canary module tests
+  - name: run_integration_tests
+    description: Run integration test suite
+
+invariants:
+  - "Canary module MUST always pass"
+  - "Test scripts MUST be idempotent"
+
+acceptance:
+  tests:
+    - "pytest tests/test_chain.py"
+    - "pytest tests/test_chain_genesis.py"
+  checks:
+    - "python3 modules/hello_module/hello.py"
+
+non_goals:
+  - "This spec does NOT handle test coverage reporting"
+  - "This spec does NOT handle test parallelization"

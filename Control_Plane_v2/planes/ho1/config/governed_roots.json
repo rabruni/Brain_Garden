@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "plane_id": "ho1",
+  "description": "Governed roots definition for HO1 plane. Files in these directories MUST be registered in file_ownership_registry.",
+  "governed_roots": [
+    "registries/",
+    "config/"
+  ],
+  "excluded_patterns": [
+    "**/__pycache__/**",
+    "**/*.pyc"
+  ],
+  "parent_plane": "ho2",
+  "notes": {
+    "G0_behavior": "G0 gate validates that every file in governed_roots exists in file_ownership_registry.csv",
+    "framework_inheritance": "HO1 can reference frameworks from HO2 and HO3",
+    "current_state": "HO1 has no code assets yet - only ledgers and configuration"
+  }
+}

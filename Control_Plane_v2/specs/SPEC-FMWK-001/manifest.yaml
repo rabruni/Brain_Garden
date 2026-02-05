@@ -1,0 +1,35 @@
+spec_id: SPEC-FMWK-001
+title: "Framework Definitions"
+framework_id: FMWK-100
+status: active
+version: 1.0.0
+plane_id: ho3
+
+assets:
+  - frameworks/FMWK-000_governance_framework.md
+  - frameworks/FMWK-100_agent_development_standard.md
+  - frameworks/FMWK-101_altitude_depth_standard.md
+  - frameworks/FMWK-102_altitude_convention.md
+  - frameworks/FMWK-107_package_management_standard.md
+  - frameworks/FMWK-200_ledger_protocol.md
+  - frameworks/FMWK-ATT-001_provenance_attestation_standard.md
+  - frameworks/FMWK-PKG-001_package_standard.md
+
+interfaces:
+  - name: validate_framework
+    description: Validate framework document structure
+  - name: list_frameworks
+    description: List all registered frameworks
+
+invariants:
+  - "Framework documents MUST define invariants"
+  - "Framework IDs MUST follow FMWK-NNN pattern"
+  - "Framework changes MUST be versioned"
+
+acceptance:
+  checks:
+    - "python3 -c 'import json; json.load(open(\"schemas/framework.schema.json\"))'"
+
+non_goals:
+  - "This spec does NOT handle framework deprecation"
+  - "This spec does NOT handle framework versioning"

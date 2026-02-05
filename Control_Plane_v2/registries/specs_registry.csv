@@ -1,0 +1,21 @@
+spec_id,title,framework_id,status,version,plane_id,created_at
+SPEC-CORE-001,Core Infrastructure,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-INT-001,Integrity & Merkle,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-LEDGER-001,Ledger System,FMWK-200,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-PKG-001,Package Management,FMWK-107,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-REG-001,Registry Management,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-GATE-001,Gate Operations,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-SEC-001,Security & Auth,FMWK-ATT-001,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-PLANE-001,Multi-Plane,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-VER-001,Version Control,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-FMWK-001,Framework Definitions,FMWK-100,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-POLICY-001,Policy Management,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-TEST-001,Test Infrastructure,FMWK-100,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-DOC-001,Documentation,FMWK-100,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-GENESIS-001,Bootstrap,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
+SPEC-EVIDENCE-001,Evidence Emission Standard Library,FMWK-100,active,1.0.0,ho3,2026-02-03T00:00:00Z
+SPEC-RUNTIME-001,Agent Runtime Module,FMWK-100,active,1.0.0,ho3,2026-02-03T00:00:00Z
+SPEC-ADMIN-001,Admin Agent,FMWK-100,active,1.0.0,ho3,2026-02-03T00:00:00Z
+SPEC-INSPECT-001,Control Plane Inspection,FMWK-000,active,1.0.0,ho3,2026-02-04T02:27:54Z
+SPEC-PROMPT-001,Prompt Governance Specification,FMWK-PROMPT-001,active,1.0.0,ho3,2026-02-04T00:00:00Z
+SPEC-CHAT-001,Chat Interface Implementation,FMWK-CHAT-001,active,1.0.0,ho3,2026-02-04T00:00:00Z

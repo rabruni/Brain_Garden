@@ -1,0 +1,39 @@
+spec_id: SPEC-INSPECT-001
+title: "Control Plane Inspection"
+framework_id: FMWK-000
+status: active
+version: 1.0.0
+plane_id: ho3
+
+# Owned assets (files this spec controls)
+assets:
+  - lib/agent_helpers.py
+
+# Interfaces (what this spec exposes)
+interfaces:
+  - name: CPInspector
+    description: "Read-only Control Plane inspector for agents"
+    inputs: {}
+    output: {}
+
+# Local invariants
+invariants:
+  - "All inspection methods MUST be read-only"
+  - "All methods MUST return EvidencePointer for replayability"
+
+# Acceptance criteria
+acceptance:
+  tests:
+    - "pytest tests/test_agent_helpers.py"
+
+# Non-goals
+non_goals:
+  - "This spec does NOT handle mutations"
+  - "This spec does NOT write to ledgers directly"
+
+# Dependencies
+dependencies:
+  - spec_id: SPEC-LEDGER-001
+    interfaces: [LedgerClient]
+  - spec_id: SPEC-REG-001
+    interfaces: [read_registry]

@@ -1,0 +1,105 @@
+ Core Control‑Plane Primitives (from bedrock upward)
+
+  - Identity & Trust Substrate – root keys and HSM/KMS, PKI, key rotation, secure bootstrap/attestation for nodes and workloads.
+  - Authentication – pluggable auth providers (OIDC/SAML/JWT/mTLS), token issuance/validation, session lifetimes, device & workload
+    identity.
+  - Authorization / Policy Engine – ABAC/RBAC with a programmable policy language, PDP + PEPs, policy versioning, dry‑run and audit
+    modes.
+  - Secure Transport & Mesh – mTLS everywhere, certificate distribution, service discovery, zero‑trust segmentation, traffic identity
+    propagation.
+  - Secrets & Config Management – encrypted at rest/in flight, scoping and leases, rotation, change history, drift detection.
+  - Audit & Immutable Ledger – append‑only event log with strong ordering, tamper evidence (hash chains/Merkle), time‑stamps, retention
+    and query.
+  - State & Metadata Store – authoritative resource registry (desired vs. observed state), schemas, migrations, optimistic concurrency,
+    watch/notify.
+  - Orchestration & Reconciliation Loop – controllers/operators that converge actual state to desired, idempotent actions, backoff,
+    work queues.
+  - Scheduling & Placement – capacity modeling, constraints/affinity, bin‑packing, preemption, quotas, fairness.
+  - Policy‑Aware Admission Control – validate/mutate incoming requests/configs, guard rails for safety, deny/allow with reason.
+  - Topology & Inventory – graph of services/nodes/endpoints, health, version, dependencies; supports impact analysis and rollout
+    planning.
+  - Change Management & Rollouts – versioned deployments, canary/blue‑green, feature flags, approvals, rollback checkpoints.
+  - Observability Fabric – metrics/logs/traces/events unified, cardinality controls, SLOs/error budgets, anomaly alerts.
+  - Data Plane Proxies/Sidecars – enforce authz, telemetry, rate limits, and routing near workloads; hot‑reload configs.
+  - Rate Limiting & Quotas – token/leaky buckets, global + per‑tenant scopes, priority shedding.
+  - Resilience Controls – circuit breakers, retries with jitter, timeouts, bulkheads, chaos hooks, dependency budgets.
+  - Billing/Entitlement (if multi‑tenant) – metering at request/resource level, usage aggregation, entitlement checks.
+  - Admin & Safety Rails – break‑glass access, scoped impersonation, dual control, sensitive action journaling.
+  - Compliance & Data Governance – data classification tags, residency/retention policies, provenance, DLP hooks.
+  - Interface Layer – declarative API/CRDs or GraphQL/REST, CLI/SDKs, schema evolution, strong typing, validation.
+
+  Foundational stack (build order)
+
+  1. Identity & Trust substrate
+  2. Authn + Authz/Policy engine
+  3. Secure transport/mesh
+  4. Secrets/config mgmt
+  5. Immutable audit/ledger
+  6. State/metadata store
+  7. Reconciliation/orchestration loop
+  8. Admission control + policy‑aware mutations
+  9. Scheduling/placement + topology inventory
+  10. Data‑plane enforcement (proxies/sidecars)
+  11. Observability fabric
+  12. Change mgmt/rollouts + resilience controls
+  13. Rate limiting/quotas + multi‑tenant billing
+  14. Compliance/governance + admin safety rails
+  15. Interface layer (APIs/SDK/CLI)
+
+  This ordering lets you bootstrap trust, enforce policy, record every action, maintain desired state, then layer safety,
+  observability, and customer‑facing interfaces.
+
+Assessment (2026-02-02)
+| # | Primitive | Status | Evidence |
+|---|-----------|--------|----------|
+| 1 | Identity & Trust substrate | ◐ | Signing + key handling (`lib/signing.py`, `lib/install_auth.py`, `lib/auth.py`); no attestation/KMS/rotation |
+| 2 | Authentication | ◐ | HMAC tokens + passthrough (`lib/auth.py`); no OIDC/SAML/JWT or sessions |
+| 3 | Authorization / Policy engine | ◐ | Static role map (`lib/authz.py`); no policy language/versioning or PDP/PEP split |
+| 4 | Secure Transport & Mesh | ⚠️ | No TLS/mTLS or mesh/cert distribution code |
+| 5 | Secrets & Config Management | ◐ | External secrets file handling (`lib/auth.py`), configs in `config/`; no vault/leases/rotation audit |
+| 6 | Audit & Immutable Ledger | ✅ | Hash-chained ledger with Merkle verification (`lib/ledger_client.py`, `lib/merkle.py`, `scripts/ledger_repair.py`) |
+| 7 | State & Metadata Store | ◐ | CSV registries + manifest integrity (`lib/registry.py`, `lib/integrity.py`, `registries/`); no transactional store/watch |
+| 8 | Orchestration & Reconciliation Loop | ⚠️ | No controllers/work queues/idempotent reconcilers |
+| 9 | Scheduling & Placement | ⚠️ | No scheduler/capacity/bin-packing; only plane topology (`lib/plane.py`) |
+|10 | Policy-Aware Admission Control | ◐ | Gate enforcement for create/install/update (`lib/gate_operations.py`, `scripts/gate_check.py`); lacks policy language/mutators |
+|11 | Topology & Inventory | ◐ | Plane topology/privilege model (`lib/plane.py`, `planes/*/tier.json`); no live inventory/health graph |
+|12 | Change Mgmt & Rollouts (+ Resilience) | ◐ | Checkpoint/rollback scripts (`scripts/cp_version_checkpoint.py`, `cp_version_rollback.py`); no canary/blue-green/resilience patterns |
+|13 | Observability Fabric | ⚠️ | No metrics/logs/traces/SLO handling |
+|14 | Data Plane Proxies/Sidecars | ⚠️ | Not implemented |
+|15 | Rate Limiting & Quotas (incl. Billing) | ⚠️ | Not implemented |
+|16 | Compliance/Governance & Admin Safety Rails | ◐ | Pristine write guards (`lib/pristine.py`), governance frameworks; no dual control/break-glass flows |
+|17 | Interface Layer (API/CLI/SDK) | ◐ | CLI scripts for packaging/install/integrity/ledger (`scripts/*`); no network API/SDK |
+
+Upgrade Plan (2026-02-02)
+- Foundations (Identity/Trust, Authn/Z, Transport): add KMS-backed key management and rotation; workload/node attestation; OIDC/JWT provider with refresh + device/workload IDs; PDP/PEP split with versioned policies and dry-run mode; mTLS bootstrap and cert distribution; tests for key rotation, OIDC integration, policy conformance.
+- Secrets & Config: pluggable secrets backend (file/env → Vault/KMS), leases/TTLs and rotation hooks, drift detection, audited secret access; tests for lease expiry, rotation, drift alerts.
+- Ledger/Audit: expand ledger coverage to all gate/security events; periodic Merkle checkpoints and remote verification; read API with pagination/filtering; tests for chain verification under rotation and tamper detection.
+- State & Metadata Store: migrate registries to typed store (SQLite/Postgres) with migrations and CSV export; add optimistic concurrency and watch/notify; tests for concurrent updates, migrations, and watcher delivery.
+- Orchestration/Reconciliation: controller loop with work queues/backoff; desired/observed CRDs; idempotent reconcilers for packages/registries/ledgers; tests for idempotency, retries, poison-message handling.
+- Scheduling & Placement: constraint/bin-pack scheduler with quotas and preemption rules; capacity model; tests for placement correctness, quota enforcement, and preemption safety.
+- Admission Control: policy-aware validators/mutators before gate operations; signed/versioned policy bundles; tests for allow/deny matrices, mutation safety, and policy regression.
+- Topology & Inventory: live inventory graph with health/version; periodic discovery; impact analysis queries; tests for graph consistency, staleness thresholds, dependency walks.
+- Change Mgmt & Rollouts + Resilience: canary/blue-green rollouts with automated abort; timeouts/retries/circuit breakers/bulkheads in controllers; tests for canary gates, rollback triggers, chaos scenarios.
+- Observability Fabric: structured logs, metrics, traces with SLOs per primitive; alerting rules and error budgets; tests for emission, trace propagation, and alert thresholds.
+- Data Plane Proxies/Sidecars: sidecar/proxy enforcing authz, rate limits, telemetry with hot-reload configs; tests for enforcement, reload safety, latency budgets.
+- Rate Limiting & Billing: token-bucket service per tenant with usage metering and daily aggregation; entitlement checks; tests for rate accuracy, quota resets, billing edges.
+- Compliance & Admin Safety Rails: dual control for sensitive actions; break-glass with ledgered justification; data classification tags enforced in policy; DLP hooks; tests for dual-control paths and classification propagation.
+- Interface Layer: REST/GraphQL API with schema versioning and SDKs; request/response validation; CLI aligned to API; tests for contract compliance and backward compatibility.
+- CI/CD & Governance: extend CI to run registry validator, contract/policy/resilience tests; sign artifacts and policy bundles; nightly chain-verify and drift detection; keep docs/templates in sync.
+
+Feature Plans (100% targets)
+- Foundations (Identity/Trust, Authn/Z, Transport): KMS plugin with rotation; attestation tokens; OIDC/JWT provider; PDP (Rego/Cedar) + PEP hooks in gate/sidecar; mTLS bootstrap + cert bundle installer. Tests: rotation, OIDC integration, PDP decisions, mTLS E2E.
+- Secrets & Config: driver interface (file/env/Vault), leases/TTLs, rotation scheduler, drift detector, read audit. Tests: lease expiry, rotation, drift alarm, denied reads.
+- Ledger/Audit: full event coverage; scheduled Merkle checkpoints + remote verifier; read/query API. Tests: chain verify across rotations, tamper injection, query filters.
+- State & Metadata Store: migrate registries to SQLite/Postgres with migrations, CSV import/export, optimistic concurrency, watch/notify. Tests: concurrent writers, rollback, watch delivery.
+- Orchestration/Reconciliation: controller runtime with work queues/backoff; CRDs for packages/registries/ledgers; idempotent reconcilers. Tests: idempotency, retries, poison isolation.
+- Scheduling & Placement: constraint/bin-pack scheduler with quotas/preemption and capacity model. Tests: placement correctness, quota enforcement, preemption safety.
+- Admission Control: pre-gate validator/mutator layer using signed, versioned policy bundles; dry-run channel. Tests: allow/deny matrix, mutation safety, policy regression.
+- Topology & Inventory: live inventory graph (health/version); discovery job; impact queries. Tests: graph consistency, staleness, dependency walks.
+- Change Mgmt & Rollouts + Resilience: canary/blue-green with auto-abort; timeouts/retries/circuit breakers/bulkheads in controllers. Tests: canary gates, rollback triggers, chaos cases.
+- Observability Fabric: structured logs/metrics/traces; SLOs per primitive; alerts/error budgets. Tests: emission, trace propagation, alert thresholds.
+- Data Plane Proxies/Sidecars: sidecar enforcing authz/rate/telemetry with hot-reload config; PDP integration. Tests: enforcement, reload safety, latency budget.
+- Rate Limiting & Billing: token-bucket per tenant; usage metering + daily aggregation; entitlement checks. Tests: rate accuracy, quota reset, billing edges.
+- Compliance & Admin Safety Rails: dual-control for sensitive ops; break-glass with ledger justification; classification tags in policy; DLP hooks. Tests: dual-control paths, classification propagation.
+- Interface Layer: REST/GraphQL API + SDKs; request/response validation; CLI alignment; schema versioning. Tests: contract compliance, backward-compat matrix.
+- CI/CD & Governance: CI stages (lint → registry validate → policy tests → contract/resilience tests → package/sign → chain-verify → drift check); signed policy/artifact bundles; nightly verify jobs. Tests: pipeline self-tests, signature verification, drift alerts.

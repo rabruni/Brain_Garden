@@ -1,0 +1,39 @@
+{
+  "package_id": "PKG-PHASE2-G2-001",
+  "version": "1.0.0",
+  "plane_id": "ho3",
+  "package_type": "phase2",
+  "description": "Phase 2 G2 WORK_ORDER Gate & Cross-Tier Provenance",
+  "install_targets": [
+    {
+      "namespace": "scripts",
+      "target_id": "phase2",
+      "files": [
+        "g2_gate.py",
+        "wo_approve.py",
+        "wo_verify.py",
+        "wo_keygen.py",
+        "rebuild_derived.py"
+      ]
+    },
+    {
+      "namespace": "config",
+      "target_id": "phase2",
+      "files": [
+        "trusted_keys.json",
+        "registry_policy.json"
+      ]
+    },
+    {
+      "namespace": "tests",
+      "target_id": "phase2",
+      "files": [
+        "test_g2_gate.py",
+        "test_cross_tier_provenance.py",
+        "test_idempotency.py"
+      ]
+    }
+  ],
+  "created_at": "2026-02-02T00:00:00Z",
+  "manifest_version": "1.2"
+}

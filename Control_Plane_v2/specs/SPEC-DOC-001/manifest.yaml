@@ -1,0 +1,30 @@
+spec_id: SPEC-DOC-001
+title: "Documentation"
+framework_id: FMWK-100
+status: active
+version: 1.0.0
+plane_id: ho3
+
+assets:
+  - docs/developer_guide.md
+  - docs/CP-ARCH-001_control_plane_overview.md
+  - docs/CP-PKG-001_framework_and_package_spec.md
+  - docs/CP-LEDGER-001_tiered_ledger_model.md
+  - docs/CP-FIREWALL-001_builder_vs_built.md
+  - docs/CP-SDLC-QUAL-001_feedback_governance.md
+
+interfaces:
+  - name: validate_docs
+    description: Validate documentation structure and links
+
+invariants:
+  - "Documentation MUST be kept in sync with code"
+  - "All public APIs MUST be documented"
+
+acceptance:
+  checks:
+    - "test -f docs/developer_guide.md"
+
+non_goals:
+  - "This spec does NOT handle documentation generation"
+  - "This spec does NOT handle API documentation"

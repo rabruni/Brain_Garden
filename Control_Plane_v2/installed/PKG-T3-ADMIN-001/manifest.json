@@ -1,0 +1,39 @@
+{
+  "package_id": "PKG-T3-ADMIN-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "package_type": "agent",
+  "plane_id": "ho3",
+  "spec_id": "SPEC-ADMIN-001",
+  "tier": "T3",
+  "assets": [
+    {
+      "path": "modules/admin_agent/__init__.py",
+      "sha256": "sha256:a59e4ecde6308cc473ffa0aaa8b0b3ea3083d36fe4f4e40801585368b8ada3e0",
+      "classification": "other"
+    },
+    {
+      "path": "modules/admin_agent/agent.py",
+      "sha256": "sha256:5c6bfb3f7683867a18818f9c4f135e22873a93f44ca39760fcc25b155c6e3821",
+      "classification": "other"
+    },
+    {
+      "path": "modules/admin_agent/capabilities.json",
+      "sha256": "sha256:a26d2940606e730f93d49388952768feb2b3a14478b81044e826b0625d7e3f5b",
+      "classification": "other"
+    },
+    {
+      "path": "tests/test_admin_agent.py",
+      "sha256": "sha256:8b07ef749d7a835c104fcd46d34b65a41fa7b22a65d64d71bddfb9d5b91630fc",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-T1-RUNTIME-001",
+    "PKG-T0-EVIDENCE-001"
+  ],
+  "metadata": {
+    "author": "Control Plane",
+    "description": "T3 Admin Agent - Read-only agent for explaining Control Plane artifacts, listing packages, checking health"
+  }
+}

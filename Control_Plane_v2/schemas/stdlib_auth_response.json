@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stdlib_auth_response.json",
+  "title": "Auth Stdlib Response",
+  "description": "Response schema for the Authentication Standard Library CLI",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok", "error"],
+      "description": "Operation status"
+    },
+    "result": {
+      "description": "Operation result (present on success)",
+      "oneOf": [
+        {
+          "description": "validate_token result",
+          "type": "object",
+          "properties": {
+            "user": {
+              "type": "string",
+              "description": "Authenticated username"
+            },
+            "roles": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "User's roles"
+            },
+            "fingerprint": {
+              "type": "string",
+              "description": "Token fingerprint for logging",
+              "pattern": "^fp:sha256:[a-f0-9]{16}$"
+            }
+          },
+          "required": ["user", "roles", "fingerprint"]
+        },
+        {
+          "description": "fingerprint result",
+          "type": "object",
+          "properties": {
+            "fingerprint": {
+              "type": "string",
+              "description": "Secret fingerprint",
+              "pattern": "^fp:sha256:[a-f0-9]{16}$|^fp:sha256:empty$"
+            }
+          },
+          "required": ["fingerprint"]
+        },
+        {
+          "description": "require_role result",
+          "type": "object",
+          "properties": {
+            "granted": {
+              "type": "boolean",
+              "description": "Whether role was granted"
+            },
+            "role": {
+              "type": "string",
+              "description": "Role that was checked"
+            }
+          },
+          "required": ["granted", "role"]
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "description": "Error details (present on error)",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "description": "Additional error details"
+        }
+      },
+      "required": ["code", "message"]
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Evidence envelope for this operation",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "Execution duration in milliseconds"
+        },
+        "auth": {
+          "type": "object",
+          "description": "Auth-specific evidence",
+          "properties": {
+            "user": { "type": "string" },
+            "token_fingerprint": { "type": "string" },
+            "role_checked": { "type": "string" },
+            "result": { "type": "string" }
+          }
+        }
+      },
+      "required": ["timestamp"]
+    }
+  },
+  "required": ["status"]
+}

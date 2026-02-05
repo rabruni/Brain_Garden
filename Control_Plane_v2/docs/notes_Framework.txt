@@ -1,0 +1,1550 @@
+
+⏺ Searched for 1 pattern, read 2 files (ctrl+o to expand)
+
+⏺ This is excellent - you've already worked through the concepts thoroughly. The notes capture the key insight:
+
+  The Effective Solution (from your notes)
+
+  The quartet that keeps the plane pristine:
+
+  1. Frameworks (law)     → Define allowed types, required gates, required metadata
+  2. Specs (contracts)    → Bind entity to one framework, declare required assets
+  3. Packages (delivery)  → Reference one spec (therefore one framework)
+  4. File-Ownership (root invariant) → Every file mapped 1:1, no exceptions
+
+  Enforcement order:
+  filesystem == ownership_registry → hash verify → spec↔framework link → package valid
+
+  ---
+  Most Effective Implementation Path
+
+  Based on your notes, the cleanest approach is:
+
+  Phase 1: Create the Three Registries (the law)
+
+  registries/
+  ├── frameworks_registry.csv    # NEW - id, name, version, allowed_spec_types, required_gates, required_metadata
+  ├── specs_registry.csv         # NEW - id, framework_id(FK), entity_type, required_assets, gates
+  ├── packages_registry.csv      # EXISTS - add spec_id, framework_id columns
+  └── file_ownership_registry.csv # NEW - compiled, authoritative
+
+  Phase 2: Create Missing Frameworks (fill the gaps)
+
+  Create frameworks for the ~50% ungoverned code:
+  - FMWK-IAM (auth, authz)
+  - FMWK-REG (registries)
+  - FMWK-PLANE (multi-tier)
+  - FMWK-GATE (enforcement)
+  - FMWK-VERSION (checkpoints)
+
+  Phase 3: Wire Enforcement (fail-closed)
+
+  Update integrity_check.py:
+  1. Diff filesystem vs file_ownership_registry (fail on mismatch)
+  2. Hash verify (fail on mismatch)
+  3. Chain verify: file→spec→framework (fail on broken link)
+  4. Gate execution
+
+  Phase 4: Package Manager Exclusivity
+
+  No filesystem mutation outside package operations.
+
+  ---
+  Do you want me to write this as a concrete implementation plan with file changes, or do you want to refine the model further first? 
+
+Explored
+  └ List docs
+    List notes_ray_claude
+    Read notes_ray_claude
+
+• I’m outlining a concise plan for fully upgrading the current control plane by establishing a single compiled ownership registry that aggregates per-directory registries,
+  frameworks, and specs, ensuring end-to-end governance of all files. The approach phases in integrity updates and optionally kernel/arena enhancements later for minimal
+  disruption.
+
+─ Worked for 12s ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Goal (from our discussion + docs/notes_ray_claude): every file is governed, hash-checked, and owned by a framework/spec/package; frameworks express family-wide rules, specs
+  express per-artifact rules; integrity and install must fail on any gap; readable, extensible, works with or without packaging.
+
+  Most effective upgrade path (concrete, minimal moving parts):
+
+  1. Registries (authoritative, normalized)
+
+  - Add frameworks_registry.csv (framework metadata: id, version, purpose, artifact_path, allowed_spec_types, required_gates, required_metadata, hash).
+  - Add specs_registry.csv (spec metadata: id, framework_id FK, entity_type, artifact_path, required_assets/globs, gates, metadata blob, hash).
+  - Extend packages_registry.csv with framework_id and spec_id columns; require both for every package row.
+
+  2. File ownership (all files, exactly once)
+
+  - Per-directory .file_registry.csv (local, human-editable): file_path (rel), owner_id, owner_registry (framework|spec|package), content_hash.
+  - New scripts/registry_compile.py: walk tree, validate locals, enforce no duplicates, fail if any governed dir lacks a registry, emit compiled registries/
+    file_ownership_registry.csv (single source of truth).
+  - Treat each .file_registry.csv as a governed artifact itself: add rows for them in control_plane_registry.csv (type=registry, owner=its framework/spec) so they’re hashed and
+    versioned.
+
+  3. Enforcement pipeline
+
+  - Update scripts/integrity_check.py:
+      - Pass 0: filesystem ↔ compiled ownership diff (fail on any unmapped/extra file).
+      - Pass 1: hash-verify files using the owner’s registry row (framework/spec/package).
+      - Pass 2: link checks (package→spec→framework) and required gates/metadata presence.
+  - Update package_pack.py: refresh the local .file_registry.csv for packaged files; refuse pack if ownership rows missing.
+  - Update package_install.py: refuse install if targets aren’t in compiled ownership; still run in INSTALL mode for pristine writes.
+
+  4. Governance coverage lift
+
+  - Add registry entries and ownership rows for currently unmapped areas: configs, policies, schemas, tests, ledgers/plane ledgers (or explicitly exempt them with a policy),
+    versions snapshots, README/MANIFEST.
+  - Document the standard commands in README.md: python3 scripts/registry_compile.py then python3 scripts/integrity_check.py --all.
+
+  Why this is better
+
+  - Single authoritative compiled list but editable locally; no ambiguity about unmapped files.
+  - Framework/spec intent is explicit and machine-checkable; packages must declare compliance.
+  - Works with or without packaging (manual edits go through compile + integrity).
+  - Extensible: new artifact types are just new entity_type values; gates/metadata are lists.
+
+  If you’re ok, I’ll implement by:
+
+  1. Adding the two new registries (+ schemas), the compile script, and the integrity/pack/install changes.
+  2. Seeding .file_registry.csv across governed dirs and compiling the first file_ownership_registry.csv.
+  3. Registering the currently unmapped files into frameworks/specs.
+
+I will read the docs/notes_ray_claude (assuming this is the location referred to as docs/notes_schema based on the file listing) to understand the combined ideas and specific
+  directions for the upgrade. Then, I will propose a comprehensive migration plan to transform the Control Plane into the schema-driven "Constitution-as-Code" system we discussed.
+
+  Plan:
+   1. Read docs/notes_ray_claude (checking if this is the correct file for "notes_schema").
+   2. Synthesize the notes with our previous analysis of the "Missing Frameworks" and "Implicit Governance" issues.
+   3. Formulate a "Grand Upgrade Plan" that details:
+       * The new Directory Structure (where Schemas live).
+       * The Migration Sequence (Schema creation -> Data migration -> Code refactoring).
+       * The "Universal Governor" architecture.
+   4. Present the plan for approval.
+
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFolder docs                                                                                                                                                              │
+│                                                                                                                                                                                 │
+│ Listed 1 item(s).                                                                                                                                                               │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile docs/notes_ray_claude                                                                                                                                               │
+│                                                                                                                                                                                 │
+│ Read lines 1-2000 of 3257 from docs/notes_ray_claude                                                                                                                            │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have updated the Control_Plane_v2/control_plane_v2.md document with the four new decisions we reached.
+
+  What we have captured so far:
+
+   1. 3-Tier Physical Structure: One codebase, configured as separate processes (HOT, Meta, First Order) for defense in depth.
+   2. Cognitive Constraints:
+       * HOT: 1 active ledger (Single Focus / Attention).
+       * Meta: Few active ledgers (Working Memory).
+       * First Order: Many active ledgers (Parallel Execution).
+   3. Memory Loops:
+       * HOT: Slow loop (Intent/Goal).
+       * Meta: Medium loop (Work Order).
+       * First Order: No loop (Fast Execution only).
+   4. Semantic Exchange: Tiers talk via Prompts (questions/context), not just status codes.
+   5. No Context Windows: The Ledger IS the Memory. Every turn is isolated to prevent drift.
+   6. Learning: Lessons detected by HOT become New Prompt Versions (packaged and versioned).
+   7. Quality > Speed: Latency is accepted for the sake of high governance.
+   8. Package Model: Packages are Bundles containing Code + Spec + Prompts. They are deterministic but can be evolved via request.
+   9. Factory Model: Control Plane is a Builder. It builds Apps. It does not self-modify (unless requested/approved).
+   10. Recursive Governance: Built Apps get their own kernel/arena structure.
+   11. Anti-Recursion: "BUILT" apps are signed as such and cannot act as "BUILDERS" without explicit Human Approval (The Firewall).
+
+  Next Step:
+  We have a very solid conceptual architecture. Now we need to define the Implementation Plan.
+   * Do you want to start defining the Schemas for these new tiers/frameworks?
+   * Or do you want to define the Directory Structure to support this multi-process, recursive model?
+
+
+
+first lets become clear on these concepts, Frameworks define the policy for the packages, define its purpose, orchestration, pacs (Spec, Module, Prompt, etc...), the specs
+  define the same, but detailed for the spec itself, modules, intefaces, etc.) throught this framework, the package must verify it is packaging tothe framework. now is there a
+  clearer way to describe what the framework file is a superset, and that specs are similar, but theier scope is a only for their entity, and framework has scope for all spec
+  pacs?
+
+✦ You've hit on a crucial distinction in the system's hierarchy. Let's sharpen the definitions based on your insight:
+
+  The Hierarchy of Law: Framework vs. Spec
+
+  You are absolutely correct: Frameworks are the Superset.
+
+   1. Frameworks (`FMWK`) = The "Universal Meta-Law"
+       * Scope: Global. Applies to ALL entities of a certain type across the entire system.
+       * Function: Defines the schema of existence for other things. It dictates "What is a Package?" or "What is an Agent?".
+       * Analogy: A Framework is like the "Vehicle Safety Standards". It applies to every car, truck, and motorcycle. It says "All vehicles must have brakes, lights, and
+         seatbelts." It doesn't describe a specific car; it describes the requirements for being a car.
+       * Example: FMWK-100 says "Every Agent Module must have a README, a Test file, and a Design doc." It doesn't care what the agent does, only that it follows the structure.
+
+   2. Specs (`SPEC`) = The "Specific Implementation Blueprint"
+       * Scope: Local/Entity-Specific. Applies only to ONE specific instance or project.
+       * Function: Defines the concrete realization of a Framework for a single purpose. It answers "How do I build this specific Agent?" while obeying the Framework.
+       * Analogy: A Spec is the "Blueprints for a 2026 Honda Civic". It describes exactly where the engine goes and how the doors open for that specific car, while ensuring it
+         meets the "Vehicle Safety Standards" (Framework).
+       * Relationship: A Spec instantiates a Framework. A Spec cannot exist without a Framework to guide it.
+
+  Revised "Packaging to the Framework" Concept
+
+  When package_pack.py runs, it is performing a Compliance Check:
+
+   * Input: Your specific code (based on a Spec).
+   * Validator: The Framework rules (e.g., FMWK-PKG-001 or FMWK-100).
+   * Process: The packer asks: "Does this specific Spec-based code obey the universal Framework laws?"
+       * Does it have the required metadata?
+       * Are the directory structures correct?
+       * Are the dependencies legal?
+   * Output: If Valid -> Signed Package. If Invalid -> Rejection.
+
+  In Summary:
+   * Frameworks govern the System. (The "Class" definition)
+   * Specs govern the Entity. (The "Instance" blueprint)
+   * Packages are the Certified Output proving the Spec met the Framework's standards.
+
+> now do we need a schema that works for this?
+
+✦ Yes, absolutely. To automate the enforcement of "Frameworks govern Specs," we need a formal Schema (likely JSON Schema) that the system can read to validate compliance
+  programmatically. We can't rely on human code review alone for an AI control plane.
+
+  We need a "Meta-Schema" or a "Framework Compliance Schema".
+
+  Why we need it
+  Right now, FMWK-100 is a Markdown file. A computer (or the package_pack.py script) can't easily "read" Markdown to strictly enforce rules like "Must have 3 test files" or "Must
+  export a class named Agent".
+
+  We need a machine-readable layer—a Schema—that translates the textual "Law" of the Framework into validation logic.
+
+  Proposed Schema Structure
+
+  We need three layers of schemas to make this work:
+
+   1. The Framework Schema (`schema_framework.json`):
+       * Defines what a Framework file itself must look like (e.g., must define id, scope, required_files, forbidden_imports).
+       * This ensures new Frameworks are written in a way the system understands.
+
+   2. The Spec Schema (`schema_spec.json`):
+       * Defines what a Spec file looks like.
+       * Crucially, it must include a complies_with: ["FMWK-XXX"] field.
+
+   3. The Artifact/Manifest Schema (The "Compliance Link"):
+       * This is the most critical one. It's the "runtime check."
+       * When you package code, this schema defines the Validators derived from the Framework.
+
+  Example: How FMWK-100 becomes a Schema
+
+  Instead of just text, FMWK-100 would have a companion FMWK-100.schema.json:
+
+    1 {
+    2   "$id": "FMWK-100",
+    3   "type": "object",
+    4   "description": "Schema for Agent Development Standard Compliance",
+    5   "properties": {
+    6     "files": {
+    7       "required": ["README.md", "tests/", "src/"],
+    8       "patterns": {
+    9         "tests/": "test_*.py"
+   10       }
+   11     },
+   12     "content": {
+   13       "README.md": {
+   14         "required_sections": ["# Overview", "# Usage", "# Dependencies"]
+   15       }
+   16     },
+   17     "code_quality": {
+   18       "forbidden_patterns": ["sk-ant-", "sk-proj-", "password="],
+   19       "max_file_size_lines": 500
+   20     }
+   21   }
+   22 }
+
+  The New Workflow with Schemas
+
+   1. Framework Authors write the policy (Markdown) AND the Schema (JSON).
+   2. Spec Authors write their blueprint.
+   3. `package_pack.py` loads the FMWK-XXX.schema.json.
+   4. It scans the code being packed.
+   5. It validates against the schema:
+       * Missing `tests/` folder? -> FAIL (violates FMWK-100 schema).
+       * Found hardcoded key? -> FAIL (violates FMWK-100 schema).
+       * Valid? -> PASS -> Pack & Sign.
+
+  Do you want to look at the existing `schemas/` directory to see what we already have, and then draft this new "Compliance Schema"?
+
+> okay what frameworks do we have, find all of them and see if they fit this schema, if not do not make changes show me the delta and reasons.
+
+✦ I will first list all the framework files in the Control_Plane_v2/frameworks/ directory and read their contents to understand their current structure. Then, I will compare them
+  against the proposed "Compliance Schema" structure (JSON-based validation logic) to identify the gaps.
+  I will not modify any files. I will only report the analysis.
+
+  Plan:
+   1. List all files in Control_Plane_v2/frameworks/.
+   2. Read the content of each framework file.
+   3. Analyze each framework against the "Compliance Schema" requirements (machine-readable validation rules vs. current human-readable Markdown).
+   4. Present the "Delta and Reasons" report.
+
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFolder Control_Plane_v2/frameworks                                                                                                                                       │
+│                                                                                                                                                                                 │
+│ Listed 7 item(s).                                                                                                                                                               │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile Control_Plane_v2...ment_standard.md                                                                                                                                 │
+│                                                                                                                                                                                 │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile FMWK-101_altitude_depth_standard.md                                                                                                                                 │
+│                                                                                                                                                                                 │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile .../FMWK-102_altitude_convention.md                                                                                                                                 │
+│                                                                                                                                                                                 │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile Control_Plane_v2...ment_standard.md                                                                                                                                 │
+│                                                                                                                                                                                 │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile Con/.../FMWK-200_ledger_protocol.md                                                                                                                                 │
+│                                                                                                                                                                                 │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile Control_Plane_v2...tion_standard.md                                                                                                                                 │
+│                                                                                                                                                                                 │
+│                                                                                                                                                                                 │
+│ ✓  ReadFile FMWK-PKG-001_package_standard.md                                                                                                                                    │
+│                                                                                                                                                                                 │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have analyzed the existing frameworks against the proposed "Compliance Schema" approach. Here is the report:
+
+  1. Framework Analysis
+
+  We have 7 frameworks. Each has a structured "Metadata" YAML block at the end, which is a great start, but the body of the frameworks relies on human-readable Markdown lists and
+  tables that are hard to validate programmatically.
+
+   * `FMWK-100` (Agent Development Standard)
+       * Structure: Lists "Definition of Done", "Spec Pack Content Requirements", "Code Structure".
+       * Gap: The rules are text (e.g., "- [ ] 08_commit.md exists"). A schema needs to define `required_files: ["08_commit.md"]` and `content_checks: {"08_commit.md":
+         "MODE=COMMIT"}`.
+   * `FMWK-101` (Altitude Depth)
+       * Structure: Tables mapping "Altitude" to "Depth".
+       * Gap: The logic is "If L4, then X". This conditional logic needs a schema that supports if/then validation rules.
+   * `FMWK-102` (Altitude Convention)
+       * Structure: Defines "Inspection Matrices" and even proposes a Python script (validate_altitude_depth.py) inside the Markdown!
+       * Gap: The validation logic is embedded in the text as code blocks. It should be extracted into a formal schema or a standalone validator.
+   * `FMWK-107` (Package Management) & `FMWK-PKG-001` (Package Standard)
+       * Structure: These define Registry schemas (CSV columns) and Tier hierarchies.
+       * Gap: They describe data shapes (perfect for JSON Schema) but are currently just text descriptions of fields.
+   * `FMWK-ATT-001` (Provenance) & `FMWK-200` (Ledger)
+       * Structure: Define JSON schemas for specific artifacts (attestations, ledger entries).
+       * Gap: These are actually closest to being machine-readable, as they literally contain JSON structures in code blocks.
+
+  2. The Delta (Gap Analysis)
+
+  To move to a "Compliance Schema" system, we have three major gaps:
+
+
+  ┌───────────────────┬──────────────────────────────────────┬────────────────────────────────────────────────┬────────────────────────────────────────────────────────────┐
+  │ Feature           │ Current State (Markdown)             │ Desired State (Schema)                         │ Reason                                                     │
+  ├───────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+  │ Rule Definition   │ Bullet points ("- Must have README") │ JSON constraints ("required": ["README.md"])   │ Machines can't reliably parse "Must have" text.            │
+  │ Conditional Logic │ "If L4, then..."                     │ if/then/else schema keywords                   │ package_pack.py needs to switch logic based on input type. │
+  │ Validation Code   │ Python code blocks inside Markdown   │ Standalone .py validators or Schema references │ We can't execute code trapped in a Markdown file safely.   │
+  └───────────────────┴──────────────────────────────────────┴────────────────────────────────────────────────┴────────────────────────────────────────────────────────────┘
+
+  3. Conclusion
+
+  The existing frameworks are well-structured for humans but ill-structured for machines. They contain all the necessary information (rules, fields, logic), but it's locked in
+  natural language or embedded code blocks.
+
+  Recommendation:
+  We should create a "Schema-fication" plan. We don't need to rewrite the Markdown (it serves as documentation), but we need to generate companion .schema.json files for each
+  framework that formally encode the rules listed in the text.
+
+  Next Step:
+  Would you like me to draft the Meta-Schema (schema_framework.json) that defines how these rule-files should look? This is the "Framework for Frameworks."
+
+> before that, lets also talk about what is in the control plane that does not have a framework, do your best to determine that.
+
+✦ I will compare the file structure and contents of the Control Plane against the existing frameworks (FMWK-XXX) to identify components or processes that are "operating without a
+  license" (i.e., lacking a governing framework).
+
+  Plan:
+   1. Map Existing Frameworks to Covered Areas: I'll list what each FMWK claims to govern (e.g., FMWK-100 governs Agents, FMWK-200 governs Ledger).
+   2. Scan Codebase for "Orphaned" Features: I'll look at the lib/, scripts/, and policies/ directories to find functionality that doesn't fit into those buckets.
+   3. Identify Gaps: I'll highlight specific components (e.g., "The Gate System," "Policy Engine," or "CLI Tooling") that exist in code but have no defining FMWK document.
+   4. Report: I'll provide a list of "Un-Frameworked" components.
+
+  I will start by re-listing the lib/ and scripts/ directories to have the raw inventory fresh in context.
+
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFolder Control_Plane_v2/lib                                                                                                                                              │
+│                                                                                                                                                                                 │
+│ Listed 0 item(s). (22 ignored)                                                                                                                                                  │
+│                                                                                                                                                                                 │
+│ ✓  ReadFolder Control_Plane_v2/scripts                                                                                                                                          │
+│                                                                                                                                                                                 │
+│ Listed 29 item(s).                                                                                                                                                              │
+│                                                                                                                                                                                 │
+│ ✓  ReadFolder Control_Plane_v2/policies                                                                                                                                         │
+│                                                                                                                                                                                 │
+│ Listed 2 item(s).                                                                                                                                                               │
+│                                                                                                                                                                                 │
+│ ✓  ReadFolder Control_Plane_v2/schemas                                                                                                                                          │
+│                                                                                                                                                                                 │
+│ Listed 4 item(s).                                                                                                                                                               │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have analyzed the codebase against the existing frameworks. Here are the components that are currently "operating without a license":
+
+  1. The Policy Engine (policies/ & validate_..._policy.py)
+   * What exists: policies/install_policy.yaml, policies/attention_default.yaml, and scripts to validate them.
+   * The Gap: There is no `FMWK-POL-XXX` defining what a "Policy" is.
+       * What is the schema for a policy?
+       * How are conflicts resolved (e.g., if two policies forbid/allow the same thing)?
+       * How are policies versioned and attached to packages?
+       * Current Status: Code-defined only.
+
+  2. The "Plane" & Multi-Plane Architecture (lib/plane.py, scripts/cp_plane.py)
+   * What exists: Code for managing "Planes" (likely higher-level isolation boundaries like "Control Plane" vs "Data Plane" vs "User Plane").
+   * The Gap: There is no Framework defining the Plane Architecture.
+       * What is a Plane? How do they communicate?
+       * What are the boundary rules between Planes?
+       * Current Status: lib/plane.py implies logic, but no governing law exists.
+
+  3. Identity & Authorization (lib/auth.py, lib/authz.py, lib/id_allocator.py)
+   * What exists: Role-Based Access Control (RBAC), ID generation (PKG-, FMWK-), and Authentication tokens.
+   * The Gap: There is no `FMWK-SEC-XXX` (Security/Identity Standard).
+       * FMWK-ATT-001 covers Provenance (files), but not People/Roles.
+       * Who defines the roles "admin", "maintainer", "auditor"?
+       * What is the standard for ID allocation? (Currently just code in id_allocator.py).
+
+  4. The "Gate" System (lib/gate_operations.py)
+   * What exists: A library that seems to centralize "decisions" (install, update, remove).
+   * The Gap: While frameworks mention "Gates" (G0, G1, etc.), there is no Framework for the Gate System itself.
+       * How does a new Gate get registered?
+       * What is the standard "Input/Output" for a Gate check?
+       * Current Status: It's an implicit concept scattered across package_factory and gate_operations.
+
+  5. "Attention" Management (schemas/attention_envelope.json, policies/attention_default.yaml)
+   * What exists: A schema and policy for "Attention." This likely relates to AI context management or resource prioritization.
+   * The Gap: This is a high-level AI concept with zero framework documentation.
+       * What is "Attention" in this system?
+       * How is it budgeted or allocated?
+       * Current Status: Completely undocumented in Frameworks.
+
+  Summary of Missing Frameworks:
+
+
+  ┌───────────────┬─────────────────────────────────────┬──────────────────────────────────────────────┐
+  │ Component     │ Code Evidence                       │ Missing Framework                            │
+  ├───────────────┼─────────────────────────────────────┼──────────────────────────────────────────────┤
+  │ Policy System │ policies/*.yaml, validate_policy.py │ `FMWK-POL-001`: Policy Definition & Resolution │
+  │ Identity/Auth │ lib/auth.py, lib/id_allocator.py    │ `FMWK-SEC-001`: Identity & Access Standard     │
+  │ Plane Arch    │ lib/plane.py, scripts/cp_plane.py   │ `FMWK-ARCH-001`: Multi-Plane Architecture      │
+  │ Gate System   │ lib/gate_operations.py              │ `FMWK-GOV-001`: Gate & Decision Protocol       │
+  │ Attention     │ schemas/attention_envelope.json     │ `FMWK-AI-001`: Attention & Context Management  │
+  └───────────────┴─────────────────────────────────────┴──────────────────────────────────────────────┘
+
+
+  Recommendation:
+  Before we build the "Meta-Schema" to validate frameworks, we should probably acknowledge that our "Legal System" is missing entire chapters. We can either:
+   1. Draft placeholders for these missing frameworks (so the schema has something to validate).
+   2. Proceed with the Schema for the existing frameworks (Package, Agent, Ledger) and fill in the gaps later.
+
+  Which approach do you prefer?
+
+> Okay do you know what we are trying to accomplish? state in detail then explain how we do this better, more extensible, and with clarity so it is easy to understand.
+
+✦ The Goal: A "Constitution-as-Code" Operating System for AI
+
+  We are trying to build the Control Plane v2, a high-integrity, formally governed environment where AI agents can operate safely. It is not just a "framework" or a "library"; it
+  is an Operating System for Agency.
+
+  The core objective is to solve the "AI Containment & Alignment Problem" not through vague prompts ("Please be nice"), but through cryptographic and structural constraints.
+
+  Detailed Goals:
+   1. Pristine State: The system must be deterministically reproducible. If it's not in the Registry, it doesn't exist.
+   2. Auditability: Every action (install, write, execution) is logged in an immutable, hash-chained ledger.
+   3. Tiered Safety: High-risk code (Agents) cannot touch low-level machinery (Kernel) directly.
+   4. Law as Code: Policies (Frameworks) are not documents; they are executable contracts. If code violates the law, it physically cannot run or install.
+
+  ---
+
+  How to do this Better, Extensible, and Clearer
+
+  The current system is a strong prototype, but it suffers from "Implicit Governance." The rules are buried in Python scripts (validate_packages.py) or Markdown files
+  (FMWK-100.md) that machines can't read easily.
+
+  To make this extensible and clear, we need to shift to "Explicit, Schema-Driven Governance."
+
+  1. The "Meta-Framework" (The Constitution)
+  We need a single, root definition of what a "Governed Object" is.
+   * Concept: Every governed thing (Policy, Agent, Package, Plane) shares a common "DNA."
+   * Implementation: A schema_governed_entity.json that enforces:
+       * id: Unique Identifier (e.g., FMWK-100).
+       * version: Semver.
+       * hash: Content integrity.
+       * signature: Authorized signer.
+       * spec: The schema it obeys.
+
+  2. Decouple "Law" (Schema) from "Enforcement" (Code)
+  Currently, validate_packages.py contains hardcoded logic like "if platform is linux...". This is brittle.
+   * Better Way:
+       * The Law: A JSON Schema file (FMWK-PKG-001.schema.json) defines the rules (e.g., enum: ["linux", "darwin"]).
+       * The Enforcer: A generic Governor script that simply loads a Schema and validates a Target. It doesn't know what it's validating, only how to validate it against the
+         schema.
+       * Result: To add a new rule, you edit the JSON Schema, not the Python code.
+
+  3. Formalize the "Missing Chapters"
+  We identified gaps (Policies, Identity, Planes). We shouldn't just write code for them; we should define their Schemas first.
+   * Example: Instead of validate_attention_policy.py, define an AttentionPolicy Schema. Then the generic Governor can validate it automatically.
+
+  4. The "Registry of Everything"
+  Currently, we have packages_registry.csv and control_plane_registry.csv.
+   * Better Way: A unified State Tree.
+       * The Control Plane is a single Merkle Tree where every leaf is a governed entity.
+       * This allows "fractal" governance: A Plane contains Agents; Agents contain Modules. The same governance logic applies at every level.
+
+  5. "Specs" as Compilation Targets
+   * Clarification:
+       * Framework: The Interface (Abstract Base Class).
+       * Spec: The Implementation Plan (Source Code).
+       * Package: The Compiled Artifact (Binary).
+   * Workflow: The Factory pipeline becomes a compiler.
+       * Spec + Framework -> Compiler -> Package.
+       * The compiler proves the Spec meets the Framework before creating the Package.
+
+  Proposed Architecture Diagram (Mental Model)
+
+    1 [ THE CONSTITUTION (Meta-Schema) ]
+    2         |
+    3         v
+    4 [ FRAMEWORKS (Schemas) ]  <-- (Defines Rules for Agents, Policies, Packages)
+    5         |
+    6         v
+    7 [ SPECS (Blueprints) ]    <-- (User Intent: "I want an Agent that does X")
+    8         |
+    9         |  (Compiler / Factory with "Governor" Check)
+   10         v
+   11 [ PACKAGES (Artifacts) ]  <-- (Signed, Verified, Immutable)
+   12         |
+   13         v
+   14 [ RUNTIME (The Plane) ]   <-- (Enforces Runtime Constraints based on Packages)
+
+  Immediate Action Plan
+
+  To move from "Implicit" to "Explicit":
+
+   1. Create the `schema_framework.json`: This defines the structure of the "Law" itself.
+   2. Schema-fy `FMWK-100`: Convert the text rules of "Agent Standards" into a machine-readable Schema.
+   3. Refactor Validator: Create a validate_compliance.py that takes (Target, Schema) and returns Pass/Fail, replacing the hardcoded scripts.
+
+  This makes the system easier to understand (read the schema to know the rules) and extensible (just add a new schema to govern a new thing).
+
+
+-- INSERT -- first lets become clear on these concepts, Frameworks define the policy for the packages, define its purpose, orchestration, pacs (Spec, Module, Prompt, etc...), the specs
+    define the same, but detailed for the spec itself, modules, intefaces, etc.) throught this framework, the package must verify it is packaging tothe framework. now is there a
+    clearer way to describe what the framework file is a superset, and that specs are similar, but theier scope is a only for their entity, and framework has scope for all spec
+    pacs?
+
+
+• A specification defines the official rules and standards that guide how something should work, while a framework is a practical implementation or toolset built to follow those
+  specifications and help developers create applications efficiently.
+
+• Try this wording:
+
+  - Framework: the top-level contract. It defines the policy, purpose, allowed artifact types (spec, module, prompt, etc.), orchestration rules, required metadata, and
+    verification gates that any package in its family must satisfy. Scope: “everything under this family.”
+  - Spec: an implementation-level contract for a single artifact type or instance under that framework. It narrows requirements to the concrete thing being packaged (e.g., one
+    module, one prompt set, one interface). Scope: “this specific artifact (and its immediate variants),” while inheriting the framework’s rules.
+  - Relationship: every spec declares which framework it complies with; every package must prove conformance to its framework (via the spec, hashes, and gates). Framework is the
+    superset policy; spec is the focused, per-entity policy derived from it.
+
+
+› > now do we need a schema that works for this?
+
+
+• Suggest a concise schema with two main registries: Framework Registry (columns: framework_id, name, version, package_manifest_ref) and Spec Registry (columns: spec_id,
+  framework_id (FK), name, version, file_path). Package manifest fields include package_name, version, and dependencies. Key constraints enforce unique IDs and foreign keys
+  linking specs to frameworks. This approach captures relationships cleanly with minimal columns and stable references.
+
+• A schema helps. Use two linked tables plus ownership/compiled registries:
+
+  Framework registry (frameworks_registry.csv)
+  - name
+  - version
+  - purpose / policy_summary
+  - artifact_path (the framework doc)
+  - allowed_spec_types (list: spec,module,prompt,interface,policy,registry)
+  - required_gates (list of gate IDs)
+  - required_metadata (list of field names specs must supply)
+
+  - id (e.g., SPEC-ATT-001)
+  - framework_id (FK → framework.id)
+  - name
+  - entity_type (spec/module/prompt/interface/registry/etc.)
+  - artifact_path (the spec file)
+  - required_assets (list of file paths or glob; must be in ownership registry)
+  - gates (gate IDs this spec enforces; inherits framework required_gates)
+  - metadata (JSON/YAML blob with the fields demanded by the framework)
+  - hash
+
+  Package registry (already present)
+
+  - Add framework_id and spec_id columns; enforce both.
+
+  Ownership/compiled registry
+
+  - file_path, owner_id, owner_registry (framework|spec|package), hash
+  - Integrity uses this as the authoritative file list.
+
+  Constraints to enforce
+
+  1. Every spec.framework_id must exist.
+  2. Every package must reference a spec (and thus a framework).
+  3. Every file in Control_Plane_v2 appears exactly once in the ownership registry, and its owner_id exists in specs or packages.
+  4. Integrity: verify hashes from the owner’s registry row; fail on unmapped/duplicate files.
+
+  This schema cleanly encodes “framework is the superset policy; spec is the per-entity contract,” and lets packages prove conformance via framework_id/spec_id and the ownership
+  list.
+
+
+› > okay what frameworks do we have, find all of them and see if they fit this schema, if not do not make changes show me the delta and reasons.
+
+
+
+• Explored
+  └ Read control_plane_registry.csv
+─ Worked for 15s ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Frameworks found (from registries/control_plane_registry.csv, entity_type=framework):
+
+  - FMWK-100 (Agent Development Standard)
+  - FMWK-101 (Altitude Depth Standard)
+  - FMWK-102 (Altitude Convention Standard)
+  - FMWK-107 (Package Management Standard)
+  - FMWK-200 (Ledger Protocol Standard)
+  - FMWK-ATT-001 (Provenance Attestation Standard) — owner column is empty
+  - FMWK-PKG-001 (Package Standard)
+
+  Fit against the proposed framework schema (id, name, version, purpose, artifact_path, allowed_spec_types, required_gates, required_metadata, hash):
+
+  - Present: id, name, version, purpose, artifact_path, hash (content_hash), status/selection, dependencies.
+  - Missing for every framework: allowed_spec_types, required_gates, required_metadata (no columns exist to hold these).
+  - Also missing: a dedicated frameworks registry file (they’re mixed into control_plane_registry.csv), and no specs_registry.csv to link specs to frameworks.
+  - Data gap: FMWK-ATT-001 has no owner value.
+
+  Reasons they don’t fit:
+
+  - The registry schema lacks columns for allowed spec types and gate/metadata requirements, so frameworks can’t declare the rules packages/specs must satisfy.
+  - Without a specs registry, there’s no place to bind specific specs to their framework.
+  - Mixed registry means you can’t enforce “every framework has these fields” via schema-specific validation.
+  - One framework record has incomplete metadata (owner empty).
+
+  No files were changed.
+
+
+
+• Planning to list files in the control plane that lack framework association by diffing all files against framework-related registry artifact paths, aiming to highlight unmapped
+  artifacts like scripts, libs, configs, and others.
+
+• Ran cd /Users/raymondbruni/Brain_Garden/playground/Control_Plane_v2 && all=$(rg --files); mapped=$( { awk -F, 'NR>1 && $6!=""{p=$6; sub(/^\//,"",p); print p}' registries/
+  │ control_plane_registry.csv; awk -F, 'NR>1 && $18!=""{p=$18; sub(/^\//,"",p); print p}' registries/packages_registry.csv; } | sort -u); comm -23 <(printf '%s
+  │ ' "$all" | sort) <(printf '%s
+  │ … +1 lines
+  └ MANIFEST.json
+    README.md
+    … +150 lines
+    versions/VER-20260131213739.json
+    versions/VER-20260131213739_registry.csv
+
+• I'm preparing to explain what parts of the control plane lack framework support by using the unmapped files—those not listed in registries—and summarizing these into categories
+  with reasons for why they are missing or excluded.
+
+─ Worked for 12s ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Unframed/unregistered surface (files present on disk but absent from any registry entry, so they have no framework/spec linkage):
+
+  - Root metadata: MANIFEST.json, README.md, VERSION, control_plane_v2.md.
+  - Config: config/control_plane_chain.json{,.bak}, tier.json.
+  - Packages store & sample package: everything under packages_store/ and packages/PKG-CANARY/....
+  - Ledgers and backups (all ledger/** plus plane ledgers under planes/ho*/ledger/**).
+  - Plane manifests: planes/ho1/tier.json, planes/ho2/tier.json.
+  - Schemas not registered: schemas/package_manifest.json.
+  - Scripts not registered: scripts/pristine_rebuild_drill.sh, scripts/test_install.sh, scripts/test_pack.sh, scripts/test_uninstall.sh, scripts/verify_integrity.sh.
+  - Tests: all tests/*.py.
+  - Version checkpoints: all versions/VER-*.json and VER-*_registry.csv.
+  - Packages content example: packages/PKG-CANARY/*.
+
+  Because these paths aren’t in control_plane_registry.csv or packages_registry.csv, they currently have no framework or spec association, no hashes recorded, and no integrity
+  coverage.
+
+
+› > Okay do you know what we are trying to accomplish? state in detail then explain how we do this better, more extensible, and with clarity so it is easy to understand.
+
+
+• Preparing a concise, bullet-structured summary of the goal and an improved, extensible plan without referencing web details.
+
+• What we’re trying to accomplish
+
+  - Every file in Control Plane v2 is governed: it must be listed, hashed, owned by a framework/spec/package, and subject to policy gates. No stray/unmapped files.
+  - Frameworks express the family-wide rules; specs narrow them to a concrete artifact; packages prove they comply. Integrity tooling must fail on any gap.
+  - This must work with and without the packaging workflow, and be understandable/maintainable.
+
+  Make it clearer and more extensible
+
+  - Single authoritative ownership list, locally editable, centrally enforced:
+      - Per-directory .file_registry.csv (local, human-friendly) → compiled into registries/file_ownership_registry.csv (authoritative).
+      - Columns: file_path, owner_id, owner_registry (framework|spec|package), content_hash.
+      - Compile script (scripts/registry_compile.py) enforces no duplicates, no missing directories, writes the compiled file.
+  - Explicit frameworks/specs registries:
+      - frameworks_registry.csv: id, name, version, purpose, artifact_path, allowed_spec_types, required_gates, required_metadata, hash.
+      - specs_registry.csv: id, framework_id (FK), entity_type (spec/module/prompt/etc.), artifact_path, required_assets (paths/globs), gates, metadata blob, hash.
+      - packages_registry.csv: add framework_id, spec_id to tie every package to its governing spec/framework.
+  - Enforcement pipeline:
+      1. Compile: walk tree, load all .file_registry.csv, validate, produce file_ownership_registry.csv.
+      2. Integrity Check (updated):
+          - Pass 0: diff filesystem vs compiled ownership (fail on unmapped/extra).
+          - Pass 1: hash-verify files using owner hashes from their registry.
+          - Pass 2: chain: spec→framework, package→spec, gates present.
+          - Fail closed on any missing registry, duplicate file, hash mismatch, or broken link.
+      3. Install/Pack: package_pack.py writes/updates local .file_registry.csv and hashes; package_install.py refuses install if target files lack ownership rows.
+  - Clarity/UX:
+      - Standard filenames (.file_registry.csv) and documented schemas; short CLI docs in README.md.
+      - Default commands:
+          - python3 scripts/registry_compile.py
+          - python3 scripts/integrity_check.py --all
+      - One-liner diff for quick checks (after compile): rg --files | sort | comm -23 - <(cut -d, -f1 registries/file_ownership_registry.csv | sort).
+  - Extensibility:
+      - New artifact types just add to entity_type enum; gates/metadata are lists, so you can layer new policies without changing schema.
+      - Multi-plane: compile and integrity accept --root to work per plane; ownership paths remain plane-relative.
+
+  This keeps the intent (“every file mapped and governed”), makes the source of truth explicit and auditable, and keeps workflows simple whether or not you use packaging.
+
+
+› Use /skills to list available skills
+
+irst lets become clear on these concepts, Frameworks define the policy for the packages, define its purpose, orchestration, pacs (Spec, Module, Prompt, etc...), the specs
+    define the same, but detailed for the spec itself, modules, intefaces, etc.) throught this framework, the package must verify it is packaging tothe framework. now is
+  there a
+    clearer way to describe what the framework file is a superset, and that specs are similar, but theier scope is a only for their entity, and framework has scope for all
+  spec
+    pacs?
+
+⏺ Yes, let me try to articulate this more precisely.
+
+  The Hierarchy
+
+  Framework (FMWK)
+      ├── Scope: ALL packages of a type (class-level governance)
+      ├── Defines: Policy, purpose, orchestration rules, allowed pacs
+      └── Packages MUST verify conformance to their framework
+
+  Spec (SPEC)
+      ├── Scope: ONE entity (instance-level governance)
+      ├── Defines: Modules, interfaces, behavior for THAT entity
+      └── Spec MUST conform to its parent Framework
+
+  Analogy
+  ┌──────────────┬──────────────────────────────┬──────────────────────────┐
+  │   Concept    │          Framework           │           Spec           │
+  ├──────────────┼──────────────────────────────┼──────────────────────────┤
+  │ Scope        │ All entities of a type       │ Single entity            │
+  ├──────────────┼──────────────────────────────┼──────────────────────────┤
+  │ Role         │ Constitution                 │ Statute                  │
+  ├──────────────┼──────────────────────────────┼──────────────────────────┤
+  │ OOP parallel │ Abstract class / Interface   │ Concrete implementation  │
+  ├──────────────┼──────────────────────────────┼──────────────────────────┤
+  │ Governance   │ "How all agents must behave" │ "How THIS agent behaves" │
+  └──────────────┴──────────────────────────────┴──────────────────────────┘
+  Clearer Naming?
+
+  Maybe the relationship is:
+
+  - Framework = Governance Schema (defines the shape of all specs)
+  - Spec = Governance Instance (fills in the schema for one entity)
+
+  Or:
+
+  - Framework = Package Class (defines what a valid package looks like)
+  - Spec = Package Definition (defines one specific package)
+
+  The Verification Chain
+
+  Package → must verify against → Spec → must conform to → Framework
+
+  A package says "I implement SPEC-AGENT-001" and that spec says "I conform to FMWK-100 (Agent Development Standard)".
+
+  ---
+  Does this capture what you mean? Or is the relationship different - like Framework defines the rules and Spec defines the content?
+
+❯ > now do we need a schema that works for this?
+
+⏺ Yes. A unified schema that enforces the chain:
+
+  Framework → Spec → Package → Files
+
+  Each level declares:
+  1. What it conforms to (parent reference)
+  2. What it requires (child constraints)
+  3. What it contains (its own content)
+
+  Strawman Schema Structure
+
+  # Common envelope for Framework, Spec, and Package
+  schema_version: "1.0"
+  type: framework | spec | package
+  id: "FMWK-100" | "SPEC-AGENT-001" | "PKG-AGENT-001"
+
+  # Upward reference (what this conforms to)
+  conforms_to:
+    id: "FMWK-100"          # Spec → Framework, Package → Spec
+    version: ">=1.0.0"
+
+  # Downward constraints (what children must declare)
+  requires:
+    pacs: [spec, module, prompt]  # Framework: allowed child types
+    fields: [purpose, interfaces] # Required fields in children
+
+  # This entity's content
+  content:
+    purpose: "..."
+    interfaces: [...]
+    files: [...]              # Package-level only
+
+  Verification Flow
+
+  Package.conforms_to → Spec.id ✓
+  Spec.conforms_to → Framework.id ✓
+  Package.content.files → all present with correct hashes ✓
+
+  ---
+  Question: Should this be one schema with type field, or three separate schemas (framework.schema.json, spec.schema.json, package.schema.json) that reference each other?
+
+❯ > okay what frameworks do we have, find all of them and see if they fit this schema, if not do not make changes show me the delta and reasons.
+
+⏺ Read 7 files (ctrl+o to expand)
+
+⏺ Analysis: 7 Frameworks vs Proposed Schema
+
+  Proposed Schema (for comparison)
+
+  schema_version: "1.0"
+  type: framework | spec | package
+  id: "FMWK-XXX"
+  conforms_to: { id: "...", version: "..." }
+  requires: { pacs: [...], fields: [...] }
+  content: { ... }
+
+  ---
+  Current Framework Metadata Patterns
+  ┌──────────────┬─────────────┬────────────┬───────────────────┬─────────────────┬──────────────┬─────────────────────────────┐
+  │  Framework   │ Has Version │ Has Status │ Has Dependencies  │ Has Conforms_To │ Has Requires │       Metadata Format       │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-100     │ ✓           │ ✓          │ ✓ (in yaml block) │ ✗               │ ✗            │ YAML block at end           │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-101     │ ✓           │ ✓          │ ✗                 │ ✗               │ ✗            │ Inline header only          │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-102     │ ✓           │ ✓          │ ✗                 │ ✗               │ ✗            │ Inline header only          │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-107     │ ✗           │ ✓          │ ✓ (prose)         │ ✓ (prose)       │ ✗            │ Prose in "Governance Links" │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-200     │ ✓           │ ✓          │ ✗                 │ ✗               │ ✗            │ Status block at end         │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-ATT-001 │ ✓           │ ✓          │ ✓ (header)        │ ✗               │ ✗            │ Header fields               │
+  ├──────────────┼─────────────┼────────────┼───────────────────┼─────────────────┼──────────────┼─────────────────────────────┤
+  │ FMWK-PKG-001 │ ✓           │ ✓          │ ✗                 │ ✗               │ ✗            │ Header + References section │
+  └──────────────┴─────────────┴────────────┴───────────────────┴─────────────────┴──────────────┴─────────────────────────────┘
+  ---
+  Key Deltas
+
+  1. No consistent metadata schema
+
+  - FMWK-100 uses YAML block at end
+  - FMWK-ATT-001 uses header fields
+  - FMWK-200 uses prose Status block
+  - Others have no structured metadata
+
+  2. conforms_to missing everywhere
+
+  - Only FMWK-107 mentions compliance (in prose: "Complies with FMWK-100, FMWK-101...")
+  - No framework formally declares what it conforms to
+  - This breaks the chain: Framework → Spec → Package
+
+  3. requires missing everywhere
+
+  - No framework declares what specs/packages implementing it MUST include
+  - FMWK-100 describes requirements in prose (Section 3: Spec Pack Content Requirements)
+  - But not machine-readable
+
+  4. Dependencies inconsistent
+
+  - FMWK-100: dependencies: [] in YAML
+  - FMWK-ATT-001: Dependencies: FMWK-100, FMWK-107, FMWK-200 in header
+  - Others: none or prose
+
+  5. No type field
+
+  - Nothing explicitly says "I am a framework"
+  - Only inferred from filename prefix (FMWK-*)
+
+  ---
+  What's Actually Needed (Minimal Schema)
+
+  Based on what exists, here's the minimum viable schema that fits current content:
+
+  # Frontmatter block (YAML) at top of file
+  ---
+  schema_version: "1.0"
+  type: framework
+  id: FMWK-100
+  name: Agent Development Standard
+  version: 1.0.0
+  status: draft | active | deprecated
+
+  # Upward link
+  conforms_to: []  # Frameworks are top-level, usually empty
+
+  # Downward requirements
+  requires:
+    - entity_type: spec
+      must_include: [purpose, requirements, testing]
+    - entity_type: package
+      must_include: [manifest.json, artifact_paths]
+
+  # Lateral links
+  dependencies: [FMWK-107, FMWK-200]  # Other frameworks this depends on
+  provides: [definition_of_done, code_standards]  # What this framework gives
+
+  # Authorship
+  author: system
+  created: 2026-01-30
+  ---
+
+  ---
+  Recommendation
+
+  Don't retrofit yet. The existing frameworks work. Instead:
+
+  1. Create FMWK-REG (Registry Framework) with the new schema as exemplar
+  2. Define the schema in schemas/framework.schema.json
+  3. New frameworks adopt the schema
+  4. Existing frameworks migrate opportunistically (when edited)
+
+  Do you want me to draft what FMWK-REG would look like with this schema?
+
+✻ Crunched for 56s
+
+❯ > before that, lets also talk about what is in the control plane that does not have a framework, do your best to determine that.
+
+⏺ Bash(echo "=== TOP-LEVEL STRUCTURE ===" && ls -la | grep -v "^\." | head -30)
+  ⎿  === TOP-LEVEL STRUCTURE ===
+     total 96
+     drwxr-xr-x  26 raymondbruni  staff    832 Jan 31 21:27 .
+     … +25 lines (ctrl+o to expand)
+
+⏺ Bash(echo "=== LIB FILES ===" && ls lib/*.py 2>/dev/null | wc -l && ls lib/*.py 2>/dev/null)
+  ⎿  === LIB FILES ===
+     21
+     lib/auth.py
+     … +20 lines (ctrl+o to expand)
+
+⏺ Bash(echo "=== SCRIPTS ===" && ls scripts/*.py 2>/dev/null | wc -l && ls scripts/*.py 2>/dev/null)
+  ⎿  === SCRIPTS ===
+     23
+     scripts/cp_init_auth.py
+     … +22 lines (ctrl+o to expand)
+
+⏺ Bash(echo "=== OTHER DIRS ===" && for d in schemas policies tests modules specs prompts contracts config registries ledger packages planes versions installed; do ech…)
+  ⎿  === OTHER DIRS ===
+     schemas:        4
+     policies:        2
+     … +12 lines (ctrl+o to expand)
+
+⏺ Bash(echo "=== SCHEMAS ===" && ls schemas/ && echo && echo "=== POLICIES ===" && ls policies/ && echo && echo "=== CONFIG ===" && ls config/ && echo && echo "=== TES…)
+  ⎿  === SCHEMAS ===
+     attention_envelope.json
+     cp_status.json
+     … +26 lines (ctrl+o to expand)
+
+⏺ Mapping: What Has a Framework vs What Doesn't
+
+  Summary
+  ┌──────────────────────────┬───────┬───────────────┬────────────────┐
+  │         Category         │ Count │ Has Framework │      Gap       │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Libraries (lib/)         │ 21    │ Partial       │ ~15 ungoverned │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Scripts (scripts/)       │ 23    │ Partial       │ ~12 ungoverned │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Schemas (schemas/)       │ 4     │ None          │ 4 ungoverned   │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Policies (policies/)     │ 2     │ None          │ 2 ungoverned   │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Tests (tests/)           │ 14    │ None          │ 14 ungoverned  │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Config (config/)         │ 2     │ None          │ 2 ungoverned   │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Registries (registries/) │ 3     │ Partial       │ 1 ungoverned   │
+  ├──────────────────────────┼───────┼───────────────┼────────────────┤
+  │ Planes (planes/)         │ 2     │ None          │ 2 ungoverned   │
+  └──────────────────────────┴───────┴───────────────┴────────────────┘
+  ---
+  Detailed Breakdown
+
+  Libraries (lib/) - 21 files
+  ┌────────────────────┬────────────────────────────┬─────────────────┐
+  │        File        │    Governing Framework     │     Status      │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ auth.py            │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ authz.py           │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ cursor.py          │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ gate_operations.py │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ id_allocator.py    │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ install_auth.py    │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ integrity.py       │ FMWK-PKG-001 (T0-001)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ ledger_client.py   │ FMWK-200 (reference impl)  │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ ledger_factory.py  │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ merkle.py          │ FMWK-PKG-001 (G0-002)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ output.py          │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ package_audit.py   │ FMWK-PKG-001 (T0-008)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ packages.py        │ FMWK-PKG-001 (G0-003)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ paths.py           │ FMWK-PKG-001 (G0-001)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ plane.py           │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ pristine.py        │ FMWK-PKG-001 (T0-003)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ provenance.py      │ FMWK-ATT-001, FMWK-PKG-001 │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ registry.py        │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ resolve.py         │ None                       │ ❌ NO FRAMEWORK │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ signing.py         │ FMWK-PKG-001 (T0-006)      │ ✓               │
+  ├────────────────────┼────────────────────────────┼─────────────────┤
+  │ tier_manifest.py   │ None                       │ ❌ NO FRAMEWORK │
+  └────────────────────┴────────────────────────────┴─────────────────┘
+  Gap: 11 libs without framework
+
+  ---
+  Scripts (scripts/) - 23 files
+  ┌──────────────────────────────┬───────────────────────┬─────────────────┐
+  │             File             │  Governing Framework  │     Status      │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ cp_init_auth.py              │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ cp_inspect.py                │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ cp_plane.py                  │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ cp_version_checkpoint.py     │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ cp_version_list.py           │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ cp_version_rollback.py       │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ genesis_bootstrap.py         │ FMWK-PKG-001 (§5.2)   │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ integrity_check.py           │ FMWK-PKG-001 (T1-004) │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ ledger_repair.py             │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ ledger_tier.py               │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ package_factory.py           │ FMWK-PKG-001 (T1-008) │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ package_install.py           │ FMWK-PKG-001 (T1-002) │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ package_pack.py              │ FMWK-PKG-001 (T1-001) │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ package_sync.py              │ FMWK-PKG-001 (T1-007) │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ package_uninstall.py         │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ quarantine_orphans.py        │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ seal_guard.py                │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ validate_attention_policy.py │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ validate_install_policy.py   │ None                  │ ❌ NO FRAMEWORK │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ validate_package_manifest.py │ FMWK-PKG-001 (§12.2)  │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ validate_packages.py         │ FMWK-107 (§7)         │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ validate_tier_deps.py        │ FMWK-PKG-001 (§12.1)  │ ✓               │
+  ├──────────────────────────────┼───────────────────────┼─────────────────┤
+  │ verify_installed_state.py    │ None                  │ ❌ NO FRAMEWORK │
+  └──────────────────────────────┴───────────────────────┴─────────────────┘
+  Gap: 13 scripts without framework
+
+  ---
+  Completely Ungoverned Categories
+  ┌────────────┬─────────────────────────────────────────────────────────────────────────────┬─────────────────────────────────────┐
+  │  Category  │                                    Files                                    │          Needed Framework           │
+  ├────────────┼─────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────┤
+  │ Schemas    │ attention_envelope.json, cp_status.json, package_manifest.json, policy.json │ FMWK-SCHEMA (schema governance)     │
+  ├────────────┼─────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────┤
+  │ Policies   │ attention_default.yaml, install_policy.yaml                                 │ FMWK-POLICY (policy governance)     │
+  ├────────────┼─────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────┤
+  │ Tests      │ 14 test files                                                               │ FMWK-TEST (test governance)         │
+  ├────────────┼─────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────┤
+  │ Config     │ control_plane_chain.json                                                    │ FMWK-CONFIG (config governance)     │
+  ├────────────┼─────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────┤
+  │ Planes     │ ho1/, ho2/                                                                  │ FMWK-PLANE (multi-plane governance) │
+  ├────────────┼─────────────────────────────────────────────────────────────────────────────┼─────────────────────────────────────┤
+  │ Registries │ control_plane_registry.csv                                                  │ FMWK-REG (registry governance)      │
+  └────────────┴─────────────────────────────────────────────────────────────────────────────┴─────────────────────────────────────┘
+  ---
+  Framework Gaps - What's Missing
+  ┌────────────────────┬─────────────────────────────────────────────────────────┬──────────┐
+  │ Proposed Framework │                      Would Govern                       │ Priority │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-IAM           │ auth.py, authz.py, install_auth.py, cp_init_auth.py     │ HIGH     │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-REG           │ registry.py, registries/*.csv, per-directory registries │ HIGH     │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-PLANE         │ plane.py, tier_manifest.py, cp_plane.py, planes/*       │ HIGH     │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-VERSION       │ cp_version_*.py, versions/*                             │ MEDIUM   │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-SCHEMA        │ schemas/*.json                                          │ MEDIUM   │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-POLICY        │ policies/.yaml, validate__policy.py                     │ MEDIUM   │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-TEST          │ tests/test_*.py                                         │ LOW      │
+  ├────────────────────┼─────────────────────────────────────────────────────────┼──────────┤
+  │ FMWK-GATE          │ gate_operations.py, seal_guard.py                       │ MEDIUM   │
+  └────────────────────┴─────────────────────────────────────────────────────────┴──────────┘
+  ---
+  The Core Problem
+
+  ~50% of the codebase has no governing framework.
+
+  The existing frameworks focus on:
+  - Module development (FMWK-100)
+  - Package management (FMWK-107, FMWK-PKG-001)
+  - Ledger protocol (FMWK-200)
+  - Attestation (FMWK-ATT-001)
+
+  But nobody defined frameworks for:
+  - Security/IAM - who can do what
+  - Registry - how artifacts are tracked
+  - Multi-plane - how tiers interact
+  - Versioning - how checkpoints work
+  - Schemas/Policies - how validation rules are defined
+
+  This is why files aren't accountable - there's no framework to account TO.
+
+✻ Brewed for 1m 16s
+
+❯ > Okay do you know what we are trying to accomplish? state in detail then explain how we do this better, more extensible, and with clarity so it is easy to understand.
+
+⏺ What We're Trying to Accomplish
+
+  The Goal
+
+  Every file in the Control Plane must be:
+  1. Registered - Listed in a registry with ID, hash, and metadata
+  2. Governed - Subject to a Framework that defines its rules
+  3. Packaged - Belongs to a package that can be installed/verified
+  4. Traceable - Changes logged to ledger, auditable history
+
+  The invariant: Nothing exists in the Control Plane that isn't accounted for. If a file exists, you can answer:
+  - What is it? (registry)
+  - Why is it allowed? (framework)
+  - What package owns it? (package)
+  - Who changed it and when? (ledger)
+
+  ---
+  The Current Problem
+
+  File exists → Maybe registered → Maybe has framework → Maybe in a package → Maybe logged
+
+  ~50% of files have no governing framework. Without a framework, there's no:
+  - Definition of what the file should do
+  - Rules for how it should behave
+  - Validation criteria
+  - Accountability chain
+
+  ---
+  How To Do This Better
+
+  The Insight
+
+  The hierarchy should be:
+
+  Framework (defines rules for a CLASS of things)
+      ↓ governs
+  Spec (defines rules for ONE thing)
+      ↓ implements
+  Package (bundles files that implement the spec)
+      ↓ contains
+  Files (actual code/content)
+      ↓ tracked in
+  Registry (records existence + hashes)
+      ↓ logged to
+  Ledger (records changes)
+
+  But currently: Frameworks exist in isolation. Files exist in isolation. The linkage is informal or missing.
+
+  ---
+  The Solution: Registry-First Architecture
+
+  Core principle: The registry is the source of truth. Everything flows from it.
+
+  1. Every directory has a registry.csv
+
+  lib/
+  ├── registry.csv      ← Lists every file in lib/
+  ├── auth.py
+  ├── authz.py
+  └── ...
+
+  The registry declares for each file:
+  - id - Unique identifier
+  - path - File path
+  - content_hash - SHA256
+  - governed_by - Framework ID that authorizes this file
+  - package_id - Package this file belongs to
+  - purpose - What it does
+
+  2. Frameworks define what's ALLOWED to exist
+
+  A Framework doesn't just describe - it authorizes:
+
+  # FMWK-IAM: Identity & Access Management Framework
+  id: FMWK-IAM
+  authorizes:
+    - pattern: "lib/auth*.py"
+      purpose: "Authentication and authorization"
+    - pattern: "scripts/cp_init_auth.py"
+      purpose: "Auth initialization"
+  requires:
+    - must_have: [content_hash, tests]
+    - must_log: [auth_change, permission_grant]
+
+  If a file claims governed_by: FMWK-IAM, the framework's authorizes patterns must match it.
+
+  3. Packages bundle what Frameworks authorize
+
+  # PKG-IAM-001
+  id: PKG-IAM-001
+  implements: SPEC-IAM-001
+  governed_by: FMWK-IAM
+  files:
+    - from_registry: lib/registry.csv
+      where: governed_by == "FMWK-IAM"
+
+  The package doesn't list files directly - it queries the registry for files governed by its framework.
+
+  4. Validation is automatic
+
+  integrity_check.py:
+    1. For every file in governed directories:
+       - Is it in a registry.csv? (NO = orphan, FAIL)
+       - Does hash match? (NO = tampered, FAIL)
+       - Does governed_by exist? (NO = unauthorized, FAIL)
+       - Does framework authorize this path? (NO = violation, FAIL)
+
+    2. For every registry entry:
+       - Does file exist? (NO = missing, FAIL)
+       - Is governed_by framework valid? (NO = invalid ref, FAIL)
+
+  ---
+  The Extensibility Model
+
+  Adding a new file:
+
+  1. Create the file
+  2. Add entry to directory's registry.csv
+  3. Set governed_by to appropriate framework
+  4. If no framework exists → create one first
+
+  Adding a new framework:
+
+  1. Create frameworks/FMWK-XXX.md
+  2. Define authorizes patterns
+  3. Define requires rules
+  4. Register in frameworks/registry.csv
+
+  Adding a new package:
+
+  1. Create packages/PKG-XXX/manifest.json
+  2. Reference framework via governed_by
+  3. Query files from registries via from_registry
+  4. Pack bundles only authorized files
+
+  ---
+  The Clarity Model
+
+  Everything answers to something:
+
+  Question                    Answer Location
+  ─────────────────────────────────────────────
+  What files exist?           → registry.csv (per directory)
+  Why is file X allowed?      → governed_by → Framework
+  What rules apply to X?      → Framework.requires
+  What package owns X?        → package_id → Package
+  How do I install X?         → Package.manifest.json
+  What changed?               → Ledger
+
+  No file is anonymous. Every file has:
+  - An ID (unique)
+  - A framework (authorization)
+  - A package (deployment unit)
+  - A hash (integrity)
+
+  ---
+  Simple Example
+
+  Before (current):
+  lib/auth.py exists
+    - Registered? Maybe (in control_plane_registry.csv)
+    - Framework? None
+    - Package? None
+    - Why allowed? Unknown
+
+  After:
+  lib/registry.csv:
+    id: LIB-AUTH
+    path: auth.py
+    content_hash: abc123...
+    governed_by: FMWK-IAM
+    package_id: PKG-IAM-CORE
+    purpose: HMAC authentication provider
+
+  frameworks/FMWK-IAM.md:
+    authorizes:
+      - pattern: "lib/auth*.py"
+    requires:
+      - tests: required
+      - logging: auth_events
+
+  packages/PKG-IAM-CORE/manifest.json:
+    governed_by: FMWK-IAM
+    files: [from lib/registry.csv where governed_by=FMWK-IAM]
+
+  Validation:
+  - File exists? ✓
+  - In registry? ✓
+  - Has framework? ✓ FMWK-IAM
+  - Framework authorizes path? ✓ matches "lib/auth*.py"
+  - Has package? ✓ PKG-IAM-CORE
+  - Hash matches? ✓
+
+  ---
+  Implementation Order
+
+  1. Define the schema - What fields go in registry.csv, framework metadata, package manifest
+  2. Create missing frameworks - FMWK-IAM, FMWK-REG, FMWK-PLANE, etc.
+  3. Create per-directory registries - lib/, scripts/, schemas/, etc.
+  4. Link files to frameworks - Set governed_by for every file
+  5. Update integrity check - Enforce the chain
+  6. Migrate packages - Query from registries instead of hardcoded lists
+
+  ---
+## TL;DR
+
+Best combo is **(1) explicit Framework + Spec registries + (2) a compiled file-ownership registry as the single source of truth + (3) package manifests that reference spec+framework**. This directly enforces your “pristine, nothing-unaccounted-for” invariant and scales cleanly across **multi-tier / multi-plane**. What needs improvement: **today too much governance is implicit**, metadata is inconsistent, and large parts of the tree can exist without a framework/spec/package chain—so you can’t fail-closed reliably. 
+
+---
+
+## Best combination (and why)
+
+### 1) **Frameworks registry + Specs registry (explicit linkage)**
+
+You already articulated the key relationship correctly: **Framework = superset policy**, **Spec = per-entity contract derived from it**, and packages must prove conformance via spec/framework linkage. 
+
+**Keep this structure:**
+
+* `frameworks_registry.csv` with fields like: `id, name, version, purpose, artifact_path, allowed_spec_types, required_gates, required_metadata, hash` 
+* `specs_registry.csv` with: `id, framework_id(FK), entity_type, artifact_path, required_assets, gates, metadata_blob, hash` 
+
+**Why this is the best “law model”:**
+
+* Frameworks can declare *family-wide* constraints (allowed artifact types, required gates, required metadata).
+* Specs instantiate those constraints for a concrete entity.
+* It makes the chain **auditable and machine-checkable** instead of prose-based. 
+
+---
+
+### 2) **Compiled file-ownership registry as the “pristine” root invariant**
+
+This is the keystone for your “nothing exists unless every filename is explicitly accounted for 1:1” requirement.
+
+Use a single authoritative table:
+
+* `file_path, owner_id, owner_registry(framework|spec|package), hash` 
+
+And enforce these constraints (these are exactly aligned with your invariant):
+
+1. Every `spec.framework_id` must exist. 
+2. Every package must reference a spec (and thus a framework). 
+3. **Every file appears exactly once** in ownership registry, and its owner exists in specs or packages. 
+4. Integrity verifies hashes from the owner row; fail on unmapped/duplicate. 
+
+**Why this is the best “pristine” mechanism:**
+
+* It’s the only structure that can *guarantee* “no stray files” at scale.
+* It’s compatible with multi-tier planes because ownership can be compiled **per-plane** (root-scoped) while retaining identical invariants. 
+
+---
+
+### 3) **Packages registry + package manifests referencing spec/framework**
+
+Your packaging model should be the “compiler output”:
+
+> **Spec + Framework -> Compiler/Factory -> Package** 
+
+So packages must carry:
+
+* `package_id -> spec_id -> framework_id`
+* and the package content must be provably a subset of the ownership registry rows owned by that spec/package (depending on how you model ownership).
+
+This is also where your “installed through package manager only” requirement lives: installs become **state transitions** validated against registries + ownership + gates.
+
+---
+
+## What needs to be done better (the current gaps)
+
+### A) Too much governance is implicit / prose-only
+
+Right now, the system can *describe* rules, but cannot reliably *enforce them* unless everything is turned into machine-readable validation. Your notes call this out repeatedly: frameworks/specs are well-formed conceptually, but enforcement needs schema/validation logic. 
+
+**Fix:** companion schemas + generic validators (governor-style), so rules live in data, not hardcoded scripts.
+
+---
+
+### B) Missing fields prevent frameworks from actually governing
+
+You already identified the deltas: frameworks currently lack structural places to declare `allowed_spec_types`, `required_gates`, `required_metadata`, and there’s no clean `specs_registry` binding specs to frameworks. 
+
+**Fix:** split registries by entity type (framework/spec/package) so each can have strict required columns.
+
+---
+
+### C) Fail-closed “pristine” isn’t guaranteed without ownership being authoritative
+
+You can’t keep the plane pristine if files can exist without being 1:1 mapped to a governing owner row.
+
+**Fix:** make integrity checks start with:
+
+* filesystem ⇄ ownership_registry diff
+* then hash verification
+* then chain validation (package→spec→framework)
+  …and fail immediately on any mismatch. 
+
+---
+
+## Multi-tier / multi-plane adaptation (simple and clean)
+
+Treat each plane/tier as a **separately compiled desired-state subtree**:
+
+* Each plane has its own compiled `file_ownership_registry.csv` (or a single global registry with a `plane_id` column).
+* The same invariants apply at every level:
+
+  * no unmapped files
+  * no duplicate ownership
+  * chain integrity (pkg→spec→fmwk)
+  * hashes match
+
+This keeps governance *fractal*: identical rules, different scope. 
+
+---
+
+## Minimal “do next” sequence (keeps it pristine throughout)
+
+1. **Declare the three registries explicitly** (frameworks/specs/packages) with the missing columns you’ve already enumerated. 
+2. **Make ownership registry authoritative** + enforce “exactly once” mapping + hash. 
+3. **Wire the enforcement order**: ownership diff → hash verify → chain verify → gate execution. 
+4. **Package manager rule**: installs/uninstalls may only occur via package operations that update registries + ledger, never by raw filesystem edits.
+
+If you want, paste (or upload) your current `control_plane_registry.csv`, `packages_registry.csv`, and the tree layout you’re enforcing, and I’ll produce a concrete “delta map” (what columns/files are missing, which files are currently orphaned, and the minimal registry rows needed to restore pristine invariants) without changing anything.
+
+## TL;DR
+
+**Best combo:** Frameworks → Specs → Packages **plus** a mandatory File-Ownership Registry.
+**Why:** It’s the only structure that *provably* enforces “nothing exists unless governed,” across all control-plane tiers.
+**What to improve:** Remove implicit governance; make ownership, linkage, and enforcement fully machine-checkable and fail-closed.
+
+---
+
+## Best combination (clear + minimal)
+
+1. **Frameworks (law)**
+
+   * Define *allowed entity types, required gates, required metadata*.
+   * Never own files directly.
+
+2. **Specs (contracts)**
+
+   * Bind a concrete entity to **one framework**.
+   * Declare *exact required assets* (no wildcards).
+
+3. **Packages (delivery)**
+
+   * Installable units only.
+   * Must reference **exactly one spec** (therefore one framework).
+
+4. **File-Ownership Registry (root invariant)**
+
+   * Every filename mapped **1-to-1** to a spec or package.
+   * No file without an owner; no file with two owners.
+
+This quartet is the smallest set that can keep the plane *pristine*.
+
+---
+
+## Why this works for a multi-tier control plane
+
+* **Same invariant at every tier**:
+  `filesystem == ownership_registry`
+* Each tier/plane can be compiled independently but governed identically.
+* Cross-tier interaction happens via packages, not raw files.
+
+This gives you fractal governance: same rules, different scope.
+
+---
+
+## What needs to be done better (the real gaps)
+
+1. **Implicit → explicit**
+
+   * Today, some rules live in prose or convention.
+   * All governance must live in registries + schemas.
+
+2. **Frameworks must actually constrain**
+
+   * Frameworks need machine-readable declarations:
+
+     * allowed spec types
+     * required gates
+     * required metadata
+
+3. **Fail-closed enforcement order**
+
+   * Ownership diff → hash verify → spec↔framework link → package validity.
+   * Any violation halts the plane.
+
+4. **Package manager exclusivity**
+
+   * No filesystem mutation outside package operations.
+   * Install/uninstall = registry + ledger state transition.
+
+---
+
+## Bottom line
+
+If **Framework → Spec → Package → File-Ownership** is enforced *strictly and mechanically*, your control plane can remain pristine forever.
+Anything less inevitably allows drift.
+

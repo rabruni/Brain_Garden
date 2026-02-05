@@ -1,0 +1,52 @@
+{
+  "package_id": "PKG-T0-EVIDENCE-001",
+  "origin": "INSTALLER",
+  "package_type": "library",
+  "plane_id": "ho3",
+  "installed_at": "2026-02-04T01:15:49.112299+00:00",
+  "manifest_hash": "sha256:51fde6b6ee376e83133a75351ade4898c6733993a2076963ddb7b9411a0ca5d6",
+  "archive_hash": "sha256:b8ea8b34f8f5a7e20e862b8ecdd87219a4b3dc644a701d5ec57d0e0c6fc41bd8",
+  "assets_count": 9,
+  "work_order_id": null,
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "receipt_version": "1.0",
+  "files": [
+    {
+      "path": "tests/test_stdlib_evidence.py",
+      "sha256": "sha256:699ae78263753f3820551964deae566e43ea4de42209a6a31b7a79b766c93a19"
+    },
+    {
+      "path": "tests/test_stdlib_evidence_pipe.py",
+      "sha256": "sha256:69935ab49edb6123a8f850d1845d410a414a04de5f15df1cf7bcbfc5b1e9e9c6"
+    },
+    {
+      "path": "schemas/stdlib_evidence_request.json",
+      "sha256": "sha256:a96987e0c273fea47a0710cf4be3fad830ca003c94e7ab75b6e10f2d88501d32"
+    },
+    {
+      "path": "schemas/stdlib_evidence_response.json",
+      "sha256": "sha256:81c8f459657d7431a82d052cdd195d877e4e477dc719d87cb3e90391fa5c922a"
+    },
+    {
+      "path": "modules/stdlib_evidence/__init__.py",
+      "sha256": "sha256:038d8bc80246100beaac5aff9f35e855bb24aa49d17ca302cb36e0e250d0c5a1"
+    },
+    {
+      "path": "modules/stdlib_evidence/reference.py",
+      "sha256": "sha256:8804e65b5721781ee5a004f1398dbbae512ca5dd1bace99cecef3f3e8423cccb"
+    },
+    {
+      "path": "modules/stdlib_evidence/hasher.py",
+      "sha256": "sha256:b07aa7c9f0688ed4d1a383deabb73b80ed2543065702d1acd1cf0ab125e72243"
+    },
+    {
+      "path": "modules/stdlib_evidence/__main__.py",
+      "sha256": "sha256:6e74399f4f327a9a300500c8de4bbf154e414e96965e51cf867f0ebc326d2063"
+    },
+    {
+      "path": "modules/stdlib_evidence/envelope.py",
+      "sha256": "sha256:dae94aa8e3c65ac4eb28fe631dc4b7f6f07746365264d77c7454492f39f9fc14"
+    }
+  ]
+}

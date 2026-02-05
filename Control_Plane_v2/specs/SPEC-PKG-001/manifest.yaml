@@ -1,0 +1,62 @@
+spec_id: SPEC-PKG-001
+title: "Package Management"
+framework_id: FMWK-107
+status: active
+version: 1.0.0
+plane_id: ho3
+
+assets:
+  - lib/packages.py
+  - lib/provenance.py
+  - lib/signing.py
+  - lib/package_audit.py
+  - scripts/package_pack.py
+  - scripts/package_install.py
+  - scripts/package_uninstall.py
+  - scripts/package_sync.py
+  - scripts/package_factory.py
+  - scripts/validate_packages.py
+  - scripts/validate_package_manifest.py
+  - tests/test_packages.py
+  - tests/test_factory_canary.py
+  - tests/test_provenance.py
+  - tests/test_manifest_v11.py
+  - schemas/package_manifest.json
+  - registries/packages_registry.csv
+  - registries/compiled/packages.json
+
+interfaces:
+  - name: pack_archive
+    description: Create tar.gz package with manifest
+  - name: install_package
+    description: Install package with hash verification
+  - name: uninstall_package
+    description: Uninstall package and update registry
+  - name: sign_package
+    description: Create detached signature for package
+  - name: verify_signature
+    description: Verify package signature
+
+invariants:
+  - "Packages MUST include SHA256 digest"
+  - "Installation MUST verify hash before extraction"
+  - "Package manifest MUST conform to schema"
+  - "All package operations MUST be logged to ledger"
+
+acceptance:
+  tests:
+    - "pytest tests/test_packages.py"
+    - "pytest tests/test_provenance.py"
+    - "pytest tests/test_factory_canary.py"
+  checks:
+    - "python3 scripts/validate_packages.py"
+
+dependencies:
+  - spec_id: SPEC-LEDGER-001
+    interfaces: [append_entry]
+  - spec_id: SPEC-INT-001
+    interfaces: [compute_file_hash]
+
+non_goals:
+  - "This spec does NOT handle package versioning conflicts"
+  - "This spec does NOT handle package dependency resolution"
