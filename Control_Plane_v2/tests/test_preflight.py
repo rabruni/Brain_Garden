@@ -319,6 +319,133 @@ class TestOwnershipValidator:
         assert result.passed
 
 
+class TestOwnershipValidatorDependencies:
+    """Test dependency-aware ownership transfers."""
+
+    def test_dependency_allows_ownership_transfer(self):
+        """PKG-B depends on PKG-A, so it can take PKG-A's files."""
+        manifest = {
+            "package_id": "PKG-B",
+            "dependencies": ["PKG-A"],
+            "assets": [
+                {"path": "lib/shared.py"},
+            ],
+        }
+        existing = {
+            "lib/shared.py": {"owner_package_id": "PKG-A"},
+        }
+
+        validator = OwnershipValidator()
+        result = validator.validate(manifest, existing, "PKG-B")
+
+        assert result.passed
+        assert any("OWNERSHIP_TRANSFER" in w for w in result.warnings)
+        assert len(result.errors) == 0
+
+    def test_non_dependency_still_fails(self):
+        """Without a dependency declaration, ownership conflict is a hard fail."""
+        manifest = {
+            "package_id": "PKG-B",
+            "dependencies": [],
+            "assets": [
+                {"path": "lib/shared.py"},
+            ],
+        }
+        existing = {
+            "lib/shared.py": {"owner_package_id": "PKG-A"},
+        }
+
+        validator = OwnershipValidator()
+        result = validator.validate(manifest, existing, "PKG-B")
+
+        assert not result.passed
+        assert any("OWNERSHIP_CONFLICT" in e for e in result.errors)
+
+    def test_transitive_dependency_not_granted(self):
+        """PKG-C depends on PKG-B which depends on PKG-A — PKG-C cannot take PKG-A's files."""
+        manifest = {
+            "package_id": "PKG-C",
+            "dependencies": ["PKG-B"],  # Only PKG-B, not PKG-A
+            "assets": [
+                {"path": "lib/shared.py"},
+            ],
+        }
+        existing = {
+            "lib/shared.py": {"owner_package_id": "PKG-A"},
+        }
+
+        validator = OwnershipValidator()
+        result = validator.validate(manifest, existing, "PKG-C")
+
+        assert not result.passed
+        assert any("OWNERSHIP_CONFLICT" in e for e in result.errors)
+
+    def test_self_reinstall_still_works(self):
+        """Same package reinstalling its own files — no conflict at all."""
+        manifest = {
+            "package_id": "PKG-A",
+            "dependencies": [],
+            "assets": [
+                {"path": "lib/mine.py"},
+            ],
+        }
+        existing = {
+            "lib/mine.py": {"owner_package_id": "PKG-A"},
+        }
+
+        validator = OwnershipValidator()
+        result = validator.validate(manifest, existing, "PKG-A")
+
+        assert result.passed
+        assert len(result.errors) == 0
+        assert len(result.warnings) == 0
+
+    def test_multiple_deps_partial_conflict(self):
+        """Two deps + one non-dep file = 1 error + 2 transfers."""
+        manifest = {
+            "package_id": "PKG-D",
+            "dependencies": ["PKG-A", "PKG-B"],
+            "assets": [
+                {"path": "lib/from_a.py"},
+                {"path": "lib/from_b.py"},
+                {"path": "lib/from_c.py"},
+            ],
+        }
+        existing = {
+            "lib/from_a.py": {"owner_package_id": "PKG-A"},
+            "lib/from_b.py": {"owner_package_id": "PKG-B"},
+            "lib/from_c.py": {"owner_package_id": "PKG-C"},
+        }
+
+        validator = OwnershipValidator()
+        result = validator.validate(manifest, existing, "PKG-D")
+
+        assert not result.passed
+        assert len(result.errors) == 1
+        assert "PKG-C" in result.errors[0]
+        transfer_warnings = [w for w in result.warnings if "TRANSFER" in w]
+        assert len(transfer_warnings) == 2
+
+    def test_legacy_deps_field(self):
+        """The 'deps' field should work identically to 'dependencies'."""
+        manifest = {
+            "package_id": "PKG-B",
+            "deps": ["PKG-A"],
+            "assets": [
+                {"path": "lib/shared.py"},
+            ],
+        }
+        existing = {
+            "lib/shared.py": {"owner_package_id": "PKG-A"},
+        }
+
+        validator = OwnershipValidator()
+        result = validator.validate(manifest, existing, "PKG-B")
+
+        assert result.passed
+        assert any("OWNERSHIP_TRANSFER" in w for w in result.warnings)
+
+
 class TestSignatureValidator:
     """Test G5: Signature validation."""
 

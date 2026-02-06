@@ -394,20 +394,33 @@ class OwnershipValidator:
         self,
         manifest: dict,
         existing_ownership: Dict[str, dict],
-        package_id: str
+        package_id: str,
+        plane_root: Optional[Path] = None,
     ) -> PreflightResult:
         """Check for file ownership conflicts.
+
+        Dependency-aware: if the current owner of a file is listed in the
+        installing package's ``dependencies`` (or ``deps``) list, the conflict
+        is treated as an ownership *transfer* (warning) rather than a hard
+        failure.  Non-dependency conflicts remain hard errors.
+
+        Only direct (non-transitive) dependencies are considered.
 
         Args:
             manifest: Package manifest dict
             existing_ownership: Current ownership registry as dict
             package_id: ID of package being installed
+            plane_root: Plane root path (unused currently, reserved)
 
         Returns:
             PreflightResult with validation outcome
         """
         errors = []
         warnings = []
+
+        declared_deps = manifest.get('dependencies', []) or manifest.get('deps', [])
+        if not isinstance(declared_deps, list):
+            declared_deps = []
 
         assets = manifest.get('assets', [])
 
@@ -416,13 +429,22 @@ class OwnershipValidator:
             if path in existing_ownership:
                 owner = existing_ownership[path].get('owner_package_id', '')
                 if owner and owner != package_id:
-                    errors.append(
-                        f"OWNERSHIP_CONFLICT: '{path}' already owned by '{owner}', "
-                        f"cannot assign to '{package_id}'"
-                    )
+                    if owner in declared_deps:
+                        warnings.append(
+                            f"OWNERSHIP_TRANSFER: '{path}' from '{owner}' to '{package_id}' (declared dependency)"
+                        )
+                    else:
+                        errors.append(
+                            f"OWNERSHIP_CONFLICT: '{path}' owned by '{owner}', "
+                            f"cannot assign to '{package_id}' (not in dependencies)"
+                        )
 
         passed = len(errors) == 0
-        message = "No ownership conflicts" if passed else f"{len(errors)} conflicts found"
+        transfer_count = sum(1 for w in warnings if 'TRANSFER' in w)
+        message = (f"{transfer_count} ownership transfers"
+                   if passed and transfer_count else
+                   "No ownership conflicts" if passed else
+                   f"{len(errors)} conflicts found")
 
         return PreflightResult(
             gate="OWN",
@@ -632,7 +654,7 @@ class PreflightValidator:
         results.append(g1_result)
 
         # 4. Ownership check
-        own_result = self.ownership.validate(manifest, existing_ownership, package_id)
+        own_result = self.ownership.validate(manifest, existing_ownership, package_id, self.plane_root)
         results.append(own_result)
 
         # 5. G5: Signature policy

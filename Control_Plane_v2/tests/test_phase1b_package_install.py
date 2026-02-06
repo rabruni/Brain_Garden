@@ -449,6 +449,47 @@ class TestHashComputation:
         assert hash1 == hash2, "Metadata should not affect hash"
 
 
+class TestDependencyOwnershipInstall:
+    """Test dependency-aware ownership during install."""
+
+    def test_install_with_dependency_passes(self, simple_manifest):
+        """Declaring a dependency allows taking ownership of its files."""
+        simple_manifest["dependencies"] = ["PKG-BASELINE-001"]
+        simple_manifest["assets"] = [{
+            "path": "lib/baseline_file.py",
+            "sha256": "sha256:" + "a" * 64,
+        }]
+
+        existing_ownership = {
+            "lib/baseline_file.py": {"owner_package_id": "PKG-BASELINE-001"},
+        }
+
+        passed, errors = check_ownership_conflicts(
+            simple_manifest, existing_ownership, "PKG-TEST-001"
+        )
+
+        assert passed, f"Should pass with dependency declared: {errors}"
+
+    def test_install_without_dependency_fails(self, simple_manifest):
+        """Without dependency declaration, ownership conflict is a hard fail."""
+        simple_manifest["dependencies"] = []
+        simple_manifest["assets"] = [{
+            "path": "lib/baseline_file.py",
+            "sha256": "sha256:" + "a" * 64,
+        }]
+
+        existing_ownership = {
+            "lib/baseline_file.py": {"owner_package_id": "PKG-BASELINE-001"},
+        }
+
+        passed, errors = check_ownership_conflicts(
+            simple_manifest, existing_ownership, "PKG-TEST-001"
+        )
+
+        assert not passed, "Should fail without dependency"
+        assert any("OWNERSHIP_CONFLICT" in e for e in errors)
+
+
 class TestIntegration:
     """Integration tests for full package install workflow."""
 

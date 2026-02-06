@@ -267,16 +267,18 @@ def check_g5_signature(
 def check_ownership_conflicts(
     manifest: dict,
     existing_ownership: Dict[str, dict],
-    package_id: str
+    package_id: str,
+    plane_root: Optional[Path] = None,
 ) -> Tuple[bool, List[str]]:
     """
     Check for ownership conflicts (no last-write-wins).
 
     Uses shared lib/preflight.py validator for consistency with pkgutil preflight.
+    Dependency-aware: declared dependencies allow ownership transfers.
 
     Returns (passed, errors)
     """
-    result = _ownership_validator.validate(manifest, existing_ownership, package_id)
+    result = _ownership_validator.validate(manifest, existing_ownership, package_id, plane_root)
     return result.passed, result.errors
 
 
@@ -519,7 +521,7 @@ def install_package(
         print(f"[install] Checking ownership conflicts...", file=sys.stderr)
         existing_ownership = load_file_ownership()
         ownership_passed, ownership_errors = check_ownership_conflicts(
-            manifest, existing_ownership, package_id
+            manifest, existing_ownership, package_id, plane_root
         )
         if not ownership_passed:
             error_msg = "OWNERSHIP CONFLICT:\n" + "\n".join(ownership_errors[:10])

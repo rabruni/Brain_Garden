@@ -113,11 +113,15 @@ def is_upgrade_allowed(current_owner: str, new_owner: str) -> bool:
     """
     Check if ownership transfer is allowed.
 
-    Currently: NO upgrades allowed. Conflict = FAIL.
-    Future: could check upgrade policies, version relationships, etc.
+    Transfer is permitted when *new_owner* explicitly declares
+    *current_owner* as a direct dependency in its installed manifest.
+    Only direct (non-transitive) dependencies are honoured.
     """
-    # Per binding constraints: No last-write-wins. Conflict = FAIL.
-    return False
+    new_manifest = load_installed_manifest(new_owner)
+    if not new_manifest:
+        return False
+    declared_deps = new_manifest.get('dependencies', []) or new_manifest.get('deps', [])
+    return isinstance(declared_deps, list) and current_owner in declared_deps
 
 
 def build_ownership_from_ledger(entries: list[dict]) -> tuple[dict, list[dict]]:
@@ -160,8 +164,15 @@ def build_ownership_from_ledger(entries: list[dict]) -> tuple[dict, list[dict]]:
                 if file_path in ownership:
                     existing = ownership[file_path]
                     if existing["owner_package_id"] != package_id:
-                        # Conflict!
-                        if not is_upgrade_allowed(existing["owner_package_id"], package_id):
+                        # Conflict — check if dependency-based transfer is allowed
+                        if is_upgrade_allowed(existing["owner_package_id"], package_id):
+                            print(
+                                f"  Transfer: {file_path} from {existing['owner_package_id']}"
+                                f" to {package_id} (dependency)",
+                                file=sys.stderr,
+                            )
+                            # Fall through to update ownership below
+                        else:
                             conflicts.append({
                                 "file_path": file_path,
                                 "current_owner": existing["owner_package_id"],
