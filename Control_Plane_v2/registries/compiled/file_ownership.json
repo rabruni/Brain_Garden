@@ -232,6 +232,13 @@
       "sha256": "sha256:3747a0b5ff0606fe18384fa193f9b7ce15e06dcbae39305250e8e7c84c94a97e"
     },
     {
+      "classification": "documentation",
+      "file_path": "docs/operator_playbook.md",
+      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:1aa9ff2ac2800a47876e3daeb6cbbbce8268dad116f807c6d014bb54fcb5ea37"
+    },
+    {
       "classification": "law_doc",
       "file_path": "frameworks/FMWK-000_governance_framework.md",
       "installed_at": "2026-02-03T06:11:46.817227+00:00",
@@ -2409,5 +2416,5 @@
       "sha256": "sha256:df3b44b95d8a580201758236969147783e05a779a60170c1cbebb94aed9c7a9f"
     }
   ],
-  "rebuilt_at": "2026-02-06T21:11:11.132929+00:00"
+  "rebuilt_at": "2026-02-06T21:37:53.492062+00:00"
 }

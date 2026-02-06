@@ -46,7 +46,8 @@
         "notes/AGENT_CLASSES_REFERENCE.md",
         "notes/LLM_AGENT_PATTERNS.md",
         "notes/MEMORY_MODEL_HO_TIERS.md",
-        "notes_Framework.txt"
+        "notes_Framework.txt",
+        "operator_playbook.md"
       ]
     },
     {
@@ -586,6 +587,11 @@
       "path": "docs/notes_Framework.txt",
       "sha256": "sha256:3747a0b5ff0606fe18384fa193f9b7ce15e06dcbae39305250e8e7c84c94a97e",
       "classification": "other"
+    },
+    {
+      "path": "docs/operator_playbook.md",
+      "sha256": "sha256:1aa9ff2ac2800a47876e3daeb6cbbbce8268dad116f807c6d014bb54fcb5ea37",
+      "classification": "documentation"
     },
     {
       "path": "frameworks/FMWK-000_governance_framework.md",
@@ -2170,7 +2176,7 @@
     ],
     "hash_algorithm": "sha256",
     "hash_format_version": "1.0",
-    "generated_at": "2026-02-06T21:10:10.655308+00:00",
+    "generated_at": "2026-02-06T21:37:08.235289+00:00",
     "generator": "generate_baseline_manifest.py",
     "generator_version": "1.0.0",
     "plane_context": "HO3",
