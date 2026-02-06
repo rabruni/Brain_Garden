@@ -109,13 +109,7 @@ class HashMismatch(InstallError):
     pass
 
 
-def compute_sha256(file_path: Path) -> str:
-    """Compute SHA256 hash in standard format: sha256:<64hex>"""
-    hasher = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            hasher.update(chunk)
-    return f"sha256:{hasher.hexdigest()}"
+from lib.hashing import compute_sha256  # canonical implementation
 
 
 def compute_manifest_hash(manifest: dict) -> str:
@@ -502,13 +496,12 @@ def install_package(
         # === GATE G5: Signature ===
         print(f"[install] Running G5 (signature)...", file=sys.stderr)
         g5_passed, g5_errors = check_g5_signature(archive_path, manifest, allow_unsigned)
-        if not g5_passed and not allow_unsigned:
-            error_msg = "G5 FAILED:\n" + "\n".join(g5_errors[:10])
-            raise GateFailure(error_msg)
-        if not g5_passed and allow_unsigned:
+        if g5_passed:
+            print(f"[install] G5 PASSED", file=sys.stderr)
+        elif allow_unsigned:
             print(f"[install] G5 WAIVED (unsigned allowed)", file=sys.stderr)
         else:
-            print(f"[install] G5 PASSED", file=sys.stderr)
+            raise GateFailure("G5 FAILED:\n" + "\n".join(g5_errors[:10]))
 
         # Check attestation
         if has_attestation(archive_path):
@@ -645,6 +638,8 @@ Examples:
     ap.add_argument("--actor", help="Actor/user ID for audit", default="")
     ap.add_argument("--token", help="Auth token (optional)")
     ap.add_argument("--json", action="store_true", help="Output result as JSON")
+    ap.add_argument("--dev", action="store_true",
+        help="Dev mode: bypass auth, signatures, attestation")
     args = ap.parse_args()
 
     # Resolve plane root
@@ -655,12 +650,18 @@ Examples:
     allow_unattested = os.getenv("CONTROL_PLANE_ALLOW_UNATTESTED", "0") == "1"
 
     # AuthZ
-    try:
-        identity = get_provider().authenticate(args.token or os.getenv("CONTROL_PLANE_TOKEN"))
-        authz.require(identity, "install")
-    except Exception as e:
-        print(f"Authorization failed: {e}", file=sys.stderr)
-        return 1
+    if args.dev:
+        print("[install] DEV MODE — auth, signature, and attestation checks bypassed", file=sys.stderr)
+        allow_unsigned = True
+        allow_unattested = True
+        identity = None
+    else:
+        try:
+            identity = get_provider().authenticate(args.token or os.getenv("CONTROL_PLANE_TOKEN"))
+            authz.require(identity, "install")
+        except Exception as e:
+            print(f"Authorization failed: {e}", file=sys.stderr)
+            return 1
 
     # Validate archive exists
     archive = args.archive.resolve()
@@ -678,7 +679,7 @@ Examples:
             work_order_id=args.work_order,
             allow_unsigned=allow_unsigned,
             allow_unattested=allow_unattested,
-            actor=args.actor or (identity.user if identity else ""),
+            actor=args.actor or (identity.user if identity else "dev"),
         )
 
         if args.json:

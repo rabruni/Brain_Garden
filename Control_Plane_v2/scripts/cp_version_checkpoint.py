@@ -60,12 +60,7 @@ PACKAGES_REG_PATH = CONTROL_PLANE / "registries" / "packages_registry.csv"
 MANIFEST_PATH = CONTROL_PLANE / "MANIFEST.json"
 
 
-def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from lib.hashing import sha256_file  # canonical implementation
 
 
 def load_packages(packages_reg_path: Path) -> list[dict]:

@@ -1,0 +1,50 @@
+{
+  "package_id": "PKG-ADMIN-EXT-001",
+  "schema_version": "1.2",
+  "version": "1.4.0",
+  "spec_id": "SPEC-ADMIN-001",
+  "plane_id": "ho3",
+  "package_type": "module",
+  "assets": [
+    {
+      "path": "modules/admin_agent/handlers/confirmation.py",
+      "sha256": "sha256:cccf9dd2a04451b54d8a7600f47288149c18b5049fe2b06301b9c94d9b777c00",
+      "classification": "module"
+    },
+    {
+      "path": "modules/admin_agent/tools.py",
+      "sha256": "sha256:bdc6a0ed233a1b6522cf065535f8771a3041a1f72541331d6890617807753c2e",
+      "classification": "module"
+    },
+    {
+      "path": "tests/test_tools_first_dryrun.py",
+      "sha256": "sha256:3342e95fd0ab53fbe7dc2f77ae690337490a77b18111fc6ea9b31a0e6dc0d5cd",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_prompt_tracking.py",
+      "sha256": "sha256:47c5effb253906c9c9ba8d79baad33c8b7950fe55b96dfb3d0470965637798c1",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_no_direct_llm.py",
+      "sha256": "sha256:7c88e9c455898bc839528168f8e76b045c40704ff1d82e6b1730f05c8570bf19",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_router_admin_contract.py",
+      "sha256": "sha256:7b456e399a4708d546a5b08861564991705ac3be633fb58472601a7e615dccd9",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000"
+  ],
+  "metadata": {
+    "description": "Admin Agent extensions: DRY_RUN confirmation gate, A0+EXECUTE same-turn authorization, tools-first handler safety, router-admin contract tests",
+    "created_by": "remediate_orphans.py",
+    "created_at": "2026-02-06T01:06:30.385359+00:00",
+    "updated_at": "2026-02-06T05:00:00.000000+00:00",
+    "changelog": "v1.4.0: Add HANDLER_EXECUTED evidence event recording what handler actually ran"
+  }
+}

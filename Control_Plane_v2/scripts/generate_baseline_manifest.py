@@ -28,6 +28,7 @@ from typing import Optional
 # Resolve paths relative to Control_Plane_v2 root
 SCRIPT_DIR = Path(__file__).resolve().parent
 CONTROL_PLANE_ROOT = SCRIPT_DIR.parent
+sys.path.insert(0, str(CONTROL_PLANE_ROOT))
 
 
 # === Asset Classification Patterns ===
@@ -64,13 +65,7 @@ def classify_asset(rel_path: str) -> str:
     return "other"
 
 
-def compute_sha256(file_path: Path) -> str:
-    """Compute SHA256 hash of file in standard format: sha256:<64hex>"""
-    hasher = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            hasher.update(chunk)
-    return f"sha256:{hasher.hexdigest()}"
+from lib.hashing import compute_sha256  # canonical implementation
 
 
 def load_governed_roots_config(plane: str) -> dict:

@@ -99,9 +99,9 @@ class TestMockProvider:
     def test_complete_canned_response(self):
         """complete matches canned responses."""
         provider = MockProvider()
-        response = provider.complete("Please explain this")
+        response = provider.complete("Hello there")
 
-        assert "explanation" in response.content.lower()
+        assert "hello" in response.content.lower()
 
     def test_add_response(self):
         """Custom responses can be added."""

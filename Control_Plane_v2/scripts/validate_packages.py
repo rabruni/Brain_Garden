@@ -128,12 +128,7 @@ def sha256_row(row: Dict[str, str], headers: List[str]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def sha256_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from lib.hashing import sha256_file  # canonical implementation
 
 
 def build_graph(rows: List[Dict[str, str]]) -> Dict[str, List[str]]:

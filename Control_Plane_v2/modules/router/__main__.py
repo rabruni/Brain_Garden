@@ -105,9 +105,9 @@ def handle_route(request: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_list_handlers(request: Dict[str, Any]) -> Dict[str, Any]:
     """Handle list_handlers operation."""
-    from modules.router.decision import HANDLER_MAP
+    from modules.router.decision import INTENT_HANDLER_MAP
 
-    handlers = {t.value: h for t, h in HANDLER_MAP.items()}
+    handlers = dict(INTENT_HANDLER_MAP)
 
     evidence = {
         "timestamp": datetime.now(timezone.utc).isoformat(),

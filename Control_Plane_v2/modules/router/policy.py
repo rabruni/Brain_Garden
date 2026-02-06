@@ -128,11 +128,13 @@ def enforce_policy(
     result = route_result
 
     query_type = route_result.classification.type.value
+    handler_name = route_result.handler
 
-    # Check deny list
-    if query_type in policy.llm_deny_list:
+    # Check deny list (match by query type or handler name)
+    deny_match = query_type in policy.llm_deny_list or handler_name in policy.llm_deny_list
+    if deny_match:
         if route_result.mode == RouteMode.LLM_ASSISTED:
-            violations.append(f"Query type '{query_type}' is in LLM deny list")
+            violations.append(f"Handler '{handler_name}' is in LLM deny list")
             # Force to tools-first
             result = RouteResult(
                 mode=RouteMode.TOOLS_FIRST,
@@ -156,17 +158,19 @@ def enforce_policy(
             )
             modifications.append("Changed mode from LLM_ASSISTED to TOOLS_FIRST")
 
-    # Check required capabilities
-    if query_type in policy.required_capabilities:
-        required = policy.required_capabilities[query_type]
+    # Check required capabilities (by query type or handler name)
+    req_key = query_type if query_type in policy.required_capabilities else handler_name
+    if req_key in policy.required_capabilities:
+        required = policy.required_capabilities[req_key]
         for cap in required:
             if cap not in route_result.capabilities_used:
                 violations.append(f"Missing required capability: {cap}")
                 allowed = False
 
-    # Check custom handlers
-    if query_type in policy.custom_handlers:
-        custom_handler = policy.custom_handlers[query_type]
+    # Check custom handlers (by query type or handler name)
+    custom_key = query_type if query_type in policy.custom_handlers else handler_name
+    if custom_key in policy.custom_handlers:
+        custom_handler = policy.custom_handlers[custom_key]
         if route_result.handler != custom_handler:
             result = RouteResult(
                 mode=route_result.mode,

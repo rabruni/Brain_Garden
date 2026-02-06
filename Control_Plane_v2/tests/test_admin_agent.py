@@ -87,34 +87,69 @@ class TestAdminTurn:
     """Tests for admin_turn function."""
 
     def test_explain_query(self, tmp_path):
-        """admin_turn handles explain queries."""
+        """admin_turn handles explain queries (dry-run then confirmed)."""
+        # First call returns dry-run plan
         result = admin_turn(
             "Explain FMWK-000",
             session_id="SES-test",
             turn_number=1,
             root=CONTROL_PLANE_ROOT
         )
-        assert "FMWK-000" in result
+        assert "Proposed Action" in result
+        assert "RUN:" in result
+
+        # Extract the RUN: token and re-send for confirmed execution
+        import re
+        token = re.search(r"RUN:([a-f0-9]{16})", result).group(1)
+        confirmed = admin_turn(
+            f"Explain FMWK-000 RUN:{token}",
+            session_id="SES-test",
+            turn_number=2,
+            root=CONTROL_PLANE_ROOT
+        )
+        assert "FMWK-000" in confirmed
 
     def test_list_query(self, tmp_path):
-        """admin_turn handles list queries."""
+        """admin_turn handles list queries (dry-run then confirmed)."""
         result = admin_turn(
             "list packages",
             session_id="SES-test-list",
             turn_number=1,
             root=CONTROL_PLANE_ROOT
         )
-        assert "Package" in result or "Installed" in result
+        assert "Proposed Action" in result
+        assert "RUN:" in result
+
+        import re
+        token = re.search(r"RUN:([a-f0-9]{16})", result).group(1)
+        confirmed = admin_turn(
+            f"list packages RUN:{token}",
+            session_id="SES-test-list",
+            turn_number=2,
+            root=CONTROL_PLANE_ROOT
+        )
+        assert "Package" in confirmed or "Installed" in confirmed
 
     def test_status_query(self, tmp_path):
-        """admin_turn handles status queries."""
+        """admin_turn handles status queries (dry-run then confirmed)."""
         result = admin_turn(
             "check health",
             session_id="SES-test-health",
             turn_number=1,
             root=CONTROL_PLANE_ROOT
         )
-        assert "Health" in result or "PASS" in result or "FAIL" in result
+        assert "Proposed Action" in result
+        assert "RUN:" in result
+
+        import re
+        token = re.search(r"RUN:([a-f0-9]{16})", result).group(1)
+        confirmed = admin_turn(
+            f"check health RUN:{token}",
+            session_id="SES-test-health",
+            turn_number=2,
+            root=CONTROL_PLANE_ROOT
+        )
+        assert "Health" in confirmed or "PASS" in confirmed or "FAIL" in confirmed
 
     def test_general_query(self, tmp_path):
         """admin_turn handles general queries."""
@@ -232,16 +267,15 @@ class TestAdminAgentCapabilities:
         for write_pattern in caps.get("write", []):
             assert "session" in write_pattern.lower() or "ledger" in write_pattern.lower()
 
-        # Should have forbidden patterns
+        # Should have forbidden patterns (dangerous scripts)
         assert len(caps.get("forbidden", [])) > 0
-        assert "lib/*" in caps["forbidden"]
+        assert "scripts/package_install.py" in caps["forbidden"]
 
-    def test_lib_is_forbidden(self):
-        """lib/ paths are forbidden."""
+    def test_lib_is_readable(self):
+        """lib/*.py paths are readable for code explanation."""
         caps_path = CONTROL_PLANE_ROOT / "modules" / "admin_agent" / "capabilities.json"
         with open(caps_path) as f:
             caps = json.load(f)["capabilities"]
 
-        from modules.agent_runtime import CapabilityEnforcer
-        enforcer = CapabilityEnforcer(caps)
-        assert enforcer.is_forbidden("lib/anything.py")
+        # lib/*.py should be in read patterns
+        assert "lib/*.py" in caps.get("read", [])

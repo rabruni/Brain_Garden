@@ -2,6 +2,10 @@
 """
 Shared path utilities for Control Plane scripts.
 
+File discovery:
+    discover_workspace_files() consolidates rglob+filter patterns used
+    across pkgutil preflight/delta/stage commands.
+
 DEPRECATION NOTICE:
     The global singletons in this module (CONTROL_PLANE, REGISTRIES_DIR, etc.)
     are DEPRECATED. For multi-plane operation, use PlaneContext from lib/plane.py
@@ -18,6 +22,7 @@ DEPRECATION NOTICE:
 """
 from pathlib import Path
 from functools import lru_cache
+from typing import Dict, Optional, Set
 import warnings
 
 
@@ -119,3 +124,55 @@ LEDGER_DIR = CONTROL_PLANE / "ledger"
 
 GENERATED_DIR = CONTROL_PLANE / "generated"
 """DEPRECATED: Use plane.root / 'generated' instead."""
+
+
+# =============================================================================
+# File Discovery Constants & Helpers
+# =============================================================================
+
+PACKAGE_META_FILES: Set[str] = {"manifest.json", "signature.json", "checksums.sha256"}
+"""Standard package metadata files excluded from workspace discovery."""
+
+COMMON_EXCLUDE_PATTERNS: Set[str] = {"__pycache__", ".DS_Store"}
+"""Common directory/file patterns to exclude from file discovery."""
+
+INTEGRITY_EXCLUDE_PATTERNS: Set[str] = {
+    "__pycache__", ".git", ".pytest_cache", "node_modules", "__init__.py"
+}
+"""Exclusion patterns used by integrity checks (orphan detection)."""
+
+
+def discover_workspace_files(
+    root: Path,
+    exclude_names: Optional[Set[str]] = None,
+    exclude_patterns: Optional[Set[str]] = None,
+) -> Dict[str, Path]:
+    """Discover files in a workspace directory, returning {relative_path: absolute_path}.
+
+    Filters out directories and applies exclusions by file name and path pattern.
+
+    Args:
+        root: Root directory to scan
+        exclude_names: File names to skip (e.g., PACKAGE_META_FILES)
+        exclude_patterns: Path component patterns to skip (e.g., __pycache__)
+
+    Returns:
+        Dict mapping relative path strings to absolute Path objects
+    """
+    if exclude_names is None:
+        exclude_names = PACKAGE_META_FILES
+    if exclude_patterns is None:
+        exclude_patterns = COMMON_EXCLUDE_PATTERNS
+
+    workspace_files: Dict[str, Path] = {}
+    for file_path in root.rglob("*"):
+        if file_path.is_dir():
+            continue
+        if file_path.name in exclude_names:
+            continue
+        if exclude_patterns and any(pat in file_path.parts for pat in exclude_patterns):
+            continue
+        rel_path = file_path.relative_to(root)
+        workspace_files[str(rel_path)] = file_path
+
+    return workspace_files

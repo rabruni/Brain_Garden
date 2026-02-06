@@ -1,0 +1,64 @@
+{
+  "package_id": "PKG-DOCS-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "spec_id": "SPEC-DOC-001",
+  "plane_id": "ho3",
+  "package_type": "documentation",
+  "assets": [
+    {
+      "path": "docs/ADMIN_AGENT_SCRIPT_REF.md",
+      "sha256": "sha256:dc1febfbeb9bf4e0d3bd748122d87776d81bdf2f037da3e7f04375a06b4a0485",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/AGENT_OPERATIONS_GUIDE.md",
+      "sha256": "sha256:3c402ff47312c0597a986135367a19bd8a89619940953e9149002ca96b9a439b",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/CROSSCUTTING.md",
+      "sha256": "sha256:354d0341d6cc90fbeb2ad13b2299f586e89351c223abb9d5f9f24360b6be16bb",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/PROMPT_ROUTER.md",
+      "sha256": "sha256:9cc027ff735a7d5488a81f0178544735d81ce8520ef27d705afaae10494df8df",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/TODO_ADMIN_SEPARATION.md",
+      "sha256": "sha256:de5ddbcdfb9c5268b0e49c0b4947be7c9cf648f0c8c8cc7f51e6bb99dd5666f8",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/AGENT_ARCHITECTURE_SESSION_20260204.md",
+      "sha256": "sha256:53ca7c4abfe9aba8f1c1f206c75b219e5010f721f66e27e86a1fe93c0a09ff3e",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/AGENT_CLASSES_REFERENCE.md",
+      "sha256": "sha256:ad634bacd3797efd580c207538dda53f7feedcb3658fee4fbf864b388a746ddf",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/LLM_AGENT_PATTERNS.md",
+      "sha256": "sha256:4e136785104233e12d66423b510ed1c3870f92b0c6c9838494b0ac19ddd5c298",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/MEMORY_MODEL_HO_TIERS.md",
+      "sha256": "sha256:6c6250e71e5ada68138048d8fb8a5f2d2b1e51cf11fbd3700fb9e93bf4f237c1",
+      "classification": "documentation"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000"
+  ],
+  "metadata": {
+    "description": "Architecture documentation and guides",
+    "created_by": "remediate_orphans.py",
+    "created_at": "2026-02-06T01:06:30.403491+00:00"
+  },
+  "manifest_hash": "sha256:76631c197a926c62ecf5f6adbe9cd100056688511c11d91df824a84750c9094d"
+}

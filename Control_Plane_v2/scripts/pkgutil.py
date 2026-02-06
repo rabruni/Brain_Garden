@@ -140,17 +140,9 @@ def cmd_init_agent(args: argparse.Namespace) -> int:
     output_dir = Path(args.output) if args.output else STAGING_DIR / package_id
 
     # Validate framework exists
-    frameworks_reg = CONTROL_PLANE / "registries" / "frameworks_registry.csv"
-    if frameworks_reg.exists():
-        found = False
-        with open(frameworks_reg, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('framework_id') == framework_id:
-                    found = True
-                    break
-        if not found:
-            print(f"Warning: Framework '{framework_id}' not found in frameworks_registry", file=sys.stderr)
+    from lib.registry import framework_exists
+    if not framework_exists(framework_id):
+        print(f"Warning: Framework '{framework_id}' not found in frameworks_registry", file=sys.stderr)
 
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -474,20 +466,8 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         return 1
 
     # Build workspace files dict
-    workspace_files = {}
-    for file_path in src_path.rglob('*'):
-        if file_path.is_dir():
-            continue
-        if file_path.name in ('manifest.json', 'signature.json', 'checksums.sha256'):
-            continue
-        if '__pycache__' in str(file_path):
-            continue
-
-        rel_path = file_path.relative_to(src_path)
-        workspace_files[str(rel_path)] = file_path
-
-    # Update manifest assets with actual hashes
-    manifest = _update_manifest_assets(manifest, workspace_files, src_path)
+    from lib.paths import discover_workspace_files, PACKAGE_META_FILES
+    workspace_files = discover_workspace_files(src_path, exclude_names=PACKAGE_META_FILES)
 
     # Get environment settings
     allow_unsigned = os.getenv("CONTROL_PLANE_ALLOW_UNSIGNED", "0") == "1"
@@ -513,15 +493,21 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     return 0 if all_passed else 1
 
 
+def _compute_asset_hashes(workspace_files: Dict[str, Path]) -> Dict[str, str]:
+    """Compute SHA256 hashes for all workspace files."""
+    return {path: compute_sha256(fp) for path, fp in sorted(workspace_files.items())}
+
+
 def _update_manifest_assets(
     manifest: dict,
     workspace_files: Dict[str, Path],
     src_path: Path
 ) -> dict:
     """Update manifest assets with actual file hashes."""
+    hashes = _compute_asset_hashes(workspace_files)
     assets = []
-    for rel_path, file_path in sorted(workspace_files.items()):
-        sha = compute_sha256(file_path)
+    for rel_path in sorted(workspace_files):
+        sha = hashes[rel_path]
         # Determine classification from path
         classification = _classify_file(rel_path)
         assets.append({
@@ -556,6 +542,39 @@ def _classify_file(path: str) -> str:
         return "other"
 
 
+def _sync_manifest_hashes(
+    manifest: dict,
+    workspace_files: Dict[str, Path],
+    src_path: Path,
+) -> dict:
+    """Update hashes for declared assets. Warn about undeclared files.
+
+    Unlike _update_manifest_assets(), this preserves the user's asset list
+    and classifications — it only refreshes sha256 hashes for assets already
+    declared in the manifest, and warns about discrepancies.
+    """
+    assets = manifest.get("assets", [])
+    declared_paths = {a["path"] for a in assets}
+
+    # Pre-compute hashes for all workspace files
+    hashes = _compute_asset_hashes(workspace_files)
+
+    # Update hashes for declared assets
+    for asset in assets:
+        path = asset["path"]
+        if path in hashes:
+            asset["sha256"] = hashes[path]
+        else:
+            print(f"  Warning: declared asset '{path}' not found on disk", file=sys.stderr)
+
+    # Warn about undeclared files
+    for rel_path in sorted(workspace_files):
+        if rel_path not in declared_paths:
+            print(f"  Warning: '{rel_path}' on disk but not in manifest (skipped)", file=sys.stderr)
+
+    return manifest
+
+
 # =============================================================================
 # delta Command
 # =============================================================================
@@ -584,17 +603,11 @@ def cmd_delta(args: argparse.Namespace) -> int:
     manifest = json.loads(manifest_path.read_text())
 
     # Build workspace files
-    workspace_files = {}
-    for file_path in src_path.rglob('*'):
-        if file_path.is_dir():
-            continue
-        if file_path.name in ('manifest.json', 'signature.json', 'checksums.sha256', 'README.md'):
-            continue
-        if '__pycache__' in str(file_path):
-            continue
-
-        rel_path = file_path.relative_to(src_path)
-        workspace_files[str(rel_path)] = file_path
+    from lib.paths import discover_workspace_files, PACKAGE_META_FILES
+    workspace_files = discover_workspace_files(
+        src_path,
+        exclude_names=PACKAGE_META_FILES | {"README.md"},
+    )
 
     # Generate delta
     lines = []
@@ -657,24 +670,16 @@ def cmd_stage(args: argparse.Namespace) -> int:
 
     manifest = json.loads(manifest_path.read_text())
 
-    # Build workspace files
-    workspace_files = {}
-    for file_path in src_path.rglob('*'):
-        if file_path.is_dir():
-            continue
-        if file_path.name in ('signature.json', 'checksums.sha256'):
-            continue
-        if '__pycache__' in str(file_path):
-            continue
+    # Build workspace files (include manifest.json in staging archive)
+    from lib.paths import discover_workspace_files
+    workspace_files = discover_workspace_files(
+        src_path,
+        exclude_names={"signature.json", "checksums.sha256"},
+    )
 
-        rel_path = file_path.relative_to(src_path)
-        workspace_files[str(rel_path)] = file_path
-
-    # Update manifest with hashes
-    manifest = _update_manifest_assets(manifest, {
-        k: v for k, v in workspace_files.items()
-        if k != "manifest.json"
-    }, src_path)
+    # Sync manifest hashes (preserves user classifications)
+    non_meta_files = {k: v for k, v in workspace_files.items() if k != "manifest.json"}
+    manifest = _sync_manifest_hashes(manifest, non_meta_files, src_path)
 
     # Write updated manifest back
     manifest_path.write_text(json.dumps(manifest, indent=2))
@@ -782,29 +787,17 @@ def cmd_check_framework(args: argparse.Namespace) -> int:
         return 1
 
     # 2. Check framework is in registry
-    frameworks_reg = CONTROL_PLANE / "registries" / "frameworks_registry.csv"
-    if frameworks_reg.exists():
-        found = False
-        with open(frameworks_reg, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('framework_id') == framework_id:
-                    found = True
-                    break
-        if not found:
-            errors.append(f"REGISTRY_MISSING: {framework_id} not in frameworks_registry.csv")
-    else:
-        warnings.append("frameworks_registry.csv not found")
+    from lib.registry import framework_exists as _fw_exists, load_registry_as_dict
+    if not _fw_exists(framework_id):
+        errors.append(f"REGISTRY_MISSING: {framework_id} not in frameworks_registry.csv")
 
     # 3. Check specs that reference this framework
     specs_reg = CONTROL_PLANE / "registries" / "specs_registry.csv"
-    dependent_specs = []
-    if specs_reg.exists():
-        with open(specs_reg, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('framework_id') == framework_id:
-                    dependent_specs.append(row.get('spec_id'))
+    specs_dict = load_registry_as_dict(specs_reg, "spec_id")
+    dependent_specs = [
+        sid for sid, row in specs_dict.items()
+        if row.get("framework_id") == framework_id
+    ]
 
     # 4. Check spec manifest files exist for dependent specs
     specs_dir = CONTROL_PLANE / "specs"
@@ -923,14 +916,11 @@ def cmd_register_framework(args: argparse.Namespace) -> int:
         return 1
 
     # Check if already registered
+    from lib.registry import framework_exists as _fw_exists
     registry_path = CONTROL_PLANE / "registries" / "frameworks_registry.csv"
-    if registry_path.exists():
-        with open(registry_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('framework_id') == framework_id:
-                    print(f"Error: Framework '{framework_id}' already registered", file=sys.stderr)
-                    return 1
+    if _fw_exists(framework_id):
+        print(f"Error: Framework '{framework_id}' already registered", file=sys.stderr)
+        return 1
 
     # Parse framework file for metadata
     content = framework_file.read_text()
@@ -1068,14 +1058,11 @@ def cmd_register_spec(args: argparse.Namespace) -> int:
         return 1
 
     # Check if already registered
+    from lib.registry import spec_exists as _sp_exists
     registry_path = CONTROL_PLANE / "registries" / "specs_registry.csv"
-    if registry_path.exists():
-        with open(registry_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('spec_id') == spec_id:
-                    print(f"Error: Spec '{spec_id}' already registered", file=sys.stderr)
-                    return 1
+    if _sp_exists(spec_id):
+        print(f"Error: Spec '{spec_id}' already registered", file=sys.stderr)
+        return 1
 
     # Parse manifest.yaml
     try:
@@ -1105,17 +1092,8 @@ def cmd_register_spec(args: argparse.Namespace) -> int:
         print(f"Error: manifest.yaml missing required 'framework_id' field", file=sys.stderr)
         return 1
 
-    frameworks_registry = CONTROL_PLANE / "registries" / "frameworks_registry.csv"
-    framework_found = False
-    if frameworks_registry.exists():
-        with open(frameworks_registry, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('framework_id') == framework_id:
-                    framework_found = True
-                    break
-
-    if not framework_found:
+    from lib.registry import framework_exists as _fw_check
+    if not _fw_check(framework_id):
         print(f"Error: Framework '{framework_id}' not found in frameworks_registry.csv", file=sys.stderr)
         print(f"  Register the framework first: pkgutil register-framework {framework_id}", file=sys.stderr)
         return 1

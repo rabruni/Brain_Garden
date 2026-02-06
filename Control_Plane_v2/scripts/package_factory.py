@@ -94,13 +94,7 @@ class FactoryResult:
             self.errors.append(f"G{len(self.gates)}: {message}")
 
 
-def sha256_file(path: Path) -> str:
-    """Compute SHA-256 of file."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from lib.hashing import sha256_file  # canonical implementation
 
 
 def sign_package(digest: str, key: str) -> str:

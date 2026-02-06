@@ -72,6 +72,7 @@ class RouteResult:
     prompt_pack_id: Optional[str] = None
     reason: str = ""
     capabilities_used: List[str] = field(default_factory=list)
+    router_provider_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -82,26 +83,9 @@ class RouteResult:
             "prompt_pack_id": self.prompt_pack_id,
             "reason": self.reason,
             "capabilities_used": self.capabilities_used,
+            "router_provider_id": self.router_provider_id,
         }
 
-
-# Mapping from QueryType to handler names
-HANDLER_MAP: Dict[QueryType, str] = {
-    QueryType.LIST: "list_installed",
-    QueryType.EXPLAIN: "explain",
-    QueryType.STATUS: "check_health",
-    QueryType.INVENTORY: "inventory",
-    QueryType.VALIDATE: "validate_document",
-    QueryType.SUMMARIZE: "summarize",
-    QueryType.LEDGER: "show_ledger",
-    QueryType.PROMPTS: "show_prompts_used",  # Show governed prompt usage
-    QueryType.SESSION_LEDGER: "show_session_ledger",  # Show current session ledger
-    QueryType.READ_FILE: "read_file",
-    QueryType.LIST_FRAMEWORKS: "list_frameworks",
-    QueryType.LIST_SPECS: "list_specs",
-    QueryType.LIST_FILES: "list_files",
-    QueryType.GENERAL: "general",  # Conversational queries
-}
 
 # Mapping from QueryType to prompt pack IDs (for LLM-assisted)
 PROMPT_PACK_MAP: Dict[QueryType, str] = {
@@ -113,6 +97,9 @@ PROMPT_PACK_MAP: Dict[QueryType, str] = {
 
 # Query types that require LLM for full functionality
 LLM_REQUIRED_TYPES = {QueryType.VALIDATE, QueryType.SUMMARIZE}
+
+# Intents that require LLM-assisted mode regardless of confidence
+LLM_REQUIRED_INTENTS = {"validate", "summarize"}
 
 
 def _check_llm_capability(
@@ -195,8 +182,10 @@ def route_query(
     # Map intent to handler
     handler = INTENT_HANDLER_MAP.get(intent.intent, "general")
 
-    # Determine routing mode based on confidence
-    if intent.confidence >= 0.8:
+    # Determine routing mode
+    if intent.intent in LLM_REQUIRED_INTENTS:
+        mode = RouteMode.LLM_ASSISTED
+    elif intent.confidence >= 0.8:
         mode = RouteMode.TOOLS_FIRST
     else:
         mode = RouteMode.LLM_ASSISTED
@@ -222,6 +211,7 @@ def route_query(
         prompt_pack_id=prompt_pack_id,
         reason=intent.reasoning or "PC-C classification via PRM-ROUTER-001",
         capabilities_used=["llm_assisted.router"],
+        router_provider_id=intent.provider_id,
     )
 
 
@@ -244,5 +234,6 @@ def get_route_evidence(result: RouteResult) -> dict:
             "prompt_pack_id": result.prompt_pack_id,
             "capabilities_used": result.capabilities_used,
             "reason": result.reason,
+            "router_provider_id": result.router_provider_id,
         }
     }

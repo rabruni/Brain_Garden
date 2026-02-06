@@ -37,23 +37,6 @@ from lib.plane import get_current_plane, PlaneContext
 from lib.merkle import hash_file, merkle_root
 
 
-# Module-level state for plane-aware operation
-_plane: Optional[PlaneContext] = None
-_plane_root: Path = CONTROL_PLANE
-_registries_dir: Path = REGISTRIES_DIR
-
-
-def set_plane_context(plane: Optional[PlaneContext]) -> None:
-    """Set the plane context for all operations."""
-    global _plane, _plane_root, _registries_dir
-    _plane = plane
-    if plane is not None:
-        _plane_root = plane.root
-        _registries_dir = plane.root / "registries"
-    else:
-        _plane_root = CONTROL_PLANE
-        _registries_dir = REGISTRIES_DIR
-
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -79,6 +62,9 @@ ORPHAN_EXCLUSIONS = {
     "node_modules",
     "__init__.py",  # Allow init files without registration
 }
+
+# Frozen set for O(1) membership tests in path component checks
+_ORPHAN_EXCLUSIONS_FROZEN = frozenset(ORPHAN_EXCLUSIONS)
 
 
 # =============================================================================
@@ -110,341 +96,345 @@ class IntegrityResult:
 
 
 # =============================================================================
-# Registry Operations
+# IntegrityChecker Class
 # =============================================================================
 
-def read_control_plane_registry() -> Tuple[List[Dict[str, str]], List[str]]:
-    """Read control_plane_registry.csv and return rows + fieldnames."""
-    registry_path = _registries_dir / "control_plane_registry.csv"
-    if not registry_path.exists():
-        return [], []
+class IntegrityChecker:
+    """Encapsulates integrity check state and operations.
 
-    with open(registry_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        fieldnames = reader.fieldnames or []
-        rows = list(reader)
+    Replaces the former module-level global state (_plane_root, _registries_dir).
+    """
 
-    return rows, fieldnames
+    def __init__(self, plane: Optional[PlaneContext] = None):
+        if plane is not None:
+            self.root = plane.root
+        else:
+            self.root = CONTROL_PLANE
+        self.registries_dir = self.root / "registries"
 
+    # -----------------------------------------------------------------
+    # Registry I/O
+    # -----------------------------------------------------------------
 
-def write_control_plane_registry(rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
-    """Write control_plane_registry.csv with updated content."""
-    registry_path = _registries_dir / "control_plane_registry.csv"
+    def read_control_plane_registry(self) -> Tuple[List[Dict[str, str]], List[str]]:
+        """Read control_plane_registry.csv and return rows + fieldnames."""
+        registry_path = self.registries_dir / "control_plane_registry.csv"
+        if not registry_path.exists():
+            return [], []
 
-    with open(registry_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+        with open(registry_path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+            rows = list(reader)
 
+        return rows, fieldnames
 
-def get_registered_paths() -> Set[str]:
-    """Get all artifact_path values from control_plane_registry, including child registries."""
-    rows, _ = read_control_plane_registry()
-    paths = set()
+    def write_control_plane_registry(self, rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
+        """Write control_plane_registry.csv with updated content."""
+        registry_path = self.registries_dir / "control_plane_registry.csv"
 
-    def add_path(p: str):
-        if not p:
-            return
-        paths.add(p.lstrip("/"))
+        with open(registry_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
 
-    # Collect top-level artifact paths
-    for row in rows:
-        add_path(row.get("artifact_path", "").strip())
+    def get_registered_paths(self) -> Set[str]:
+        """Get all artifact_path values from control_plane_registry, including child registries."""
+        rows, _ = self.read_control_plane_registry()
+        paths = set()
 
-    # If a row points to a child registry (pack/shaper/etc.), include its entries
-    for row in rows:
-        etype = row.get("entity_type", "").strip().lower()
-        art = row.get("artifact_path", "").strip().lstrip("/")
-        if etype in {"pack", "registry"} and art.endswith("registry.csv"):
-            child_path = _plane_root / art
-            if child_path.is_file():
+        def add_path(p: str):
+            if not p:
+                return
+            paths.add(p.lstrip("/"))
+
+        for row in rows:
+            add_path(row.get("artifact_path", "").strip())
+
+        for row in rows:
+            etype = row.get("entity_type", "").strip().lower()
+            art = row.get("artifact_path", "").strip().lstrip("/")
+            if etype in {"pack", "registry"} and art.endswith("registry.csv"):
+                child_path = self.root / art
+                if child_path.is_file():
+                    try:
+                        with child_path.open(newline="", encoding="utf-8") as f:
+                            for crow in csv.DictReader(f):
+                                add_path(crow.get("artifact_path", "").strip())
+                    except Exception:
+                        continue
+
+        return paths
+
+    def read_specs_registry(self) -> List[Dict[str, str]]:
+        """Read specs_registry.csv and return rows."""
+        specs_path = self.registries_dir / "specs_registry.csv"
+        if not specs_path.exists():
+            return []
+
+        with open(specs_path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            return list(reader)
+
+    # -----------------------------------------------------------------
+    # Pass 1: Registry -> Filesystem
+    # -----------------------------------------------------------------
+
+    def _is_excluded(self, file_path: Path) -> bool:
+        """Check if any path component matches exclusion set (O(1) per component)."""
+        return bool(_ORPHAN_EXCLUSIONS_FROZEN.intersection(file_path.parts))
+
+    def verify_registry_hashes(self) -> IntegrityResult:
+        """Pass 1: For each registered artifact, verify file hash matches stored hash."""
+        result = IntegrityResult()
+        rows, _ = self.read_control_plane_registry()
+        all_hashes = []
+
+        for row in rows:
+            item_id = row.get("id", "")
+            artifact_path = row.get("artifact_path", "").strip()
+            stored_hash = row.get("content_hash", "").strip()
+
+            if not artifact_path:
+                continue
+
+            full_path = self.root / artifact_path.lstrip("/")
+
+            if not full_path.exists():
+                result.missing.append((item_id, artifact_path))
+                continue
+
+            if full_path.is_dir():
+                dir_hashes = []
+                for file_path in sorted(full_path.rglob("*")):
+                    if file_path.is_file() and not self._is_excluded(file_path):
+                        try:
+                            dir_hashes.append(hash_file(file_path))
+                        except (PermissionError, OSError):
+                            pass
+                actual_hash = merkle_root(dir_hashes) if dir_hashes else ""
+            else:
                 try:
-                    with child_path.open(newline="", encoding="utf-8") as f:
-                        for crow in csv.DictReader(f):
-                            add_path(crow.get("artifact_path", "").strip())
-                except Exception:
+                    actual_hash = hash_file(full_path)
+                except (PermissionError, OSError) as e:
+                    result.missing.append((item_id, f"{artifact_path} (error: {e})"))
                     continue
 
-    return paths
+            if actual_hash:
+                all_hashes.append(actual_hash)
 
+            if not stored_hash:
+                result.no_hash.append(item_id)
+                continue
+
+            if actual_hash.lower() == stored_hash.lower():
+                result.valid.append(item_id)
+            else:
+                result.invalid.append((item_id, stored_hash, actual_hash))
+
+        result.merkle_root = merkle_root(sorted(all_hashes))
+        return result
+
+    # -----------------------------------------------------------------
+    # Pass 2: Filesystem -> Registry
+    # -----------------------------------------------------------------
+
+    def find_orphans(self) -> List[str]:
+        """Pass 2: Scan artifact directories for files not in any registry."""
+        registered_paths = self.get_registered_paths()
+        orphans = []
+
+        for dir_name in ARTIFACT_DIRS:
+            dir_path = self.root / dir_name
+            if not dir_path.exists():
+                continue
+
+            for file_path in dir_path.rglob("*"):
+                if self._is_excluded(file_path):
+                    continue
+                if file_path.is_dir():
+                    continue
+                if file_path.suffix.lower() not in ARTIFACT_EXTENSIONS:
+                    continue
+
+                rel_path = str(file_path.relative_to(self.root))
+                if rel_path not in registered_paths and f"/{rel_path}" not in registered_paths:
+                    orphans.append(rel_path)
+
+        return sorted(orphans)
+
+    # -----------------------------------------------------------------
+    # Pass 3: Chain Link Validation
+    # -----------------------------------------------------------------
+
+    def verify_chain_links(self) -> List[Tuple[str, str, str]]:
+        """Pass 3: Verify all structural links in the artifact chain."""
+        errors = []
+
+        artifacts, _ = self.read_control_plane_registry()
+        specs = self.read_specs_registry()
+
+        artifacts_by_id = {row['id']: row for row in artifacts}
+        specs_by_id = {row.get('spec_id', row.get('id', '')): row for row in specs}
+
+        # 1. Verify artifact -> spec links
+        for row in artifacts:
+            item_id = row.get('id', '')
+            source_spec = row.get('source_spec_id', '').strip()
+
+            if source_spec:
+                if source_spec not in specs_by_id:
+                    errors.append((item_id, 'source_spec_id', source_spec))
+                else:
+                    spec = specs_by_id[source_spec]
+                    spec_id_val = spec.get('spec_id', spec.get('id', ''))
+                    spec_path = self.root / "specs" / spec_id_val / "manifest.yaml"
+                    if not spec_path.exists():
+                        alt_path = self.root / "specs" / f"{spec_id_val}.yaml"
+                        if not alt_path.exists():
+                            errors.append((item_id, 'source_spec_path', str(spec_path)))
+
+        # 2. Verify spec -> framework links
+        for spec in specs:
+            spec_id = spec.get('spec_id', spec.get('id', ''))
+            complies_with = spec.get('framework_id', spec.get('complies_with', '')).strip()
+
+            if complies_with:
+                for fmwk_id in complies_with.split(','):
+                    fmwk_id = fmwk_id.strip()
+                    if fmwk_id:
+                        if fmwk_id not in artifacts_by_id:
+                            errors.append((spec_id, 'complies_with', fmwk_id))
+                        else:
+                            fmwk = artifacts_by_id[fmwk_id]
+                            fmwk_path = self.root / fmwk.get('artifact_path', '').lstrip('/')
+                            if not fmwk_path.exists():
+                                errors.append((spec_id, 'framework_path', str(fmwk_path)))
+
+            # 3. Verify spec -> artifacts_created links
+            created = spec.get('artifacts_created', '').strip()
+            if created:
+                for art_id in created.split(','):
+                    art_id = art_id.strip()
+                    if art_id and art_id not in artifacts_by_id:
+                        errors.append((spec_id, 'artifacts_created', art_id))
+
+        # 4. Verify framework -> framework links (dependencies)
+        for row in artifacts:
+            if row.get('entity_type') != 'framework':
+                continue
+
+            item_id = row.get('id', '')
+            deps = row.get('dependencies', '').strip()
+
+            if deps:
+                for dep_id in deps.split(','):
+                    dep_id = dep_id.strip().strip('"')
+                    if dep_id.startswith('FMWK-'):
+                        if dep_id not in artifacts_by_id:
+                            errors.append((item_id, 'dependency', dep_id))
+
+        return errors
+
+    # -----------------------------------------------------------------
+    # Hash Update
+    # -----------------------------------------------------------------
+
+    def update_registry_hashes(self) -> int:
+        """Update content_hash column in control_plane_registry.csv."""
+        rows, fieldnames = self.read_control_plane_registry()
+
+        if "content_hash" not in fieldnames:
+            if "config" in fieldnames:
+                idx = fieldnames.index("config")
+                fieldnames.insert(idx, "content_hash")
+            else:
+                fieldnames.append("content_hash")
+
+        updated_count = 0
+
+        for row in rows:
+            artifact_path = row.get("artifact_path", "").strip()
+            if not artifact_path:
+                row["content_hash"] = ""
+                continue
+
+            full_path = self.root / artifact_path.lstrip("/")
+
+            if not full_path.exists():
+                row["content_hash"] = ""
+                continue
+
+            if full_path.is_dir():
+                dir_hashes = []
+                for file_path in sorted(full_path.rglob("*")):
+                    if file_path.is_file() and not self._is_excluded(file_path):
+                        try:
+                            dir_hashes.append(hash_file(file_path))
+                        except (PermissionError, OSError):
+                            pass
+                new_hash = merkle_root(dir_hashes) if dir_hashes else ""
+            else:
+                try:
+                    new_hash = hash_file(full_path)
+                except (PermissionError, OSError):
+                    new_hash = ""
+
+            old_hash = row.get("content_hash", "")
+            if new_hash != old_hash:
+                updated_count += 1
+
+            row["content_hash"] = new_hash
+
+        self.write_control_plane_registry(rows, fieldnames)
+        return updated_count
+
+
+# =============================================================================
+# Backward-Compatible Module-Level Functions
+# =============================================================================
+
+# Module-level state for backward compatibility
+_checker: Optional[IntegrityChecker] = None
+
+
+def set_plane_context(plane: Optional[PlaneContext]) -> None:
+    """Set the plane context for all module-level operations."""
+    global _checker
+    _checker = IntegrityChecker(plane)
+
+
+def _get_checker() -> IntegrityChecker:
+    """Get the current IntegrityChecker instance."""
+    global _checker
+    if _checker is None:
+        _checker = IntegrityChecker()
+    return _checker
+
+
+def read_control_plane_registry() -> Tuple[List[Dict[str, str]], List[str]]:
+    return _get_checker().read_control_plane_registry()
+
+def write_control_plane_registry(rows: List[Dict[str, str]], fieldnames: List[str]) -> None:
+    _get_checker().write_control_plane_registry(rows, fieldnames)
+
+def get_registered_paths() -> Set[str]:
+    return _get_checker().get_registered_paths()
 
 def read_specs_registry() -> List[Dict[str, str]]:
-    """Read specs_registry.csv and return rows."""
-    specs_path = _registries_dir / "specs_registry.csv"
-    if not specs_path.exists():
-        return []
-
-    with open(specs_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        return list(reader)
-
-
-# =============================================================================
-# Pass 1: Registry -> Filesystem
-# =============================================================================
+    return _get_checker().read_specs_registry()
 
 def verify_registry_hashes() -> IntegrityResult:
-    """
-    Pass 1: For each registered artifact, verify file hash matches stored hash.
-
-    Returns:
-        IntegrityResult with valid, invalid, missing, and no_hash lists
-    """
-    result = IntegrityResult()
-    rows, _ = read_control_plane_registry()
-    all_hashes = []
-
-    for row in rows:
-        item_id = row.get("id", "")
-        artifact_path = row.get("artifact_path", "").strip()
-        stored_hash = row.get("content_hash", "").strip()
-
-        if not artifact_path:
-            continue
-
-        # Resolve full path
-        full_path = _plane_root / artifact_path.lstrip("/")
-
-        # Check if file exists
-        if not full_path.exists():
-            result.missing.append((item_id, artifact_path))
-            continue
-
-        # Handle directory artifacts (modules)
-        if full_path.is_dir():
-            # For directories, we hash the concatenation of all file hashes
-            dir_hashes = []
-            for file_path in sorted(full_path.rglob("*")):
-                if file_path.is_file() and not any(ex in str(file_path) for ex in ORPHAN_EXCLUSIONS):
-                    try:
-                        dir_hashes.append(hash_file(file_path))
-                    except (PermissionError, OSError):
-                        pass
-            actual_hash = merkle_root(dir_hashes) if dir_hashes else ""
-        else:
-            # Compute actual hash
-            try:
-                actual_hash = hash_file(full_path)
-            except (PermissionError, OSError) as e:
-                result.missing.append((item_id, f"{artifact_path} (error: {e})"))
-                continue
-
-        # Collect hash for Merkle root
-        if actual_hash:
-            all_hashes.append(actual_hash)
-
-        # Check if stored hash exists
-        if not stored_hash:
-            result.no_hash.append(item_id)
-            continue
-
-        # Verify hash matches
-        if actual_hash.lower() == stored_hash.lower():
-            result.valid.append(item_id)
-        else:
-            result.invalid.append((item_id, stored_hash, actual_hash))
-
-    # Compute overall Merkle root
-    result.merkle_root = merkle_root(sorted(all_hashes))
-
-    return result
-
-
-# =============================================================================
-# Pass 2: Filesystem -> Registry
-# =============================================================================
+    return _get_checker().verify_registry_hashes()
 
 def find_orphans() -> List[str]:
-    """
-    Pass 2: Scan artifact directories for files not in any registry.
-
-    Returns:
-        List of orphaned file paths (relative to plane root)
-    """
-    registered_paths = get_registered_paths()
-    orphans = []
-
-    for dir_name in ARTIFACT_DIRS:
-        dir_path = _plane_root / dir_name
-        if not dir_path.exists():
-            continue
-
-        for file_path in dir_path.rglob("*"):
-            # Skip excluded items
-            if any(ex in file_path.parts for ex in ORPHAN_EXCLUSIONS):
-                continue
-
-            # Skip directories
-            if file_path.is_dir():
-                continue
-
-            # Skip non-artifact extensions
-            if file_path.suffix.lower() not in ARTIFACT_EXTENSIONS:
-                continue
-
-            # Check if registered
-            rel_path = str(file_path.relative_to(_plane_root))
-            if rel_path not in registered_paths and f"/{rel_path}" not in registered_paths:
-                orphans.append(rel_path)
-
-    return sorted(orphans)
-
-
-# =============================================================================
-# Pass 3: Chain Link Validation
-# =============================================================================
+    return _get_checker().find_orphans()
 
 def verify_chain_links() -> List[Tuple[str, str, str]]:
-    """
-    Pass 3: Verify all structural links in the artifact chain.
-
-    Validates:
-    - Artifact -> Spec (source_spec_id)
-    - Spec -> Framework (complies_with)
-    - Framework -> Framework (dependencies)
-    - All linked paths exist on disk
-
-    Returns:
-        List of (id, link_type, broken_target) tuples for broken links
-    """
-    errors = []
-
-    # Load registries once
-    artifacts, _ = read_control_plane_registry()
-    specs = read_specs_registry()
-
-    # Build lookup dicts (O(1) lookups)
-    artifacts_by_id = {row['id']: row for row in artifacts}
-    # specs_registry uses 'spec_id' field, not 'id'
-    specs_by_id = {row.get('spec_id', row.get('id', '')): row for row in specs}
-
-    # 1. Verify artifact -> spec links
-    for row in artifacts:
-        item_id = row.get('id', '')
-        source_spec = row.get('source_spec_id', '').strip()
-
-        if source_spec:
-            # Check spec exists in specs_registry
-            if source_spec not in specs_by_id:
-                errors.append((item_id, 'source_spec_id', source_spec))
-            else:
-                # Check spec directory exists on disk (specs are directories, not files)
-                spec = specs_by_id[source_spec]
-                spec_id_val = spec.get('spec_id', spec.get('id', ''))
-                spec_path = _plane_root / "specs" / spec_id_val / "manifest.yaml"
-                if not spec_path.exists():
-                    # Also check if it's an old-style spec (just YAML file)
-                    alt_path = _plane_root / "specs" / f"{spec_id_val}.yaml"
-                    if not alt_path.exists():
-                        errors.append((item_id, 'source_spec_path', str(spec_path)))
-
-    # 2. Verify spec -> framework links
-    for spec in specs:
-        spec_id = spec.get('spec_id', spec.get('id', ''))
-        # specs_registry uses 'framework_id', not 'complies_with'
-        complies_with = spec.get('framework_id', spec.get('complies_with', '')).strip()
-
-        if complies_with:
-            for fmwk_id in complies_with.split(','):
-                fmwk_id = fmwk_id.strip()
-                if fmwk_id:
-                    # Check framework exists in control_plane_registry
-                    if fmwk_id not in artifacts_by_id:
-                        errors.append((spec_id, 'complies_with', fmwk_id))
-                    else:
-                        # Check framework path exists on disk
-                        fmwk = artifacts_by_id[fmwk_id]
-                        fmwk_path = _plane_root / fmwk.get('artifact_path', '').lstrip('/')
-                        if not fmwk_path.exists():
-                            errors.append((spec_id, 'framework_path', str(fmwk_path)))
-
-        # 3. Verify spec -> artifacts_created links
-        created = spec.get('artifacts_created', '').strip()
-        if created:
-            for art_id in created.split(','):
-                art_id = art_id.strip()
-                if art_id and art_id not in artifacts_by_id:
-                    errors.append((spec_id, 'artifacts_created', art_id))
-
-    # 4. Verify framework -> framework links (dependencies)
-    for row in artifacts:
-        if row.get('entity_type') != 'framework':
-            continue
-
-        item_id = row.get('id', '')
-        deps = row.get('dependencies', '').strip()
-
-        if deps:
-            for dep_id in deps.split(','):
-                dep_id = dep_id.strip().strip('"')
-                # Only check framework dependencies (skip LIB-*, etc.)
-                if dep_id.startswith('FMWK-'):
-                    if dep_id not in artifacts_by_id:
-                        errors.append((item_id, 'dependency', dep_id))
-
-    return errors
-
-
-# =============================================================================
-# Hash Update
-# =============================================================================
+    return _get_checker().verify_chain_links()
 
 def update_registry_hashes() -> int:
-    """
-    Update content_hash column in control_plane_registry.csv.
-
-    Returns:
-        Number of hashes updated
-    """
-    rows, fieldnames = read_control_plane_registry()
-
-    # Ensure content_hash column exists
-    if "content_hash" not in fieldnames:
-        # Insert before 'config' if it exists, otherwise at end
-        if "config" in fieldnames:
-            idx = fieldnames.index("config")
-            fieldnames.insert(idx, "content_hash")
-        else:
-            fieldnames.append("content_hash")
-
-    updated_count = 0
-
-    for row in rows:
-        artifact_path = row.get("artifact_path", "").strip()
-        if not artifact_path:
-            row["content_hash"] = ""
-            continue
-
-        full_path = _plane_root / artifact_path.lstrip("/")
-
-        if not full_path.exists():
-            row["content_hash"] = ""
-            continue
-
-        # Handle directory artifacts
-        if full_path.is_dir():
-            dir_hashes = []
-            for file_path in sorted(full_path.rglob("*")):
-                if file_path.is_file() and not any(ex in str(file_path) for ex in ORPHAN_EXCLUSIONS):
-                    try:
-                        dir_hashes.append(hash_file(file_path))
-                    except (PermissionError, OSError):
-                        pass
-            new_hash = merkle_root(dir_hashes) if dir_hashes else ""
-        else:
-            try:
-                new_hash = hash_file(full_path)
-            except (PermissionError, OSError):
-                new_hash = ""
-
-        old_hash = row.get("content_hash", "")
-        if new_hash != old_hash:
-            updated_count += 1
-
-        row["content_hash"] = new_hash
-
-    write_control_plane_registry(rows, fieldnames)
-    return updated_count
+    return _get_checker().update_registry_hashes()
 
 
 # =============================================================================
@@ -582,6 +572,9 @@ def main():
     # Set plane context
     plane_root = args.root.resolve() if args.root else None
     plane = get_current_plane(plane_root)
+    checker = IntegrityChecker(plane)
+
+    # Also set module-level state for backward compat
     set_plane_context(plane)
 
     # Default to --verify if no action specified
@@ -593,7 +586,7 @@ def main():
     try:
         # Update hashes if requested
         if args.update_hashes:
-            updated = update_registry_hashes()
+            updated = checker.update_registry_hashes()
             if not args.json:
                 print(f"Updated {updated} content hashes in registry.")
             return 0
@@ -603,13 +596,13 @@ def main():
         orphans = []
 
         if args.verify:
-            result = verify_registry_hashes()
+            result = checker.verify_registry_hashes()
 
         if args.orphans:
-            orphans = find_orphans()
+            orphans = checker.find_orphans()
 
         if args.chain:
-            result.chain_errors = verify_chain_links()
+            result.chain_errors = checker.verify_chain_links()
 
         # Output
         if args.json:

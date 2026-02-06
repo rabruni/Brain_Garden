@@ -1,0 +1,52 @@
+{
+  "package_id": "PKG-DOCS-001",
+  "origin": "INSTALLER",
+  "package_type": "documentation",
+  "plane_id": "ho3",
+  "installed_at": "2026-02-06T01:06:33.060762+00:00",
+  "manifest_hash": "sha256:6bfcb921005987a0453ea0d95ceddc9686a211cfdc235905b9e6e3e02eee72b0",
+  "archive_hash": "sha256:c50b365f4afde6981abd9af7c443586ac62a5d74aeaaa3fe00446204a0203f84",
+  "assets_count": 9,
+  "work_order_id": null,
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "receipt_version": "1.0",
+  "files": [
+    {
+      "path": "docs/PROMPT_ROUTER.md",
+      "sha256": "sha256:9cc027ff735a7d5488a81f0178544735d81ce8520ef27d705afaae10494df8df"
+    },
+    {
+      "path": "docs/CROSSCUTTING.md",
+      "sha256": "sha256:354d0341d6cc90fbeb2ad13b2299f586e89351c223abb9d5f9f24360b6be16bb"
+    },
+    {
+      "path": "docs/TODO_ADMIN_SEPARATION.md",
+      "sha256": "sha256:de5ddbcdfb9c5268b0e49c0b4947be7c9cf648f0c8c8cc7f51e6bb99dd5666f8"
+    },
+    {
+      "path": "docs/AGENT_OPERATIONS_GUIDE.md",
+      "sha256": "sha256:3c402ff47312c0597a986135367a19bd8a89619940953e9149002ca96b9a439b"
+    },
+    {
+      "path": "docs/ADMIN_AGENT_SCRIPT_REF.md",
+      "sha256": "sha256:ae83d246fc301d21cbd08d98cb8462afbb8a7b4fc50fd7af79c95373b97c32e6"
+    },
+    {
+      "path": "docs/notes/LLM_AGENT_PATTERNS.md",
+      "sha256": "sha256:4e136785104233e12d66423b510ed1c3870f92b0c6c9838494b0ac19ddd5c298"
+    },
+    {
+      "path": "docs/notes/AGENT_CLASSES_REFERENCE.md",
+      "sha256": "sha256:ad634bacd3797efd580c207538dda53f7feedcb3658fee4fbf864b388a746ddf"
+    },
+    {
+      "path": "docs/notes/MEMORY_MODEL_HO_TIERS.md",
+      "sha256": "sha256:6c6250e71e5ada68138048d8fb8a5f2d2b1e51cf11fbd3700fb9e93bf4f237c1"
+    },
+    {
+      "path": "docs/notes/AGENT_ARCHITECTURE_SESSION_20260204.md",
+      "sha256": "sha256:53ca7c4abfe9aba8f1c1f206c75b219e5010f721f66e27e86a1fe93c0a09ff3e"
+    }
+  ]
+}

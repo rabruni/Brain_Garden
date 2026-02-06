@@ -17,6 +17,7 @@ import json
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -403,13 +404,23 @@ def admin_turn(
 
     # Route decision tracking for evidence
     route_evidence = {}
+    handler_executed = {}
 
     # Create ledger writer for session entries
     writer = LedgerWriter(session)
 
     try:
-        # Write query entry BEFORE execution
+        # Write query entry BEFORE execution (original query for audit trail)
         writer.write_query(turn_number=turn_number, content=user_query)
+
+        # Extract authorization signals from the original query
+        from modules.admin_agent.handlers.confirmation import (
+            extract_confirmation, extract_a0_execute,
+        )
+        # 1. Strip A0 + EXECUTE signals (same-turn authorization)
+        clean_query, a0_execute = extract_a0_execute(user_query)
+        # 2. Strip RUN:<hex16> token (two-turn authorization)
+        clean_query, confirmation_id = extract_confirmation(clean_query)
 
         # Execute in sandbox
         with TurnSandbox(session_id, declared_outputs, root=root):
@@ -422,71 +433,91 @@ def admin_turn(
                 # Load capabilities
                 capabilities = _load_capabilities()
 
-                # Route the query
-                route_result = route_query(user_query, capabilities=capabilities)
+                # Route using clean query (without RUN: token)
+                route_result = route_query(clean_query, capabilities=capabilities)
+
+                # Track what handler actually ran
+                handler_executed = {
+                    "handler": route_result.handler,
+                    "mode": route_result.mode.value,
+                    "executed": False,
+                    "confirmation_id": confirmation_id,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+
+                # Capture route evidence early (before handler may throw)
                 route_evidence = get_route_evidence(route_result)
 
                 # Handle based on mode
                 if route_result.mode == RouteMode.DENIED:
+                    handler_executed["authorization"] = "none"
                     result = f"Query denied: {route_result.reason}"
-                elif route_result.mode == RouteMode.LLM_ASSISTED:
-                    # Use LLM-assisted handler
-                    handler = get_handler(route_result.handler, RouteMode.LLM_ASSISTED)
-                    if handler:
-                        context = {
-                            "query": user_query,
-                            "session": session,
-                            "prompt_pack_id": route_result.prompt_pack_id,
-                            **route_result.classification.extracted_args,
-                        }
-                        result = handler(agent, context)
-                    else:
-                        # Fallback to tools-first
-                        handler = get_handler(route_result.handler, RouteMode.TOOLS_FIRST)
-                        if handler:
-                            context = {
-                                "query": user_query,
-                                "session": session,
-                                **route_result.classification.extracted_args,
-                            }
-                            result = handler(agent, context)
-                        else:
-                            result = f"No handler found for: {route_result.handler}"
                 else:
-                    # Tools-first mode
-                    handler = get_handler(route_result.handler, RouteMode.TOOLS_FIRST)
-                    if handler:
-                        context = {
-                            "query": user_query,
-                            "session": session,
-                            **route_result.classification.extracted_args,
-                        }
-                        result = handler(agent, context)
-                    else:
-                        result = f"No handler found for: {route_result.handler}"
-            else:
-                # Legacy classification (for backwards compatibility)
-                query_type = _classify_query(user_query)
+                    # Get handler for the returned mode — no cross-mode fallback
+                    use_llm = (route_result.mode == RouteMode.LLM_ASSISTED)
+                    handler = get_handler(route_result.handler, route_result.mode)
 
-                if query_type == "explain":
-                    artifact_id = _extract_artifact_id(user_query)
-                    result = agent.explain(artifact_id)
-                elif query_type == "list":
-                    result = agent.list_installed()
-                elif query_type == "status":
-                    result = agent.check_health()
-                elif query_type == "inventory":
-                    trace_result = agent._run_trace("--inventory")
-                    if "error" in trace_result:
-                        result = f"Error: {trace_result['error']}"
+                    if handler:
+                        context = {
+                            "query": clean_query,
+                            "session": session,
+                            **route_result.classification.extracted_args,
+                        }
+                        if confirmation_id:
+                            context["confirmation_id"] = confirmation_id
+                        if a0_execute:
+                            context["a0_execute"] = True
+                        if use_llm:
+                            context["prompt_pack_id"] = route_result.prompt_pack_id
+                        result = handler(agent, context)
+                        handler_executed["executed"] = True
+                        handler_executed["mode"] = route_result.mode.value
+                        # Capture confirmation_id injected by a0_execute path
+                        if not confirmation_id and context.get("confirmation_id"):
+                            handler_executed["confirmation_id"] = context["confirmation_id"]
+
+                        # Determine authorization method for evidence
+                        if use_llm:
+                            handler_executed["authorization"] = "capability"
+                        elif confirmation_id:
+                            handler_executed["authorization"] = "run_token"
+                        elif a0_execute:
+                            handler_executed["authorization"] = "a0_execute"
+                        else:
+                            handler_executed["authorization"] = "dry_run"
                     else:
-                        health = trace_result.get("health", "unknown")
-                        total = trace_result.get("total_files", 0)
-                        orphans = trace_result.get("orphans", 0)
-                        result = f"# Inventory\n\n**Health:** {health}\n**Total files:** {total}\n**Orphans:** {orphans}"
-                else:
-                    artifact_id = _extract_artifact_id(user_query)
-                    result = agent.explain(artifact_id)
+                        # Handler not found — fail closed, record denial
+                        denied_reason = (
+                            f"Handler '{route_result.handler}' not found "
+                            f"in {route_result.mode.value} mode"
+                        )
+                        route_result.mode = RouteMode.DENIED
+                        route_result.reason = denied_reason
+                        handler_executed["mode"] = "denied"
+                        handler_executed["authorization"] = "none"
+                        result = (
+                            f"Error: handler '{route_result.handler}' not found. "
+                            f"No fallback — router decision is authoritative."
+                        )
+
+                # Re-capture route evidence if mode was mutated to DENIED
+                if route_result.mode == RouteMode.DENIED:
+                    route_evidence = get_route_evidence(route_result)
+            else:
+                # Legacy dispatch path — denied by default.
+                # All queries must go through route_query() for authorization.
+                result = (
+                    "Error: Legacy dispatch (use_router=False) is disabled. "
+                    "All queries must be routed through route_query()."
+                )
+                handler_executed = {
+                    "handler": "legacy",
+                    "mode": "denied",
+                    "executed": False,
+                    "confirmation_id": None,
+                    "authorization": "none",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
 
         # Write response entry AFTER execution
         writer.write_response(
@@ -495,7 +526,7 @@ def admin_turn(
             status="ok",
         )
 
-        # Write evidence entry with route decision
+        # Write evidence entry with route decision and handler execution
         evidence_entry = {
             "declared_reads": [],
             "declared_writes": [],
@@ -503,6 +534,8 @@ def admin_turn(
         }
         if route_evidence:
             evidence_entry["route_decision"] = route_evidence.get("route_decision", {})
+        if handler_executed:
+            evidence_entry["handler_executed"] = handler_executed
 
         writer.write_turn(
             turn_number=turn_number,
@@ -525,7 +558,22 @@ def admin_turn(
             status="error",
         )
 
-        # Write evidence entry with error
+        # Build error evidence preserving any route/handler context
+        # gathered before the exception occurred
+        error_evidence = {
+            "declared_reads": [],
+            "declared_writes": [],
+            "external_calls": [],
+            "error": str(e),
+        }
+        if route_evidence:
+            error_evidence["route_decision"] = route_evidence.get(
+                "route_decision", {}
+            )
+        if handler_executed:
+            error_evidence["handler_executed"] = handler_executed
+
+        # Write evidence entry with error + preserved context
         writer.write_turn(
             turn_number=turn_number,
             exec_entry={
@@ -533,12 +581,7 @@ def admin_turn(
                 "result_hash": hash_json({"error": str(e)}),
                 "status": "error",
             },
-            evidence_entry={
-                "declared_reads": [],
-                "declared_writes": [],
-                "external_calls": [],
-                "error": str(e),
-            },
+            evidence_entry=error_evidence,
         )
         return error_result
 

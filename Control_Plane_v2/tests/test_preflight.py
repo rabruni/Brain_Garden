@@ -401,6 +401,8 @@ class TestPreflightValidator:
 
         manifest = {
             "package_id": "PKG-TEST-001",
+            "schema_version": "1.2",
+            "version": "1.0.0",
             "assets": [
                 {"path": "lib/test.py", "sha256": compute_sha256(test_file), "classification": "library"}
             ],

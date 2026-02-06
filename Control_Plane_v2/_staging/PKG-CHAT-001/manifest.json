@@ -1,0 +1,153 @@
+{
+  "package_id": "PKG-CHAT-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "spec_id": "SPEC-CHAT-001",
+  "plane_id": "ho3",
+  "package_type": "module",
+  "assets": [
+    {
+      "path": "frameworks/FMWK-CHAT-001_chat_interface_governance.md",
+      "sha256": "sha256:b14e8e71b9905528382bd46c8992506e68add2eaec6c911082564ffc9826c422",
+      "classification": "framework"
+    },
+    {
+      "path": "modules/chat_interface/__init__.py",
+      "sha256": "sha256:3857d90cb28a2124ab98817bbae15b5458074192bb76d323dba44d77199b579d",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/__main__.py",
+      "sha256": "sha256:e4950f2e1320364d67c5a4d98242c1e9c71f682b3b52ec21166215d87cbe0fc9",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/classifier.py",
+      "sha256": "sha256:7245cf6216c3ea13b3be80fc7823d53afacdb1c1e4d6894f840b48bd2b1b12ee",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/__init__.py",
+      "sha256": "sha256:546bfef9d8b87a8d3f7f17bf13949723821cb5c0179843283ebc1380b0b9a57a",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/browse.py",
+      "sha256": "sha256:744762022b57f69a62e783b2477563ca0ce54626b04560884d0e5283afca58b0",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/help.py",
+      "sha256": "sha256:36dbde435fc7e65021d9abc58dc58ae7a2fff606cb6332bffe2e247833638f24",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/ledger.py",
+      "sha256": "sha256:3099f625f59e8d04a49039f08cdb80ddd3f1a7f33879fce17b7e4c66999a70f4",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/packages.py",
+      "sha256": "sha256:728b9e7cd3f0bcb995994d06ba85c490eb04453cbf9842b1124f8bb1aecd76e6",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/search.py",
+      "sha256": "sha256:91871f2d9d944fd9bf6fdfbe5051442219693ed16399a666ae59107f4947820a",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/registry.py",
+      "sha256": "sha256:a203f3be43548fde885a0716bb785451cd652723a6b42b32e336b1f6785e38e5",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/session.py",
+      "sha256": "sha256:3ec96228902d1af57ee5207acebdcfbb639754b6a3cfee97ed0f43c4b09a571a",
+      "classification": "module"
+    },
+    {
+      "path": "schemas/chat_request.json",
+      "sha256": "sha256:49c4ca03b576ac09149c781de0cb5c9697e9f63d8db5dbb0f16d5a7052e4d004",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/chat_response.json",
+      "sha256": "sha256:516862103bfbe8053e0b48e9672b0ef5588667fdeca9335d08f2b006903ba9d0",
+      "classification": "schema"
+    },
+    {
+      "path": "scripts/chat.py",
+      "sha256": "sha256:1377edb7faaf650032ad6f4cca610351de0ce3c863985a4f9c2c5c5cf7963d4d",
+      "classification": "script"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/00_overview.md",
+      "sha256": "sha256:f51d7e7989cf93ad8aef996ac52e8e18e90b2aff370e503b1bc758d34004b2a9",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/01_problem.md",
+      "sha256": "sha256:f698cfeb03e8dd31810067078125a067e15864f30dbf253cdbe4a0b5073e6ff5",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/02_solution.md",
+      "sha256": "sha256:cf6d4579e658a05bf79919c3b1f1d375a043e2b0e871601d687d2ff0fa773ff4",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/03_requirements.md",
+      "sha256": "sha256:c781b815de5027b01f0e70be267f8f43e931849b5e7f75a8305ed6a3e6516c1b",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/04_design.md",
+      "sha256": "sha256:b8c743254c65a44e290d2371ed53cfe0e71ab91872e824321661c16f1cc2565c",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/05_testing.md",
+      "sha256": "sha256:fb93e4ad62c6106765b961a3e8fcd8df0f2dcf10d6cfa48d2c1cbb4c212d1caa",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/06_rollout.md",
+      "sha256": "sha256:b275d48050d6b4e31eccf39938ecb9307e2a98bcb504b5a03c9ee0c06e74bb88",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/07_registry.md",
+      "sha256": "sha256:e5ca6ba3915d936bf8a5034bc0d2215dac5aa5e91e31abcd425d48b8e345c4de",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/08_commit.md",
+      "sha256": "sha256:c42feda450ae8b8b07435eddbb3512c0f9162bbdceecb517794a19ea2f4ff3be",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/manifest.yaml",
+      "sha256": "sha256:39aa618d88da9e633ebee0495ec8050935c8d2cd8f72ca7509e88edb9ef746a1",
+      "classification": "spec"
+    },
+    {
+      "path": "tests/test_chat_interface.py",
+      "sha256": "sha256:0dea1d2f46bdabe78354e8c1906a634d02a415fe6bb43da1cfcf44e08956338c",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_chat_session.py",
+      "sha256": "sha256:edfa451bfb2450ef44fbf924f8e743fe69c0aed4c4a6500994af5a41a71b20ca",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000"
+  ],
+  "metadata": {
+    "description": "Chat Interface for Control Plane",
+    "created_by": "remediate_orphans.py",
+    "created_at": "2026-02-06T01:06:30.382609+00:00"
+  }
+}

@@ -44,13 +44,7 @@ CANARY_SRC = PACKAGES_DIR / "PKG-CANARY"
 INSTALLED_DIR = CONTROL_PLANE / "installed"
 
 
-def sha256_file(path: Path) -> str:
-    """Compute SHA-256 of file."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from lib.hashing import sha256_file  # canonical implementation
 
 
 def load_manifest(manifest_path: Path) -> Dict[str, Any]:

@@ -74,7 +74,7 @@ class TestEnforcePolicy:
         """Deny list blocks LLM."""
         capabilities = {"llm_assisted": {"validate": True}}
         result = route_query("Validate document", capabilities=capabilities)
-        policy = RoutePolicy(llm_deny_list=["validate"])
+        policy = RoutePolicy(llm_deny_list=["validate_document"])
 
         enforced = enforce_policy(result, policy)
         # Mode changed from LLM_ASSISTED to TOOLS_FIRST
@@ -105,7 +105,7 @@ class TestEnforcePolicy:
     def test_enforce_custom_handler(self):
         """Custom handler overrides default."""
         result = route_query("List packages")
-        policy = RoutePolicy(custom_handlers={"list": "custom_list_handler"})
+        policy = RoutePolicy(custom_handlers={"list_installed": "custom_list_handler"})
 
         enforced = enforce_policy(result, policy)
         assert enforced.route_result.handler == "custom_list_handler"
@@ -138,15 +138,15 @@ class TestPipeCLI:
         return json.loads(result.stdout)
 
     def test_classify_via_pipe(self):
-        """Classify operation works via pipe."""
+        """Route operation classifies queries via pipe."""
         response = self.run_pipe({
-            "operation": "classify",
+            "operation": "route",
             "query": "What packages are installed?",
         })
 
         assert response["status"] == "ok"
-        assert response["result"]["type"] == "list"
-        assert response["result"]["pattern_matched"] is True
+        assert response["result"]["handler"] == "list_installed"
+        assert response["result"]["mode"] == "tools_first"
 
     def test_route_via_pipe(self):
         """Route operation works via pipe."""
@@ -178,7 +178,7 @@ class TestPipeCLI:
 
         assert response["status"] == "ok"
         assert "handlers" in response["result"]
-        assert "list" in response["result"]["handlers"]
+        assert "list_packages" in response["result"]["handlers"]
 
     def test_evidence_in_response(self):
         """Evidence is included in response."""

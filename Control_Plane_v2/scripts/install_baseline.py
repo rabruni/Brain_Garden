@@ -170,13 +170,7 @@ def verify_declared_inputs(manifest: dict, plane: str) -> None:
         )
 
 
-def compute_sha256(file_path: Path) -> str:
-    """Compute SHA256 hash in standard format: sha256:<64hex>"""
-    hasher = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            hasher.update(chunk)
-    return f"sha256:{hasher.hexdigest()}"
+from lib.hashing import compute_sha256  # canonical implementation
 
 
 def verify_all_files(manifest: dict) -> list[str]:

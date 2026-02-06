@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from modules.admin_agent.agent import AdminAgent
+from modules.admin_agent.handlers.confirmation import check_confirmation
 
 
 def list_installed(agent: AdminAgent, context: Dict[str, Any]) -> str:
@@ -34,6 +35,10 @@ def list_installed(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Formatted package list
     """
+    block = check_confirmation("list_installed", context,
+        "List all installed packages via trace.py --installed.")
+    if block:
+        return block
     return agent.list_installed()
 
 
@@ -47,6 +52,10 @@ def explain(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Artifact explanation
     """
+    block = check_confirmation("explain", context,
+        "Explain artifact via trace.py --explain.")
+    if block:
+        return block
     artifact_id = context.get("artifact_id")
     if not artifact_id:
         # Try to extract from query
@@ -69,6 +78,10 @@ def check_health(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Health check results
     """
+    block = check_confirmation("check_health", context,
+        "Check system health via trace.py --verify.")
+    if block:
+        return block
     return agent.check_health()
 
 
@@ -82,6 +95,10 @@ def inventory(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Inventory summary
     """
+    block = check_confirmation("inventory", context,
+        "Get system inventory via trace.py --inventory.")
+    if block:
+        return block
     trace_result = agent._run_trace("--inventory")
 
     if "error" in trace_result:
@@ -104,6 +121,10 @@ def show_ledger(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Formatted ledger entries
     """
+    block = check_confirmation("show_ledger", context,
+        "Read recent ledger entries from ledger/ directory.")
+    if block:
+        return block
     import json
     from pathlib import Path
 
@@ -233,6 +254,10 @@ def show_session_ledger(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Formatted session ledger entries
     """
+    block = check_confirmation("show_session_ledger", context,
+        "Read current session ledger entries.")
+    if block:
+        return block
     session = context.get("session")
 
     if not session:
@@ -317,6 +342,10 @@ def show_prompts_used(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Formatted prompt usage report
     """
+    block = check_confirmation("show_prompts_used", context,
+        "Read governed prompt usage from LLM ledger.")
+    if block:
+        return block
     import json
     from pathlib import Path
 
@@ -500,6 +529,10 @@ def read_file(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         File contents with formatting
     """
+    block = check_confirmation("read_file", context,
+        "Read file contents from disk.")
+    if block:
+        return block
     query = context.get("query", "")
     file_path = _extract_file_path(query)
 
@@ -560,6 +593,10 @@ def list_frameworks(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Formatted framework list
     """
+    block = check_confirmation("list_frameworks", context,
+        "Read frameworks from registries/frameworks_registry.csv.")
+    if block:
+        return block
     registry_path = agent.root / "registries" / "frameworks_registry.csv"
 
     if not registry_path.exists():
@@ -595,6 +632,10 @@ def list_specs(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Formatted specs list
     """
+    block = check_confirmation("list_specs", context,
+        "Read specs from registries/specs_registry.csv.")
+    if block:
+        return block
     registry_path = agent.root / "registries" / "specs_registry.csv"
 
     if not registry_path.exists():
@@ -630,6 +671,10 @@ def list_files(agent: AdminAgent, context: Dict[str, Any]) -> str:
     Returns:
         Directory listing
     """
+    block = check_confirmation("list_files", context,
+        "List directory contents.")
+    if block:
+        return block
     query = context.get("query", "")
     dir_path = _extract_dir_path(query)
 

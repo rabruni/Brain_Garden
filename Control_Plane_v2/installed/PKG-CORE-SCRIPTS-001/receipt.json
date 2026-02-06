@@ -1,0 +1,24 @@
+{
+  "package_id": "PKG-CORE-SCRIPTS-001",
+  "origin": "INSTALLER",
+  "package_type": "module",
+  "plane_id": "ho3",
+  "installed_at": "2026-02-06T01:06:34.126883+00:00",
+  "manifest_hash": "sha256:6b9c3cd4391241dbc33fc245a2aa03fe05a379ab160cf27870a762ad6119947a",
+  "archive_hash": "sha256:d33110c325d041ccfa24ad1b629ba9a44a4779d36117ec1ce5f469bce91711ea",
+  "assets_count": 2,
+  "work_order_id": null,
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "receipt_version": "1.0",
+  "files": [
+    {
+      "path": "scripts/agent_check.py",
+      "sha256": "sha256:2d979a90a07a81d2b4e381b3b2192255c63dfe39303aa1d218f2668d9bd85e8a"
+    },
+    {
+      "path": "scripts/remediate_orphans.py",
+      "sha256": "sha256:e1103d4f7f971eb03f40d7765bd79bd0049338aa092eab09f4a060323352438d"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ Tests commands:
 - stage: Package staging
 - check-framework: Framework validation
 """
+import hashlib
 import json
 import os
 import pytest
@@ -20,6 +21,15 @@ from pathlib import Path
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+
+def _sha256(file_path: Path) -> str:
+    """Compute sha256:<hex> hash for a file."""
+    h = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return f"sha256:{h.hexdigest()}"
 
 
 def run_pkgutil(*args, env=None, cwd=None):
@@ -139,11 +149,14 @@ class TestPreflightCommand:
 
         lib_dir = pkg_dir / "lib"
         lib_dir.mkdir()
-        (lib_dir / "test.py").write_text("# Test module")
+        test_file = lib_dir / "test.py"
+        test_file.write_text("# Test module")
 
         manifest = {
             "package_id": "PKG-VALID-001",
-            "assets": [],  # Will be populated by preflight
+            "assets": [
+                {"path": "lib/test.py", "sha256": _sha256(test_file), "classification": "library"},
+            ],
         }
         (pkg_dir / "manifest.json").write_text(json.dumps(manifest))
 
@@ -255,11 +268,15 @@ class TestStageCommand:
 
         lib_dir = pkg_dir / "lib"
         lib_dir.mkdir()
-        (lib_dir / "module.py").write_text("# Module code")
+        module_file = lib_dir / "module.py"
+        module_file.write_text("# Module code")
 
         manifest = {
             "package_id": "PKG-STAGE-001",
-            "assets": [],
+            "version": "1.0.0",
+            "assets": [
+                {"path": "lib/module.py", "sha256": _sha256(module_file), "classification": "library"},
+            ],
         }
         (pkg_dir / "manifest.json").write_text(json.dumps(manifest))
 
@@ -339,6 +356,20 @@ class TestEndToEndWorkflow:
         pkg_dir = tmp_path / "PKG-E2E-AGENT-001"
         assert pkg_dir.exists()
 
+        # Populate manifest assets from generated files (init leaves assets empty)
+        manifest_path = pkg_dir / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        assets = []
+        for fp in sorted(pkg_dir.rglob("*")):
+            if fp.is_dir() or fp.name in ("manifest.json", "signature.json"):
+                continue
+            if "__pycache__" in str(fp):
+                continue
+            rel = str(fp.relative_to(pkg_dir))
+            assets.append({"path": rel, "sha256": _sha256(fp), "classification": "other"})
+        manifest["assets"] = assets
+        manifest_path.write_text(json.dumps(manifest, indent=2))
+
         # 2. Preflight (use --no-strict for isolated testing)
         result = run_pkgutil(
             "preflight", "PKG-E2E-AGENT-001",
@@ -346,7 +377,7 @@ class TestEndToEndWorkflow:
             "--no-strict"
         )
         # Should pass with --no-strict
-        assert result.returncode == 0, f"Preflight failed: {result.stderr}"
+        assert result.returncode == 0, f"Preflight failed: {result.stdout}\n{result.stderr}"
 
         # 3. Stage (use --no-strict for isolated testing)
         result = run_pkgutil(

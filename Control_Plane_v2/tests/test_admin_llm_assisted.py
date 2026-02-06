@@ -16,24 +16,24 @@ class TestAdminTurnWithRouter:
     """Tests for admin_turn with router integration."""
 
     def test_list_packages_tools_first(self):
-        """List packages uses tools-first mode."""
-        result = admin_turn("What packages are installed?", root=CONTROL_PLANE)
+        """List packages uses tools-first mode (A0 EXECUTE for same-turn auth)."""
+        result = admin_turn("What packages are installed? A0 EXECUTE", root=CONTROL_PLANE)
         assert "Installed" in result or "packages" in result.lower()
 
     def test_explain_tools_first(self):
-        """Explain uses tools-first mode."""
-        result = admin_turn("Explain FMWK-000", root=CONTROL_PLANE)
+        """Explain uses tools-first mode (A0 EXECUTE for same-turn auth)."""
+        result = admin_turn("Explain FMWK-000 A0 EXECUTE", root=CONTROL_PLANE)
         # Should return some explanation
         assert len(result) > 0
 
     def test_health_check_tools_first(self):
-        """Health check uses tools-first mode."""
-        result = admin_turn("System health", root=CONTROL_PLANE)
+        """Health check uses tools-first mode (A0 EXECUTE for same-turn auth)."""
+        result = admin_turn("System health A0 EXECUTE", root=CONTROL_PLANE)
         assert "Health" in result or "PASS" in result or "FAIL" in result
 
     def test_inventory_tools_first(self):
-        """Inventory uses tools-first mode."""
-        result = admin_turn("Show inventory", root=CONTROL_PLANE)
+        """Inventory uses tools-first mode (A0 EXECUTE for same-turn auth)."""
+        result = admin_turn("Show inventory A0 EXECUTE", root=CONTROL_PLANE)
         assert "Inventory" in result or "files" in result.lower()
 
     def test_validate_denied_without_route(self):
@@ -43,14 +43,14 @@ class TestAdminTurnWithRouter:
         # Should either be denied or handled
         assert len(result) > 0
 
-    def test_legacy_mode_works(self):
-        """Legacy mode (use_router=False) still works."""
+    def test_legacy_mode_denied(self):
+        """Legacy mode (use_router=False) is denied by default."""
         result = admin_turn(
             "What packages are installed?",
             root=CONTROL_PLANE,
             use_router=False,
         )
-        assert "Installed" in result or "packages" in result.lower()
+        assert "disabled" in result.lower() or "denied" in result.lower()
 
 
 class TestGetHandler:
@@ -98,7 +98,7 @@ class TestToolsFirstHandlers:
         from modules.admin_agent.handlers.tools_first import check_health
 
         agent = AdminAgent(root=CONTROL_PLANE)
-        result = check_health(agent, {})
+        result = check_health(agent, {"a0_execute": True})
         assert "Health" in result
 
     def test_inventory_handler(self):
@@ -106,7 +106,7 @@ class TestToolsFirstHandlers:
         from modules.admin_agent.handlers.tools_first import inventory
 
         agent = AdminAgent(root=CONTROL_PLANE)
-        result = inventory(agent, {})
+        result = inventory(agent, {"a0_execute": True})
         assert "Inventory" in result
 
 

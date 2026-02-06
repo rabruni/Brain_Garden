@@ -17,7 +17,10 @@
       "frameworks/*.md",
       "specs/*/manifest.yaml",
       "specs/*/*.md",
-      "governed_prompts/*.md"
+      "governed_prompts/*.md",
+      "lib/*.py",
+      "modules/**/*.py",
+      "scripts/*.py"
     ],
     "execute": [
       "scripts/trace.py --explain *",
@@ -31,7 +34,6 @@
       "planes/ho1/sessions/<session_id>/ledger/evidence.jsonl"
     ],
     "forbidden": [
-      "lib/*",
       "scripts/package_install.py",
       "scripts/package_pack.py",
       "scripts/package_uninstall.py",

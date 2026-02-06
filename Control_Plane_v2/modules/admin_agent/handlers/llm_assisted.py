@@ -1,7 +1,7 @@
-"""LLM-Assisted Handlers with Claude Code-style Tools.
+"""LLM-Assisted Handlers — Governed LLM Completions.
 
-Handlers that use LLM with tool calling for dynamic file access.
-The LLM can read files, list directories, and grep - like Claude Code.
+Handlers that use stdlib_llm.complete() for all LLM operations.
+Direct Anthropic SDK usage is forbidden per Phase 1 governance.
 
 Example:
     from modules.admin_agent.handlers.llm_assisted import general
@@ -10,14 +10,25 @@ Example:
 """
 
 import json
-from typing import Any, Dict, List, Optional
-from pathlib import Path
+import os
+from typing import Any, Dict
 
 from modules.admin_agent.agent import AdminAgent
-from modules.admin_agent.tools import AdminTools, TOOL_DEFINITIONS, execute_tool, ToolError
-from modules.stdlib_llm import complete, load_prompt, LLMResponse
+from modules.stdlib_llm import complete
 from modules.stdlib_llm.client import LLMError
+from modules.stdlib_llm.config import get_default_provider_id
 from lib.prompt_loader import load_prompt as load_governed_prompt
+
+LLM_ASSISTED_PROVIDER_ENV = "LLM_ASSISTED_PROVIDER"
+
+
+def get_llm_assisted_provider_id() -> str:
+    """Return the provider_id for LLM-assisted handlers.
+
+    Sources from LLM_ASSISTED_PROVIDER env var, falling back to the
+    system default provider (LLM_DEFAULT_PROVIDER or "anthropic").
+    """
+    return os.getenv(LLM_ASSISTED_PROVIDER_ENV) or get_default_provider_id()
 
 
 def validate_document(
@@ -59,7 +70,7 @@ def validate_document(
         response = complete(
             prompt=f"Validate the following query: {query}",
             prompt_pack_id=prompt_pack_id,
-            provider_id="mock",  # Use mock for now
+            provider_id=get_llm_assisted_provider_id(),
         )
 
         return f"# Validation Result\n\n{response.content}"
@@ -115,7 +126,7 @@ Only use information from the provided data."""
         response = complete(
             prompt=prompt,
             prompt_pack_id=prompt_pack_id,
-            provider_id="mock",  # Use mock for now
+            provider_id=get_llm_assisted_provider_id(),
         )
 
         return f"# Summary\n\n{response.content}"
@@ -178,7 +189,7 @@ Provide a clear, concise explanation of this artifact."""
         response = complete(
             prompt=prompt,
             prompt_pack_id=prompt_pack_id,
-            provider_id="mock",
+            provider_id=get_llm_assisted_provider_id(),
         )
 
         return f"# {artifact_id}\n\n{response.content}"
@@ -191,162 +202,69 @@ def general(
     agent: AdminAgent,
     context: Dict[str, Any],
 ) -> str:
-    """Handle queries using LLM with Claude Code-style tools.
+    """Handle general queries by delegating to brain_call().
 
-    The LLM has access to tools (read_file, list_directory, glob, grep)
-    and can dynamically access any file the admin agent is allowed to read.
+    Gathers system context via _gather_general_context(), then calls
+    brain_call() which uses PRM-BRAIN-001 for structured advisory output.
 
     Args:
         agent: AdminAgent instance
         context: Query context with session
 
     Returns:
-        LLM-generated response
+        Formatted brain advisory response
     """
-    prompt_pack_id = context.get("prompt_pack_id", "PRM-ADMIN-GENERAL-001")
+    from modules.brain import brain_call
+
     query = context.get("query", "")
     session = context.get("session")
 
-    # Load capabilities for tool sandboxing
-    caps_path = Path(__file__).parent.parent / "capabilities.json"
-    if caps_path.exists():
-        capabilities = json.loads(caps_path.read_text()).get("capabilities", {})
-    else:
-        capabilities = {"read": ["**/*"], "forbidden": []}
+    # Record prompt usage in session for audit trail
+    if session and hasattr(session, "record_prompt"):
+        session.record_prompt("PRM-BRAIN-001")
 
-    # Create tools instance
-    tools = AdminTools(root=agent.root, capabilities=capabilities)
+    # Step 1: Gather system context (packages, health, ledgers, sessions)
+    gathered_context = _gather_general_context(agent, session)
 
-    # Build system prompt with session context
-    session_info = ""
-    if session:
-        session_info = f"""
-Current Session:
-- Session ID: {session.session_id}
-- Tier: {session.tier}
-- Session path: {session.session_path}
-- Exec ledger: {session.exec_ledger_path}
-- Evidence ledger: {session.evidence_ledger_path}
-"""
+    # Step 2: Call brain (one-shot KERNEL.semantic)
+    brain_resp = brain_call(
+        query=query,
+        system_context=gathered_context,
+        provider_id=get_llm_assisted_provider_id(),
+    )
 
-    system_prompt = f"""You are the Control Plane Admin Agent with read access to the Control Plane filesystem.
+    # Step 3: Format BrainResponse for human consumption
+    lines = ["# Response", ""]
+    lines.append(f"**Intent:** {brain_resp.intent}")
+    lines.append(f"**Confidence:** {brain_resp.confidence}")
+    lines.append(f"**Suggested handler:** {brain_resp.suggested_handler} ({brain_resp.mode})")
+    lines.append("")
+    lines.append(brain_resp.proposed_next_step)
+    lines.append("")
+    lines.append(f"*Provider: {brain_resp.provider_id}*")
 
-You have tools to explore the system:
-- read_file: Read any file contents
-- list_directory: List directory contents
-- glob: Find files matching patterns (e.g., "**/*.jsonl")
-- grep: Search for patterns in files
+    # Store evidence in context for upstream logging
+    context["brain_evidence"] = brain_resp.evidence
+    context["brain_provider_id"] = brain_resp.provider_id
 
-Control Plane root: {agent.root}
-Ledger directory: {agent.root / "ledger"}
-{session_info}
-
-When answering questions:
-1. Use tools to find and read the actual data
-2. Show file paths and actual content
-3. Be specific and accurate
-4. Format nicely with markdown
-
-You can read ledgers, configs, registries, session data, and more."""
-
-    # Call LLM with tools
-    try:
-        response = _complete_with_tools(
-            query=query,
-            system_prompt=system_prompt,
-            tools=tools,
-            prompt_pack_id=prompt_pack_id,
-        )
-        return response
-
-    except Exception as e:
-        return f"Error: {e}"
+    return "\n".join(lines)
 
 
-def _complete_with_tools(
-    query: str,
-    system_prompt: str,
-    tools: AdminTools,
-    prompt_pack_id: str,
-    max_turns: int = 10,
-) -> str:
-    """Execute LLM completion with tool calling loop.
+def _complete_with_tools(**kwargs) -> str:
+    """FORBIDDEN: Direct LLM calls are not allowed.
 
-    Args:
-        query: User query
-        system_prompt: System instructions
-        tools: AdminTools instance for executing tools
-        prompt_pack_id: Governed prompt ID for audit
-        max_turns: Maximum tool-calling turns
+    This function previously called the Anthropic SDK directly, bypassing
+    stdlib_llm.complete(). It has been replaced with a hard fail to enforce
+    governance. All LLM usage must go through stdlib_llm.complete().
 
-    Returns:
-        Final text response from LLM
+    Raises:
+        LLMError: Always. Direct LLM calls are forbidden.
     """
-    import anthropic
-    from modules.stdlib_llm.config import get_anthropic_config
-
-    config = get_anthropic_config()
-    if not config.api_key:
-        raise LLMError("ANTHROPIC_API_KEY not configured")
-
-    client = anthropic.Anthropic(api_key=config.api_key)
-
-    messages = [{"role": "user", "content": query}]
-
-    for turn in range(max_turns):
-        # Call Claude with tools
-        response = client.messages.create(
-            model=config.model or "claude-sonnet-4-20250514",
-            max_tokens=4096,
-            system=system_prompt,
-            tools=TOOL_DEFINITIONS,
-            messages=messages,
-        )
-
-        # Check if done (no tool use)
-        if response.stop_reason == "end_turn":
-            # Extract text response
-            for block in response.content:
-                if hasattr(block, "text"):
-                    return block.text
-            return ""
-
-        # Process tool calls
-        tool_results = []
-        assistant_content = []
-
-        for block in response.content:
-            if block.type == "text":
-                assistant_content.append({"type": "text", "text": block.text})
-            elif block.type == "tool_use":
-                assistant_content.append({
-                    "type": "tool_use",
-                    "id": block.id,
-                    "name": block.name,
-                    "input": block.input,
-                })
-
-                # Execute tool
-                try:
-                    result = execute_tool(tools, block.name, block.input)
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": json.dumps(result, indent=2),
-                    })
-                except ToolError as e:
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": f"Error: {e}",
-                        "is_error": True,
-                    })
-
-        # Add assistant message and tool results
-        messages.append({"role": "assistant", "content": assistant_content})
-        messages.append({"role": "user", "content": tool_results})
-
-    return "Error: Max tool-calling turns exceeded"
+    raise LLMError(
+        "Direct LLM calls are forbidden. All LLM usage must go through "
+        "stdlib_llm.complete() per Phase 1 governance.",
+        code="DIRECT_LLM_FORBIDDEN",
+    )
 
 
 def _gather_general_context(agent: AdminAgent, session=None) -> dict:

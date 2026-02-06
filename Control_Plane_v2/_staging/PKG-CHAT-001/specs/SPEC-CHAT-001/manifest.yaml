@@ -1,0 +1,76 @@
+spec_id: SPEC-CHAT-001
+title: Chat Interface Implementation
+framework_id: FMWK-CHAT-001
+version: 1.0.0
+status: active
+plane_id: ho3
+created_at: 2026-02-04T00:00:00Z
+
+description: |
+  Implementation specification for the extensible, transparent chat interface.
+  Provides conversational access to Control Plane functionality with full
+  audit trail and session management.
+
+assets:
+  - path: modules/chat_interface/__init__.py
+    classification: library
+  - path: modules/chat_interface/__main__.py
+    classification: script
+  - path: modules/chat_interface/session.py
+    classification: library
+  - path: modules/chat_interface/registry.py
+    classification: library
+  - path: modules/chat_interface/classifier.py
+    classification: library
+  - path: modules/chat_interface/handlers/__init__.py
+    classification: library
+  - path: modules/chat_interface/handlers/browse.py
+    classification: library
+  - path: modules/chat_interface/handlers/packages.py
+    classification: library
+  - path: modules/chat_interface/handlers/search.py
+    classification: library
+  - path: modules/chat_interface/handlers/ledger.py
+    classification: library
+  - path: modules/chat_interface/handlers/help.py
+    classification: library
+  - path: schemas/chat_request.json
+    classification: schema
+  - path: schemas/chat_response.json
+    classification: schema
+  - path: tests/test_chat_interface.py
+    classification: test
+  - path: tests/test_chat_session.py
+    classification: test
+
+interfaces:
+  pipe:
+    input: schemas/chat_request.json
+    output: schemas/chat_response.json
+    command: python3 -m modules.chat_interface
+
+  interactive:
+    command: python3 -m modules.chat_interface --interactive
+
+  programmatic:
+    module: modules.chat_interface
+    exports:
+      - ChatInterface
+      - chat_turn
+
+dependencies:
+  - lib/ledger_client.py
+  - lib/merkle.py
+  - modules/stdlib_evidence/
+  - scripts/pkgutil.py
+
+invariants:
+  - I-CHAT-1
+  - I-CHAT-2
+  - I-CHAT-3
+  - I-CHAT-4
+  - I-CHAT-5
+  - I-CHAT-6
+  - I-CHAT-7
+  - I-CHAT-8
+  - I-CHAT-9

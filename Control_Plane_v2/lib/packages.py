@@ -31,13 +31,7 @@ def _deterministic_filter(tarinfo: tarfile.TarInfo) -> tarfile.TarInfo:
     return tarinfo
 
 
-def sha256_file(path: Path) -> str:
-    """Compute SHA256 for a file."""
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from lib.hashing import sha256_file  # canonical implementation; re-exported for backward compat
 
 
 def pack(src: Path, dest: Path, base: Optional[Path] = None) -> str:
@@ -70,9 +64,7 @@ def pack(src: Path, dest: Path, base: Optional[Path] = None) -> str:
                 return str(p.resolve().relative_to(base.resolve()))
             except ValueError:
                 pass
-        if p.is_dir():
-            return p.name
-        return p.name
+        return str(p.relative_to(src))
 
     # Create tar in memory first, then gzip with mtime=0
     tar_buffer = io.BytesIO()
@@ -80,14 +72,15 @@ def pack(src: Path, dest: Path, base: Optional[Path] = None) -> str:
         if src.is_dir():
             for item in sorted(src.rglob("*")):
                 arcname = rel_arcname(item)
-                tar.add(item, arcname=arcname, filter=_deterministic_filter)
+                tar.add(item, arcname=arcname, recursive=False, filter=_deterministic_filter)
         else:
             tar.add(src, arcname=rel_arcname(src), filter=_deterministic_filter)
 
     # Write gzip with mtime=0 for determinism
     tar_data = tar_buffer.getvalue()
-    with gzip.GzipFile(filename="", mode="wb", fileobj=open(dest, "wb"), mtime=0) as gz:
-        gz.write(tar_data)
+    with open(dest, "wb") as raw_f:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=raw_f, mtime=0) as gz:
+            gz.write(tar_data)
 
     return sha256_file(dest)
 

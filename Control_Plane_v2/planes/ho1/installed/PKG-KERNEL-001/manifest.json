@@ -22,7 +22,7 @@
     },
     {
       "path": "lib/merkle.py",
-      "sha256": "sha256:3dbaaa28cc4c4abab37b9f1adbfe9e7c7625bf54b7b2ab992d050f2bc2b82a63"
+      "sha256": "sha256:5a3c471e2cd3049b1a1cf48509af1cd2c0767bd9c4bd884a6cf37096eaa6f432"
     },
     {
       "path": "lib/output.py",
@@ -30,11 +30,11 @@
     },
     {
       "path": "lib/paths.py",
-      "sha256": "sha256:b69f7f76e231bcbbb6a51793c2ca33dbcde0841187055ce263f6d9b7df584c0b"
+      "sha256": "sha256:3dc36d8cc1e3444e5be529033fd2b918c28ce26fcdac0c2fe6cd75d8f79156ed"
     },
     {
       "path": "lib/registry.py",
-      "sha256": "sha256:31ad6ab45921cc47e0678d8416e3395daf288c7fe81d4d70cc2a6bb956a20796"
+      "sha256": "sha256:9a057c95a48b40c5a1aff878d302b0937b9a6dc1c529ea2ca0dc34d737982e64"
     },
     {
       "path": "scripts/trace.py",
@@ -42,7 +42,7 @@
     }
   ],
   "assets_count": 9,
-  "manifest_hash": "sha256:c7e854f02e941482ded4b4a48be56e8ac1baaa878c052ee5860a8b6549bcd9a0",
+  "manifest_hash": "sha256:fbac4783caa5346e6d6e3117e43ddc4ada4bebbd75690ff1f4d37e8758e212ab",
   "metadata": {
     "built_at": "2026-02-04T02:51:31.386725+00:00",
     "source_plane": "ho3",

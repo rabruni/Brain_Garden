@@ -1,0 +1,20 @@
+{
+  "package_id": "PKG-ROUTER-EXT-001",
+  "origin": "INSTALLER",
+  "package_type": "module",
+  "plane_id": "ho3",
+  "installed_at": "2026-02-06T01:06:33.539720+00:00",
+  "manifest_hash": "sha256:5801f33914afda5e3853fd815223979263e35326f98143458eb9447c6460c189",
+  "archive_hash": "sha256:b529c9c934d3ae553f82953d09fcea7c1099ad1b4ed1ca74661904dac6c07cc5",
+  "assets_count": 1,
+  "work_order_id": null,
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "receipt_version": "1.0",
+  "files": [
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:c03c1d4d8fecd14b6363c45db8227a9beafc1c92ee576bbb35183a46e50559f1"
+    }
+  ]
+}

@@ -6,6 +6,11 @@ Plane-Aware:
     Functions accept an optional `plane` parameter (PlaneContext).
     When provided, operations are scoped to that plane's root instead of
     the global CONTROL_PLANE singleton.
+
+Lookup helpers (framework_exists, spec_exists, etc.) accept either:
+    - registries_dir: Path  — direct path to registries/ directory
+    - plane: PlaneContext    — derives registries_dir from plane.root
+    - neither               — uses default REGISTRIES_DIR
 """
 import csv
 from pathlib import Path
@@ -232,3 +237,68 @@ def count_registry_stats(plane: Optional["PlaneContext"] = None) -> Dict[str, in
             continue
 
     return stats
+
+
+# =============================================================================
+# Registry Lookup Helpers
+# =============================================================================
+
+def _resolve_registries_dir(
+    registries_dir: Optional[Path] = None,
+    plane: Optional["PlaneContext"] = None,
+) -> Path:
+    """Resolve the registries directory from available context."""
+    if registries_dir is not None:
+        return registries_dir
+    _, reg_dir = _get_plane_paths(plane)
+    return reg_dir
+
+
+def framework_exists(
+    framework_id: str,
+    registries_dir: Optional[Path] = None,
+    plane: Optional["PlaneContext"] = None,
+) -> bool:
+    """Check if framework exists in frameworks_registry.csv."""
+    reg_path = _resolve_registries_dir(registries_dir, plane) / "frameworks_registry.csv"
+    if not reg_path.is_file():
+        return False
+    _, rows = read_registry(reg_path)
+    return any(row.get("framework_id") == framework_id for row in rows)
+
+
+def spec_exists(
+    spec_id: str,
+    registries_dir: Optional[Path] = None,
+    plane: Optional["PlaneContext"] = None,
+) -> bool:
+    """Check if spec exists in specs_registry.csv."""
+    reg_path = _resolve_registries_dir(registries_dir, plane) / "specs_registry.csv"
+    if not reg_path.is_file():
+        return False
+    _, rows = read_registry(reg_path)
+    return any(row.get("spec_id") == spec_id for row in rows)
+
+
+def get_spec_framework(
+    spec_id: str,
+    registries_dir: Optional[Path] = None,
+    plane: Optional["PlaneContext"] = None,
+) -> Optional[str]:
+    """Get framework_id for a spec from specs_registry.csv."""
+    reg_path = _resolve_registries_dir(registries_dir, plane) / "specs_registry.csv"
+    if not reg_path.is_file():
+        return None
+    _, rows = read_registry(reg_path)
+    for row in rows:
+        if row.get("spec_id") == spec_id:
+            return row.get("framework_id")
+    return None
+
+
+def load_registry_as_dict(reg_path: Path, key_field: str) -> Dict[str, Dict[str, str]]:
+    """Load CSV registry as dict keyed by key_field for O(1) lookups."""
+    if not reg_path.is_file():
+        return {}
+    _, rows = read_registry(reg_path)
+    return {row[key_field]: row for row in rows if key_field in row}

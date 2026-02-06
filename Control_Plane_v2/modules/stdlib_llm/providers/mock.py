@@ -11,13 +11,29 @@ from typing import Optional, Dict, List
 from modules.stdlib_llm.provider import LLMProvider, ProviderResponse
 
 
-# Canned responses for common test patterns
+# Canned responses for common test patterns.
+# Order matters: more specific patterns must come before general ones.
+# Router prompts include the template boilerplate (intent list), so patterns
+# must match the user query portion specifically. Using "query: <keyword>"
+# anchors to the rendered {{query}} line in PRM-ROUTER-001.
 CANNED_RESPONSES: Dict[str, str] = {
     "hello": "Hello! I'm a mock LLM assistant.",
-    "explain": "This is a mock explanation of the requested artifact.",
-    "validate": '{"valid": true, "issues": []}',
-    "summarize": "This is a mock summary of the provided content.",
-    "classify": '{"classification": "tools_first", "confidence": 0.95}',
+    # Router classification patterns (anchored to "Query: <user text>")
+    "query: list packages": '{"intent": "list_packages", "confidence": 0.95, "reasoning": "User wants to list installed packages"}',
+    "query: show inventory": '{"intent": "list_packages", "confidence": 0.95, "reasoning": "User wants inventory of packages"}',
+    "packages are installed": '{"intent": "list_packages", "confidence": 0.95, "reasoning": "User wants to list installed packages"}',
+    "query: check health": '{"intent": "health_check", "confidence": 0.95, "reasoning": "User wants health status"}',
+    "query: system health": '{"intent": "health_check", "confidence": 0.95, "reasoning": "User wants health status"}',
+    "query: system status": '{"intent": "health_check", "confidence": 0.95, "reasoning": "User wants health status"}',
+    "query: show ledger": '{"intent": "show_ledger", "confidence": 0.95, "reasoning": "User wants to see the ledger"}',
+    "query: show session": '{"intent": "show_session", "confidence": 0.95, "reasoning": "User wants session data"}',
+    "query: explain": '{"intent": "explain_artifact", "confidence": 0.95, "reasoning": "User wants an explanation of an artifact"}',
+    "query: what is": '{"intent": "explain_artifact", "confidence": 0.95, "reasoning": "User wants an explanation"}',
+    "query: describe": '{"intent": "explain_artifact", "confidence": 0.95, "reasoning": "User wants a description"}',
+    "query: validate": '{"intent": "validate", "confidence": 0.95, "reasoning": "User wants to validate a document"}',
+    "query: summarize": '{"intent": "summarize", "confidence": 0.95, "reasoning": "User wants a summary"}',
+    # Generic router classification fallback
+    "classify": '{"intent": "general", "confidence": 0.95, "reasoning": "Mock classification"}',
 }
 
 # Default response when no pattern matches

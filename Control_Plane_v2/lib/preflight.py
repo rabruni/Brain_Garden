@@ -69,13 +69,7 @@ class PreflightResult:
         return result
 
 
-def compute_sha256(file_path: Path) -> str:
-    """Compute SHA256 hash in standard format: sha256:<64hex>"""
-    hasher = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            hasher.update(chunk)
-    return f"sha256:{hasher.hexdigest()}"
+from lib.hashing import compute_sha256  # canonical implementation; re-exported for backward compat
 
 
 def load_file_ownership(plane_root: Optional[Path] = None) -> Dict[str, dict]:
@@ -320,42 +314,18 @@ class ChainValidator:
 
     def _framework_exists(self, framework_id: str) -> bool:
         """Check if framework exists in registry."""
-        reg_path = self.plane_root / "registries" / "frameworks_registry.csv"
-        if not reg_path.exists():
-            return False
-
-        with open(reg_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('framework_id') == framework_id:
-                    return True
-        return False
+        from lib.registry import framework_exists
+        return framework_exists(framework_id, registries_dir=self.plane_root / "registries")
 
     def _spec_exists(self, spec_id: str) -> bool:
         """Check if spec exists in registry."""
-        reg_path = self.plane_root / "registries" / "specs_registry.csv"
-        if not reg_path.exists():
-            return False
-
-        with open(reg_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('spec_id') == spec_id:
-                    return True
-        return False
+        from lib.registry import spec_exists
+        return spec_exists(spec_id, registries_dir=self.plane_root / "registries")
 
     def _get_spec_framework(self, spec_id: str) -> Optional[str]:
         """Get framework_id for a spec from registry."""
-        reg_path = self.plane_root / "registries" / "specs_registry.csv"
-        if not reg_path.exists():
-            return None
-
-        with open(reg_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                if row.get('spec_id') == spec_id:
-                    return row.get('framework_id')
-        return None
+        from lib.registry import get_spec_framework
+        return get_spec_framework(spec_id, registries_dir=self.plane_root / "registries")
 
     def _check_assets_in_spec(self, manifest: dict, spec_id: str,
                               errors: List[str], warnings: List[str]) -> None:
@@ -633,6 +603,17 @@ class PreflightValidator:
         # Load ownership if not provided
         if existing_ownership is None:
             existing_ownership = load_file_ownership(self.plane_root)
+
+        # 0. Schema validation (lightweight, no jsonschema dependency)
+        from lib.schema_validator import validate_manifest
+        schema_valid, schema_errors = validate_manifest(manifest)
+        schema_result = PreflightResult(
+            gate="SCHEMA",
+            passed=schema_valid,
+            message="Schema valid" if schema_valid else f"{len(schema_errors)} schema errors",
+            errors=schema_errors,
+        )
+        results.append(schema_result)
 
         # 1. Manifest structure validation
         manifest_result = self.manifest_validator.validate(manifest, package_id)

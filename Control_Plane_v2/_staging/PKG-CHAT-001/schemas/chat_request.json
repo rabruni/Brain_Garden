@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://controlplane.local/schemas/chat_request.json",
+  "title": "Chat Request",
+  "description": "Input schema for chat interface pipe mode",
+  "type": "object",
+  "required": ["query"],
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "User query string",
+      "minLength": 1,
+      "examples": [
+        "what is in modules?",
+        "list packages",
+        "read lib/auth.py"
+      ]
+    },
+    "capability": {
+      "type": "string",
+      "description": "Caller capability level",
+      "enum": ["admin", "maintainer", "auditor", "reader"],
+      "examples": ["admin"]
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Optional session ID to resume",
+      "pattern": "^SES-CHAT-[0-9]{8}-[a-f0-9]{8}$"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "query": "what is in modules?"
+    },
+    {
+      "query": "install PKG-TEST-001",
+      "capability": "admin"
+    }
+  ]
+}

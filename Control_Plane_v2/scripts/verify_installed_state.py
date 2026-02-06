@@ -65,13 +65,7 @@ class StateComparisonResult:
         self.match = False
 
 
-def sha256_file(path: Path) -> str:
-    """Compute SHA-256 of file."""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from lib.hashing import sha256_file  # canonical implementation
 
 
 def load_receipt(receipt_path: Path) -> Optional[Dict[str, Any]]:

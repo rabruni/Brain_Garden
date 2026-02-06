@@ -1,0 +1,163 @@
+{
+  "package_id": "PKG-SHELL-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "spec_id": "SPEC-SHELL-001",
+  "plane_id": "ho3",
+  "package_type": "module",
+  "assets": [
+    {
+      "path": "frameworks/FMWK-SHELL-001_shell_standard.md",
+      "sha256": "sha256:5e2e0a8b2c21c768ea5fac1f83f2c3643befbe082b069325e1174757a13f9a6e",
+      "classification": "framework"
+    },
+    {
+      "path": "modules/shell/README.md",
+      "sha256": "sha256:3370683ce528604a58cf2543ce8085dfa91a5750e4f12e0b90493273eb073a0c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/__init__.py",
+      "sha256": "sha256:8ce62c2a8818546d45879ce0f95a0e38241768ea4c1c0caaebca2f3ec52eafae",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/__main__.py",
+      "sha256": "sha256:1cc3722cc7758e22ceafbd4dc7a1aad34316eb7d8f574e4dba16c0d14f96da16",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/capabilities.json",
+      "sha256": "sha256:144ad89343f424a7c8b965e03841bdb369f45232b4acfa6d5615303d75cbca6c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/chat_ui.py",
+      "sha256": "sha256:53c753f8cdb14a8038249f5fd0dcc2e0f59c3dde502fc2fe7e095a17d0373ceb",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/__init__.py",
+      "sha256": "sha256:138566bc896f4b0d04c9d17c55aafec49e6dac9fb4ece3f2c01cd30b900b611c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/core.py",
+      "sha256": "sha256:41ff23864f5b8f6a2880c0ab7eb82181b1972c8853a98a1aa5fd3322165e5469",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/governance.py",
+      "sha256": "sha256:40566cd4f1a85a2199fb22dadf0235bc805a766be6c99dfd4b3394b3a58cefc7",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/memory.py",
+      "sha256": "sha256:828b215664433181047f1a784f256afcac3fda809727f3560e647c51a5fd1c39",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/notes.py",
+      "sha256": "sha256:7e13f04590b90a93e078b805192bbedcfb2e57a7617f299c2dc91a202fd34cb7",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/signals.py",
+      "sha256": "sha256:02ae13d40b2fd9594bbbff827eb685a38c4b3e16f5b4027a3be833cfbeb19a15",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/interfaces.py",
+      "sha256": "sha256:b5baedaaecf36735128d1a6738d5d371530074a6c86454764486199b3229ab4c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/operations.py",
+      "sha256": "sha256:1d32c1527d5cc802443aa374b83531b338db41b45ccb6968856ce63dd10b0382",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/shell.py",
+      "sha256": "sha256:7d9ea19c29c314af7a1bbbed8baa9aec3d2d64d2bf6779545c321528fddaa6a2",
+      "classification": "module"
+    },
+    {
+      "path": "scripts/shell.py",
+      "sha256": "sha256:ae2a924da7c9a3c5ac3f7f0b8a9c5d68d481871cbc8f037faef670fa0a51edad",
+      "classification": "script"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/00_overview.md",
+      "sha256": "sha256:6e321bf24a19059f4cc56779c693c6be730d50c2cdce75b7687ded6a2dd73e72",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/01_problem.md",
+      "sha256": "sha256:b074ab1ba9951853f7c1f797b6d592887da13175b81480cec5db333537fefa4f",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/02_solution.md",
+      "sha256": "sha256:f56fda095147a5a247118e6bee9b29dc939a741e76aa478b54003b73513402b8",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/03_requirements.md",
+      "sha256": "sha256:b548ecc11df86159a19b377bbeda357bd1f30493e6bedc84418092799fda1000",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/04_design.md",
+      "sha256": "sha256:e883c0ca28377c3999eff89b70cfeb67cc387c690fc6c576fdf6459f10ea0956",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/05_testing.md",
+      "sha256": "sha256:384d06e95208d83e231346d69107535344225c0b14a6b34734acbb909b57163c",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/06_rollout.md",
+      "sha256": "sha256:91c0097fd65885de6995ae12096e96541e19cc958e2146fcd45647bc42e6faa3",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/07_registry.md",
+      "sha256": "sha256:ae7edae41179c5e787967489273b078731ff27c296cd84f8085de4588fb2eacd",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/08_commit.md",
+      "sha256": "sha256:a72b53e84894e678048d483434e2e063fabd6e5dd70c2926743394c328f19f23",
+      "classification": "spec"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/manifest.yaml",
+      "sha256": "sha256:c78bcba5e69694dc98326724a6020ab4ed294f94bb8b2bd2af783a1813f5e8f8",
+      "classification": "spec"
+    },
+    {
+      "path": "tests/test_shell.py",
+      "sha256": "sha256:de8924e577760dfc70bbbc3e55677330226b0fce4912640873d06fb2b248ef01",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_shell_commands.py",
+      "sha256": "sha256:804f62dcaf6e23e0cf456db71fe5f588b00f0295f220663f72539fbcc7e259b7",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_shell_pipe.py",
+      "sha256": "sha256:69e190e5afb1996dd687070f46abaca9da4905935c71ffa1afa50a1188842e4d",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000"
+  ],
+  "metadata": {
+    "description": "Universal Shell for Control Plane",
+    "created_by": "remediate_orphans.py",
+    "created_at": "2026-02-06T01:06:30.316061+00:00"
+  }
+}

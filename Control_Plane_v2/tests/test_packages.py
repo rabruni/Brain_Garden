@@ -90,6 +90,57 @@ class TestPackUnpackRoundTrip:
             assert extracted.exists()
             assert extracted.read_text() == "test content"
 
+    def test_nested_directory_no_duplicates(self):
+        """Nested directory pack has no duplicate entries and preserves paths."""
+        import tarfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+
+            # Create nested directory structure mimicking a real package
+            src = tmp / "PKG-TEST"
+            (src / "modules" / "admin_agent").mkdir(parents=True)
+            (src / "lib").mkdir()
+            (src / "tests").mkdir()
+
+            (src / "manifest.json").write_text('{"package_id": "PKG-TEST"}')
+            (src / "modules" / "admin_agent" / "agent.py").write_text("class Agent: pass")
+            (src / "modules" / "admin_agent" / "tools.py").write_text("def tool(): pass")
+            (src / "lib" / "helpers.py").write_text("def help(): pass")
+            (src / "tests" / "test_agent.py").write_text("def test(): pass")
+
+            # Pack
+            archive = tmp / "test.tar.gz"
+            pack(src, archive)
+
+            # Inspect archive: no duplicate entries
+            with tarfile.open(archive, "r:gz") as tf:
+                names = [m.name for m in tf.getmembers()]
+
+            assert len(names) == len(set(names)), f"Duplicate entries found: {names}"
+
+            # Verify paths are preserved (not flattened to bare filenames)
+            assert "modules/admin_agent/agent.py" in names
+            assert "modules/admin_agent/tools.py" in names
+            assert "lib/helpers.py" in names
+            assert "tests/test_agent.py" in names
+            assert "manifest.json" in names
+
+            # Verify directory entries exist
+            assert "modules" in names or "modules/" in names or \
+                any(n.startswith("modules/") for n in names)
+
+            # Round-trip: extract and verify file layout
+            dest = tmp / "extracted"
+            dest.mkdir()
+            unpack(archive, dest)
+
+            assert (dest / "modules" / "admin_agent" / "agent.py").read_text() == "class Agent: pass"
+            assert (dest / "modules" / "admin_agent" / "tools.py").read_text() == "def tool(): pass"
+            assert (dest / "lib" / "helpers.py").read_text() == "def help(): pass"
+            assert (dest / "tests" / "test_agent.py").read_text() == "def test(): pass"
+            assert (dest / "manifest.json").read_text() == '{"package_id": "PKG-TEST"}'
+
 
 def run_tests():
     """Run all tests and report results."""

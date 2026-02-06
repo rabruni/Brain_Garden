@@ -22,6 +22,8 @@ import hashlib
 from pathlib import Path
 from typing import List, Union
 
+from lib.hashing import sha256_file as _sha256_file, sha256_string as _sha256_string
+
 
 def hash_file(path: Union[str, Path], chunk_size: int = 8192) -> str:
     """
@@ -38,14 +40,7 @@ def hash_file(path: Union[str, Path], chunk_size: int = 8192) -> str:
         FileNotFoundError: If file doesn't exist
         IsADirectoryError: If path is a directory
     """
-    path = Path(path)
-    sha256 = hashlib.sha256()
-
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(chunk_size), b""):
-            sha256.update(chunk)
-
-    return sha256.hexdigest()
+    return _sha256_file(path, chunk_size)
 
 
 def hash_string(content: str) -> str:
@@ -58,7 +53,7 @@ def hash_string(content: str) -> str:
     Returns:
         Lowercase hex digest of SHA256 hash
     """
-    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+    return _sha256_string(content)
 
 
 def hash_combine(hash_a: str, hash_b: str) -> str:
