@@ -7,7 +7,7 @@ installation-specific rules.
 
 Usage:
     python3 scripts/validate_install_policy.py
-    python3 scripts/validate_install_policy.py --policy policies/install_policy.yaml
+    python3 scripts/validate_install_policy.py --policy scripts/policies/install_policy.yaml
     python3 scripts/validate_install_policy.py --strict
 """
 from __future__ import annotations
@@ -361,7 +361,7 @@ def validate_install_policy(policy: Dict[str, Any]) -> Tuple[List[ValidationErro
 
 def find_policy_files() -> List[Path]:
     """Find all install policy files."""
-    policies_dir = CONTROL_PLANE / "policies"
+    policies_dir = CONTROL_PLANE / "scripts" / "policies"
     if not policies_dir.exists():
         return []
 

@@ -48,7 +48,7 @@ GOVERNED_ROOTS = [
     "tests/",
     "docs/",
     "gates/",
-    "policies/",
+    "scripts/policies/",
 ]
 
 # Always forbidden (even for package install)

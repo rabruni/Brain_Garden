@@ -74,8 +74,8 @@
         "PRM-ADMIN-EXPLAIN-001.md",
         "PRM-ADMIN-GENERAL-001.md",
         "PRM-ADMIN-VALIDATE-001.md",
-        "PRM-BRAIN-001.md",
         "PRM-CLASSIFY-001.md",
+        "PRM-FMWK-CAPABILITIES-001.md",
         "PRM-ROUTER-001.md"
       ]
     },
@@ -120,7 +120,6 @@
         "admin_agent/README.md",
         "admin_agent/agent.py",
         "admin_agent/capabilities.json",
-        "admin_agent/handlers/confirmation.py",
         "admin_agent/handlers/llm_assisted.py",
         "admin_agent/handlers/tools_first.py",
         "admin_agent/tools.py",
@@ -133,7 +132,6 @@
         "agent_runtime/runner.py",
         "agent_runtime/sandbox.py",
         "agent_runtime/session.py",
-        "brain/brain.py",
         "chat_interface/__main__.py",
         "chat_interface/classifier.py",
         "chat_interface/handlers/browse.py",
@@ -145,7 +143,7 @@
         "chat_interface/session.py",
         "hello_module/hello.py",
         "router/__main__.py",
-        "router/classifier.py",
+        "router/capabilities.py",
         "router/decision.py",
         "router/policy.py",
         "router/prompt_router.py",
@@ -250,6 +248,7 @@
         "kernel_install.py",
         "ledger_repair.py",
         "ledger_tier.py",
+        "mp.py",
         "package_factory.py",
         "package_install.py",
         "package_pack.py",
@@ -319,6 +318,7 @@
         "SPEC-EVIDENCE-001/08_commit.md",
         "SPEC-EVIDENCE-001/manifest.yaml",
         "SPEC-FMWK-001/manifest.yaml",
+        "SPEC-FMWK-CAPS-001/manifest.yaml",
         "SPEC-GATE-001/manifest.yaml",
         "SPEC-GENESIS-001/manifest.yaml",
         "SPEC-INSPECT-001/manifest.yaml",
@@ -336,8 +336,11 @@
         "SPEC-PROMPT-001/06_rollout.md",
         "SPEC-PROMPT-001/07_registry.md",
         "SPEC-PROMPT-001/08_commit.md",
+        "SPEC-RATE-MGMT-001/manifest.yaml",
         "SPEC-REG-001/manifest.yaml",
         "SPEC-ROUTER-001/manifest.yaml",
+        "SPEC-ROUTER-FIX-001/manifest.yaml",
+        "SPEC-ROUTER-PURE-001/manifest.yaml",
         "SPEC-RUNTIME-001/00_overview.md",
         "SPEC-RUNTIME-001/01_problem.md",
         "SPEC-RUNTIME-001/02_solution.md",
@@ -373,7 +376,6 @@
         "test_agent_runtime.py",
         "test_auth.py",
         "test_authz.py",
-        "test_brain.py",
         "test_chain.py",
         "test_chain_genesis.py",
         "test_chat_interface.py",
@@ -405,7 +407,6 @@
         "test_provenance.py",
         "test_router.py",
         "test_router_admin_contract.py",
-        "test_router_policy.py",
         "test_sandbox_failclosed.py",
         "test_shell.py",
         "test_shell_commands.py",
@@ -417,7 +418,6 @@
         "test_stdlib_llm.py",
         "test_stdlib_llm_mock.py",
         "test_tier_ledger.py",
-        "test_tools_first_dryrun.py",
         "test_trace.py"
       ]
     }
@@ -664,18 +664,18 @@
       "classification": "other"
     },
     {
-      "path": "governed_prompts/PRM-BRAIN-001.md",
-      "sha256": "sha256:f1d955204615ee717dbf7bdee004670519b586435543c0282858ca68f1cf25de",
-      "classification": "other"
-    },
-    {
       "path": "governed_prompts/PRM-CLASSIFY-001.md",
       "sha256": "sha256:fe4b3319db85039a86389d089732f1752c7874dd8272cdb6273bff22bccb172b",
       "classification": "other"
     },
     {
+      "path": "governed_prompts/PRM-FMWK-CAPABILITIES-001.md",
+      "sha256": "sha256:d801dd573a31859217ef007d1a8e731b23896a6fe26d13d95f49c0ea17c5f408",
+      "classification": "other"
+    },
+    {
       "path": "governed_prompts/PRM-ROUTER-001.md",
-      "sha256": "sha256:4caf392dad279e0511fb2a8bd1e3a106dde0b8ef94f2a4c352d826bec4539220",
+      "sha256": "sha256:61d4001a92681ae783fb7e5edf3e3870ca71a2512d119de8301a2f9ea99933f2",
       "classification": "other"
     },
     {
@@ -770,7 +770,7 @@
     },
     {
       "path": "lib/preflight.py",
-      "sha256": "sha256:33b552a609c858e92a3c64304041240ee5164d546d207c993d3c1a42711c79b6",
+      "sha256": "sha256:07c5237a437599e0a6139f392fae7342093af78e801142777477f54766c44567",
       "classification": "library"
     },
     {
@@ -825,7 +825,7 @@
     },
     {
       "path": "modules/admin_agent/agent.py",
-      "sha256": "sha256:140e10d14f31bf4db09e9b5a6e2975aa2ae9b3c4aa859020188ce1d0d91d4a0c",
+      "sha256": "sha256:a2b0336cd2990b7b23c5a686ce348d1818c307c3d79a366a435615c9b6007142",
       "classification": "module"
     },
     {
@@ -834,18 +834,13 @@
       "classification": "module"
     },
     {
-      "path": "modules/admin_agent/handlers/confirmation.py",
-      "sha256": "sha256:cccf9dd2a04451b54d8a7600f47288149c18b5049fe2b06301b9c94d9b777c00",
-      "classification": "module"
-    },
-    {
       "path": "modules/admin_agent/handlers/llm_assisted.py",
-      "sha256": "sha256:033c9bbd9b5404113813278eeeb4c855bd62500d37b43be5cfd5183c1ed90283",
+      "sha256": "sha256:f18a4bdfdfbeab4b51347c68355cd6035787eda692d821ba7375a665fc70ec5e",
       "classification": "module"
     },
     {
       "path": "modules/admin_agent/handlers/tools_first.py",
-      "sha256": "sha256:2dcc26b3e27f224fa14f40f21b8e0a67fd64df7101892fe17d763ac5fe6d485d",
+      "sha256": "sha256:b079171d1e6a55507861d4a2f8f1f7bfc45e6aac21966ad84e0d99004348a130",
       "classification": "module"
     },
     {
@@ -899,18 +894,13 @@
       "classification": "module"
     },
     {
-      "path": "modules/brain/brain.py",
-      "sha256": "sha256:5cc288b7b4864ba3ee39c97c964b5c869a003814ba9136426d328b301608d98e",
-      "classification": "module"
-    },
-    {
       "path": "modules/chat_interface/__main__.py",
       "sha256": "sha256:e4950f2e1320364d67c5a4d98242c1e9c71f682b3b52ec21166215d87cbe0fc9",
       "classification": "module"
     },
     {
       "path": "modules/chat_interface/classifier.py",
-      "sha256": "sha256:7245cf6216c3ea13b3be80fc7823d53afacdb1c1e4d6894f840b48bd2b1b12ee",
+      "sha256": "sha256:029bb360317727c189d299389c95b9d35ce7e84a9c9ba309cff4dc55f3bec217",
       "classification": "module"
     },
     {
@@ -955,17 +945,17 @@
     },
     {
       "path": "modules/router/__main__.py",
-      "sha256": "sha256:492e082a3e7c0568eb450ec551e0da752ea107f77321801099d125b2637b4091",
+      "sha256": "sha256:4169f09eebeafe9ac1f035d6010e74cb7214eb2b4742fc159044ef1b6b92720a",
       "classification": "module"
     },
     {
-      "path": "modules/router/classifier.py",
-      "sha256": "sha256:4c68b3f7e29110770a3addca9ffba53cbeb186590c0a8c16e41a61e23f0ccf43",
+      "path": "modules/router/capabilities.py",
+      "sha256": "sha256:f9971900f9062afe76f8570a282eca1ea22be1f35127bed37ec3150b50928696",
       "classification": "module"
     },
     {
       "path": "modules/router/decision.py",
-      "sha256": "sha256:de281ad1fc06a7c8689d2a61877d21fc66f0d299971cf8b33d14e3a16858bf52",
+      "sha256": "sha256:946956b5a6616ff24093acdc07601d5f6d90aaba5f0fad5800e092950bb5b1f2",
       "classification": "module"
     },
     {
@@ -975,7 +965,7 @@
     },
     {
       "path": "modules/router/prompt_router.py",
-      "sha256": "sha256:6b8c155adb876c5fb6ecc65735c6653dc6639c589e2381b18950a04c2372900f",
+      "sha256": "sha256:fc0b35405a5bc53de84a0ece8bf64d2bbe9b5da6263d14b825b65742af2d8663",
       "classification": "module"
     },
     {
@@ -1105,7 +1095,7 @@
     },
     {
       "path": "modules/stdlib_llm/providers/anthropic.py",
-      "sha256": "sha256:4b5c3cd606ed5617b6dbf799f6a7255a94a9433eb304c6871721010668a1d98a",
+      "sha256": "sha256:453e6db4014299964651764a7332a2e78f64ebd0d0839ea34bba1cc954144b4f",
       "classification": "module"
     },
     {
@@ -1114,12 +1104,12 @@
       "classification": "module"
     },
     {
-      "path": "policies/attention_default.yaml",
+      "path": "scripts/policies/attention_default.yaml",
       "sha256": "sha256:dced8973850090c226698ca4ce57c491378a8576a0d57dee6913c7bfa8d51cab",
       "classification": "policy"
     },
     {
-      "path": "policies/install_policy.yaml",
+      "path": "scripts/policies/install_policy.yaml",
       "sha256": "sha256:445a48b15cfe3636d46089f297b51bd255c5192c18d6449896e63d05d1abbfe3",
       "classification": "policy"
     },
@@ -1145,7 +1135,7 @@
     },
     {
       "path": "registries/specs_registry.csv",
-      "sha256": "sha256:22c42135d03e09f681677aa3717d254ee9e0a7ac4a1de36f40e83b901f416c05",
+      "sha256": "sha256:cc9b42b8219f46a0ff069dd3327d7e6094ccce5ebc6449c592c3b07e5e98c37d",
       "classification": "registry"
     },
     {
@@ -1364,13 +1354,18 @@
       "classification": "script"
     },
     {
+      "path": "scripts/mp.py",
+      "sha256": "sha256:0edf1c37662402781be3686fe99080c49dfc7315d3faa9c572adccb0d6e3ecf2",
+      "classification": "script"
+    },
+    {
       "path": "scripts/package_factory.py",
       "sha256": "sha256:2d9f84af38beeda04859ac979b7a2c0fc4dcf37d1a28860a2b4adaa6ebd7b8b5",
       "classification": "script"
     },
     {
       "path": "scripts/package_install.py",
-      "sha256": "sha256:a95b2a9ad0cdd9d9f22d8439bfbbacd3c940e44498ae09a09402b23bd15c932c",
+      "sha256": "sha256:704625d1789689c8787a92cee89dfc523c3766d5d54564ed222bbf07a6a50021",
       "classification": "script"
     },
     {
@@ -1415,7 +1410,7 @@
     },
     {
       "path": "scripts/rebuild_derived_registries.py",
-      "sha256": "sha256:efe67e96aeee6d828c5f2e5019efbe5cf10a15dc3ef92587840171fb89849678",
+      "sha256": "sha256:df3abfd62e05127556195d83a0e2bd2f99fac348415992adc1929ba64d6abfba",
       "classification": "script"
     },
     {
@@ -1679,6 +1674,11 @@
       "classification": "spec_manifest"
     },
     {
+      "path": "specs/SPEC-FMWK-CAPS-001/manifest.yaml",
+      "sha256": "sha256:7e56ddc3a26c2f9d33345019eb055362014f79c89da76979f14f1947b64487fe",
+      "classification": "spec_manifest"
+    },
+    {
       "path": "specs/SPEC-GATE-001/manifest.yaml",
       "sha256": "sha256:59581474c279bb9d145b3dc9720e1f20753caa57dbb956baa36450fdd2165c78",
       "classification": "spec_manifest"
@@ -1764,6 +1764,11 @@
       "classification": "spec_asset"
     },
     {
+      "path": "specs/SPEC-RATE-MGMT-001/manifest.yaml",
+      "sha256": "sha256:b4ad08d44624629ca94a35fff180637391450b9cea7f1760ebdb187d388b7b00",
+      "classification": "spec_manifest"
+    },
+    {
       "path": "specs/SPEC-REG-001/manifest.yaml",
       "sha256": "sha256:44563f78e4a2c4f863c999583f44e17d0b8fd5ae7847b9030317d5056b788222",
       "classification": "spec_manifest"
@@ -1771,6 +1776,16 @@
     {
       "path": "specs/SPEC-ROUTER-001/manifest.yaml",
       "sha256": "sha256:7f7bd245fad48777f58b08fa1850629b30b133b6490902c63f78f34c97e2d3b8",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-ROUTER-FIX-001/manifest.yaml",
+      "sha256": "sha256:ca4af2e016abb9309051c68903bd94f0bf9f2ad62737948872f9af1c630f3a20",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-ROUTER-PURE-001/manifest.yaml",
+      "sha256": "sha256:5bbae300280a1cc4659e8d84ba8ca4025303119eeeba9edc6fa99675b72aefd4",
       "classification": "spec_manifest"
     },
     {
@@ -1890,12 +1905,12 @@
     },
     {
       "path": "tests/test_admin_agent.py",
-      "sha256": "sha256:0052b072f933777f21cc0503afe2a0b2ee23be34aa22e7fb541231951bcba609",
+      "sha256": "sha256:7beccbd21025a445bc198240169438a511b3436a2594c364b0384b2a798e65eb",
       "classification": "test"
     },
     {
       "path": "tests/test_admin_llm_assisted.py",
-      "sha256": "sha256:111aac5493c15ab2953585cebfec6e000af3a66ed594b759f281bdda9af5f361",
+      "sha256": "sha256:23cd702e39cc69b1daab610f2020e89fccce5ce62a274ae20fe102dead4c71d1",
       "classification": "test"
     },
     {
@@ -1919,11 +1934,6 @@
       "classification": "test"
     },
     {
-      "path": "tests/test_brain.py",
-      "sha256": "sha256:14fe195e00e84248e959d291f6c2defaeee388d9e391af212d8a78db55af868f",
-      "classification": "test"
-    },
-    {
       "path": "tests/test_chain.py",
       "sha256": "sha256:209e0a5e914c8b53a31d5e6ec1d9eb295efc58a125a8e2a89ddfe1de624eb365",
       "classification": "test"
@@ -1935,7 +1945,7 @@
     },
     {
       "path": "tests/test_chat_interface.py",
-      "sha256": "sha256:0dea1d2f46bdabe78354e8c1906a634d02a415fe6bb43da1cfcf44e08956338c",
+      "sha256": "sha256:445a043b9a94e8eb300d4006a2ff78623c5f6136eb9736ab6828402cd808a641",
       "classification": "test"
     },
     {
@@ -2020,12 +2030,12 @@
     },
     {
       "path": "tests/test_phase1_baseline.py",
-      "sha256": "sha256:804808ef6d8538e4fd31bf559285d3089e7e4753aee70eef1e81524e4a69faf6",
+      "sha256": "sha256:e84fea1a3e7f392feeb2f30244d1b001555f113f12eab7aac4bbe4afb0a31ef9",
       "classification": "test"
     },
     {
       "path": "tests/test_phase1b_package_install.py",
-      "sha256": "sha256:b812986275a91d98ad95e1dc8d00efce59ff78307609602464f2c7e998fedab0",
+      "sha256": "sha256:646d54d127fdb9a5b905a4ccb7cdf10454f45ab63930b097324b31cf5f496e05",
       "classification": "test"
     },
     {
@@ -2045,7 +2055,7 @@
     },
     {
       "path": "tests/test_preflight.py",
-      "sha256": "sha256:89d9d3515c77e838c9cd81917ee7fe095c486f1cbfa01687e43d909a97491075",
+      "sha256": "sha256:841b2061eb5ba4a7c4d3c61c13e982c8087500c0403e766b203c8e538facb25f",
       "classification": "test"
     },
     {
@@ -2070,17 +2080,12 @@
     },
     {
       "path": "tests/test_router.py",
-      "sha256": "sha256:e51f4b66a1aff90a2a0f2bf1f0654cc7befe80db820c33085e7e60ce0a1bc5f0",
+      "sha256": "sha256:66553f12b36dde3ae9737e46b630511d38a00b2486a4f9bf90cbc7e8b535454b",
       "classification": "test"
     },
     {
       "path": "tests/test_router_admin_contract.py",
-      "sha256": "sha256:f39c3df4a731b2168e91789da35d05e7795428a17e147898c1bb1416f55953d0",
-      "classification": "test"
-    },
-    {
-      "path": "tests/test_router_policy.py",
-      "sha256": "sha256:66c4a0e6760b0ce411a648faf0b964dede5858a142c8d41254ba2be6154d064e",
+      "sha256": "sha256:4e475fd201715566a7383d54d5255c9165cfa589a711c9e47b50bd600b21c1a7",
       "classification": "test"
     },
     {
@@ -2139,11 +2144,6 @@
       "classification": "test"
     },
     {
-      "path": "tests/test_tools_first_dryrun.py",
-      "sha256": "sha256:3342e95fd0ab53fbe7dc2f77ae690337490a77b18111fc6ea9b31a0e6dc0d5cd",
-      "classification": "test"
-    },
-    {
       "path": "tests/test_trace.py",
       "sha256": "sha256:df3b44b95d8a580201758236969147783e05a779a60170c1cbebb94aed9c7a9f",
       "classification": "test"
@@ -2156,7 +2156,7 @@
       "scripts/",
       "frameworks/",
       "schemas/",
-      "policies/",
+      "scripts/policies/",
       "registries/",
       "modules/",
       "tests/",
@@ -2176,7 +2176,7 @@
     ],
     "hash_algorithm": "sha256",
     "hash_format_version": "1.0",
-    "generated_at": "2026-02-06T21:37:08.235289+00:00",
+    "generated_at": "2026-02-07T06:39:21.584714+00:00",
     "generator": "generate_baseline_manifest.py",
     "generator_version": "1.0.0",
     "plane_context": "HO3",

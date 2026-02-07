@@ -52,7 +52,7 @@ if [[ "${WIPE_CONFIRM:-}" != "YES_WIPE_PRISTINE" ]]; then
     echo "  - lib/"
     echo "  - modules/"
     echo "  - schemas/"
-    echo "  - policies/"
+    echo "  - scripts/policies/"
     echo "  - scripts/ (except genesis_bootstrap.py)"
     echo "  - specs/"
     echo ""
@@ -149,7 +149,7 @@ PRISTINE_PATHS=(
     "lib"
     "modules"
     "schemas"
-    "policies"
+    "scripts/policies"
     "specs"
 )
 

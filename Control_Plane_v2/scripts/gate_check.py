@@ -69,7 +69,7 @@ def load_governed_roots(plane_root: Path) -> dict:
     config_path = plane_root / 'config' / 'governed_roots.json'
     if not config_path.exists():
         return {
-            "governed_roots": ["lib/", "scripts/", "frameworks/", "schemas/", "policies/", "registries/", "modules/", "tests/"],
+            "governed_roots": ["lib/", "scripts/", "frameworks/", "schemas/", "registries/", "modules/", "tests/"],
             "excluded_patterns": ["**/__pycache__/**", "**/*.pyc", "**/__init__.py"]
         }
     with open(config_path, 'r', encoding='utf-8') as f:

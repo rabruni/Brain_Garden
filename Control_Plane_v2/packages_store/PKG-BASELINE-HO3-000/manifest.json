@@ -9,10 +9,10 @@
       "target_id": "baseline",
       "files": [
         "control_plane_chain.json",
-        "control_plane_chain.json.bak",
         "governed_roots.json",
         "kernel_files.json",
         "registry_policy.json",
+        "router_policy.json",
         "signing_keys.json",
         "trusted_keys.json"
       ]
@@ -21,20 +21,33 @@
       "namespace": "docs",
       "target_id": "baseline",
       "files": [
+        "ADMIN_AGENT_SCRIPT_REF.md",
+        "AGENT_INDEX.md",
+        "AGENT_OPERATIONS_GUIDE.md",
+        "AGENT_PACKAGE_GUIDE.md",
         "CP-ARCH-001_control_plane_overview.md",
         "CP-FIREWALL-001_builder_vs_built.md",
         "CP-IMPL-001_governance_implementation_plan.md",
         "CP-LEDGER-001_tiered_ledger_model.md",
         "CP-PKG-001_framework_and_package_spec.md",
         "CP-SDLC-QUAL-001_feedback_governance.md",
+        "CROSSCUTTING.md",
         "Framework 100 Development SDLC.txt",
+        "PACKAGE_COMPLIANCE.md",
         "PHASE-02_ACCEPTANCE.md",
         "PHASE-02_PLAYBOOK.md",
         "PHASE-02_SYSTEM.md",
+        "PROMPT_ROUTER.md",
         "System_Structure.txt",
         "System_Structure.txt.bak",
+        "TODO_ADMIN_SEPARATION.md",
         "developer_guide.md",
-        "notes_Framework.txt"
+        "notes/AGENT_ARCHITECTURE_SESSION_20260204.md",
+        "notes/AGENT_CLASSES_REFERENCE.md",
+        "notes/LLM_AGENT_PATTERNS.md",
+        "notes/MEMORY_MODEL_HO_TIERS.md",
+        "notes_Framework.txt",
+        "operator_playbook.md"
       ]
     },
     {
@@ -48,18 +61,35 @@
         "FMWK-107_package_management_standard.md",
         "FMWK-200_ledger_protocol.md",
         "FMWK-ATT-001_provenance_attestation_standard.md",
-        "FMWK-PKG-001_package_standard.md"
+        "FMWK-CHAT-001_chat_interface_governance.md",
+        "FMWK-PKG-001_package_standard.md",
+        "FMWK-PROMPT-001_prompt_governance.md",
+        "FMWK-SHELL-001_shell_standard.md"
+      ]
+    },
+    {
+      "namespace": "governed_prompts",
+      "target_id": "baseline",
+      "files": [
+        "PRM-ADMIN-EXPLAIN-001.md",
+        "PRM-ADMIN-GENERAL-001.md",
+        "PRM-ADMIN-VALIDATE-001.md",
+        "PRM-CLASSIFY-001.md",
+        "PRM-FMWK-CAPABILITIES-001.md",
+        "PRM-ROUTER-001.md"
       ]
     },
     {
       "namespace": "lib",
       "target_id": "baseline",
       "files": [
+        "agent_helpers.py",
         "atomic.py",
         "auth.py",
         "authz.py",
         "cursor.py",
         "gate_operations.py",
+        "hashing.py",
         "id_allocator.py",
         "install_auth.py",
         "integrity.py",
@@ -71,10 +101,13 @@
         "packages.py",
         "paths.py",
         "plane.py",
+        "preflight.py",
         "pristine.py",
+        "prompt_loader.py",
         "provenance.py",
         "registry.py",
         "resolve.py",
+        "schema_validator.py",
         "signing.py",
         "tier_manifest.py",
         "workspace.py"
@@ -84,7 +117,63 @@
       "namespace": "modules",
       "target_id": "baseline",
       "files": [
-        "hello_module/hello.py"
+        "admin_agent/README.md",
+        "admin_agent/agent.py",
+        "admin_agent/capabilities.json",
+        "admin_agent/handlers/llm_assisted.py",
+        "admin_agent/handlers/tools_first.py",
+        "admin_agent/tools.py",
+        "agent_runtime/README.md",
+        "agent_runtime/capability.py",
+        "agent_runtime/exceptions.py",
+        "agent_runtime/ledger_writer.py",
+        "agent_runtime/memory.py",
+        "agent_runtime/prompt_builder.py",
+        "agent_runtime/runner.py",
+        "agent_runtime/sandbox.py",
+        "agent_runtime/session.py",
+        "chat_interface/__main__.py",
+        "chat_interface/classifier.py",
+        "chat_interface/handlers/browse.py",
+        "chat_interface/handlers/help.py",
+        "chat_interface/handlers/ledger.py",
+        "chat_interface/handlers/packages.py",
+        "chat_interface/handlers/search.py",
+        "chat_interface/registry.py",
+        "chat_interface/session.py",
+        "hello_module/hello.py",
+        "router/__main__.py",
+        "router/capabilities.py",
+        "router/decision.py",
+        "router/policy.py",
+        "router/prompt_router.py",
+        "shell/README.md",
+        "shell/__main__.py",
+        "shell/capabilities.json",
+        "shell/chat_ui.py",
+        "shell/commands/core.py",
+        "shell/commands/governance.py",
+        "shell/commands/memory.py",
+        "shell/commands/notes.py",
+        "shell/commands/signals.py",
+        "shell/interfaces.py",
+        "shell/operations.py",
+        "shell/shell.py",
+        "stdlib_auth/__main__.py",
+        "stdlib_auth/fingerprint.py",
+        "stdlib_auth/validator.py",
+        "stdlib_evidence/README.md",
+        "stdlib_evidence/__main__.py",
+        "stdlib_evidence/envelope.py",
+        "stdlib_evidence/hasher.py",
+        "stdlib_evidence/reference.py",
+        "stdlib_llm/__main__.py",
+        "stdlib_llm/client.py",
+        "stdlib_llm/config.py",
+        "stdlib_llm/evidence.py",
+        "stdlib_llm/provider.py",
+        "stdlib_llm/providers/anthropic.py",
+        "stdlib_llm/providers/mock.py"
       ]
     },
     {
@@ -102,6 +191,7 @@
         "control_plane_registry.csv",
         "frameworks_registry.csv",
         "packages_registry.csv",
+        "prompts_registry.csv",
         "specs_registry.csv"
       ]
     },
@@ -110,11 +200,22 @@
       "target_id": "baseline",
       "files": [
         "attention_envelope.json",
+        "chat_request.json",
+        "chat_response.json",
         "cp_status.json",
         "framework.schema.json",
         "package_manifest.json",
         "policy.json",
+        "route_policy.json",
+        "router_request.json",
+        "router_response.json",
         "spec.schema.json",
+        "stdlib_auth_request.json",
+        "stdlib_auth_response.json",
+        "stdlib_evidence_request.json",
+        "stdlib_evidence_response.json",
+        "stdlib_llm_request.json",
+        "stdlib_llm_response.json",
         "work_order.schema.json"
       ]
     },
@@ -122,7 +223,9 @@
       "namespace": "scripts",
       "target_id": "baseline",
       "files": [
+        "agent_check.py",
         "apply_work_order.py",
+        "chat.py",
         "compute_wo_hash.py",
         "cp_init_auth.py",
         "cp_inspect.py",
@@ -145,19 +248,25 @@
         "kernel_install.py",
         "ledger_repair.py",
         "ledger_tier.py",
+        "mp.py",
         "package_factory.py",
         "package_install.py",
         "package_pack.py",
         "package_sync.py",
+        "package_trace.sh",
         "package_uninstall.py",
+        "pkgutil.py",
         "pristine_rebuild_drill.sh",
         "quarantine_orphans.py",
         "rebuild_derived.py",
         "rebuild_derived_registries.py",
+        "remediate_orphans.py",
         "seal_guard.py",
+        "shell.py",
         "test_install.sh",
         "test_pack.sh",
         "test_uninstall.sh",
+        "trace.py",
         "validate_attention_policy.py",
         "validate_install_policy.py",
         "validate_package_manifest.py",
@@ -175,18 +284,84 @@
       "namespace": "specs",
       "target_id": "baseline",
       "files": [
+        "SPEC-ADMIN-001/00_overview.md",
+        "SPEC-ADMIN-001/01_problem.md",
+        "SPEC-ADMIN-001/02_solution.md",
+        "SPEC-ADMIN-001/03_requirements.md",
+        "SPEC-ADMIN-001/04_design.md",
+        "SPEC-ADMIN-001/05_testing.md",
+        "SPEC-ADMIN-001/06_rollout.md",
+        "SPEC-ADMIN-001/07_registry.md",
+        "SPEC-ADMIN-001/08_commit.md",
+        "SPEC-ADMIN-001/manifest.yaml",
+        "SPEC-CHAT-001/00_overview.md",
+        "SPEC-CHAT-001/01_problem.md",
+        "SPEC-CHAT-001/02_solution.md",
+        "SPEC-CHAT-001/03_requirements.md",
+        "SPEC-CHAT-001/04_design.md",
+        "SPEC-CHAT-001/05_testing.md",
+        "SPEC-CHAT-001/06_rollout.md",
+        "SPEC-CHAT-001/07_registry.md",
+        "SPEC-CHAT-001/08_commit.md",
+        "SPEC-CHAT-001/manifest.yaml",
         "SPEC-CORE-001/manifest.yaml",
+        "SPEC-CORE-SCRIPTS-001/manifest.yaml",
         "SPEC-DOC-001/manifest.yaml",
+        "SPEC-EVIDENCE-001/00_overview.md",
+        "SPEC-EVIDENCE-001/01_problem.md",
+        "SPEC-EVIDENCE-001/02_solution.md",
+        "SPEC-EVIDENCE-001/03_requirements.md",
+        "SPEC-EVIDENCE-001/04_design.md",
+        "SPEC-EVIDENCE-001/05_testing.md",
+        "SPEC-EVIDENCE-001/06_rollout.md",
+        "SPEC-EVIDENCE-001/07_registry.md",
+        "SPEC-EVIDENCE-001/08_commit.md",
+        "SPEC-EVIDENCE-001/manifest.yaml",
         "SPEC-FMWK-001/manifest.yaml",
+        "SPEC-FMWK-CAPS-001/manifest.yaml",
         "SPEC-GATE-001/manifest.yaml",
         "SPEC-GENESIS-001/manifest.yaml",
+        "SPEC-INSPECT-001/manifest.yaml",
         "SPEC-INT-001/manifest.yaml",
         "SPEC-LEDGER-001/manifest.yaml",
         "SPEC-PKG-001/manifest.yaml",
         "SPEC-PLANE-001/manifest.yaml",
         "SPEC-POLICY-001/manifest.yaml",
+        "SPEC-PROMPT-001/00_overview.md",
+        "SPEC-PROMPT-001/01_problem.md",
+        "SPEC-PROMPT-001/02_solution.md",
+        "SPEC-PROMPT-001/03_requirements.md",
+        "SPEC-PROMPT-001/04_design.md",
+        "SPEC-PROMPT-001/05_testing.md",
+        "SPEC-PROMPT-001/06_rollout.md",
+        "SPEC-PROMPT-001/07_registry.md",
+        "SPEC-PROMPT-001/08_commit.md",
+        "SPEC-RATE-MGMT-001/manifest.yaml",
         "SPEC-REG-001/manifest.yaml",
+        "SPEC-ROUTER-001/manifest.yaml",
+        "SPEC-ROUTER-FIX-001/manifest.yaml",
+        "SPEC-ROUTER-PURE-001/manifest.yaml",
+        "SPEC-RUNTIME-001/00_overview.md",
+        "SPEC-RUNTIME-001/01_problem.md",
+        "SPEC-RUNTIME-001/02_solution.md",
+        "SPEC-RUNTIME-001/03_requirements.md",
+        "SPEC-RUNTIME-001/04_design.md",
+        "SPEC-RUNTIME-001/05_testing.md",
+        "SPEC-RUNTIME-001/06_rollout.md",
+        "SPEC-RUNTIME-001/07_registry.md",
+        "SPEC-RUNTIME-001/08_commit.md",
+        "SPEC-RUNTIME-001/manifest.yaml",
         "SPEC-SEC-001/manifest.yaml",
+        "SPEC-SHELL-001/00_overview.md",
+        "SPEC-SHELL-001/01_problem.md",
+        "SPEC-SHELL-001/02_solution.md",
+        "SPEC-SHELL-001/03_requirements.md",
+        "SPEC-SHELL-001/04_design.md",
+        "SPEC-SHELL-001/05_testing.md",
+        "SPEC-SHELL-001/06_rollout.md",
+        "SPEC-SHELL-001/07_registry.md",
+        "SPEC-SHELL-001/08_commit.md",
+        "SPEC-SHELL-001/manifest.yaml",
         "SPEC-TEST-001/manifest.yaml",
         "SPEC-VER-001/manifest.yaml"
       ]
@@ -195,10 +370,16 @@
       "namespace": "tests",
       "target_id": "baseline",
       "files": [
+        "test_admin_agent.py",
+        "test_admin_llm_assisted.py",
+        "test_agent_helpers.py",
+        "test_agent_runtime.py",
         "test_auth.py",
         "test_authz.py",
         "test_chain.py",
         "test_chain_genesis.py",
+        "test_chat_interface.py",
+        "test_chat_session.py",
         "test_cross_tier_provenance.py",
         "test_factory_canary.py",
         "test_g2_gate.py",
@@ -206,19 +387,38 @@
         "test_g4_gate.py",
         "test_g5_gate.py",
         "test_g6_full.py",
+        "test_hashing.py",
         "test_idempotency.py",
         "test_kernel_parity.py",
         "test_ledger_chain.py",
         "test_manifest_v11.py",
         "test_multiplane.py",
+        "test_no_direct_llm.py",
         "test_packages.py",
         "test_phase1_baseline.py",
         "test_phase1b_package_install.py",
         "test_phase3_summary.py",
+        "test_pkgutil.py",
         "test_plane.py",
+        "test_preflight.py",
         "test_pristine.py",
+        "test_prompt_loader.py",
+        "test_prompt_tracking.py",
         "test_provenance.py",
-        "test_tier_ledger.py"
+        "test_router.py",
+        "test_router_admin_contract.py",
+        "test_sandbox_failclosed.py",
+        "test_shell.py",
+        "test_shell_commands.py",
+        "test_shell_pipe.py",
+        "test_stdlib_auth.py",
+        "test_stdlib_auth_pipe.py",
+        "test_stdlib_evidence.py",
+        "test_stdlib_evidence_pipe.py",
+        "test_stdlib_llm.py",
+        "test_stdlib_llm_mock.py",
+        "test_tier_ledger.py",
+        "test_trace.py"
       ]
     }
   ],
@@ -229,23 +429,23 @@
       "classification": "config"
     },
     {
-      "path": "config/control_plane_chain.json.bak",
-      "sha256": "sha256:0b84dd8ab8707f34defe489f0b15a29cc26ccf9c4a6a5603feebbcc3ee7cd8df",
-      "classification": "other"
-    },
-    {
       "path": "config/governed_roots.json",
-      "sha256": "sha256:179b6fd77c02e01ae9ec51b858ad44dd094babcf08be695e9a9d9e2eafa832b1",
+      "sha256": "sha256:fd0c6af549d139a6afab53e1a24e1f234ab907a3ffbdaf9138652b62e101b667",
       "classification": "config"
     },
     {
       "path": "config/kernel_files.json",
-      "sha256": "sha256:367a1df3daf5b0185ce2d02503e9f9a0617e031b4fa7442c311f2b3fa1ad9b23",
+      "sha256": "sha256:a77ee22812090de59efdce4c8b05f601d470c5efaa74b203ebec9bb96234b8f1",
       "classification": "config"
     },
     {
       "path": "config/registry_policy.json",
       "sha256": "sha256:d34f53c5df80fd973e21f438249d6aa12ef2e48774f5981b106e88c8550519b2",
+      "classification": "config"
+    },
+    {
+      "path": "config/router_policy.json",
+      "sha256": "sha256:bec506e4f2aa453c40dff869b913a4f434ddbebdd049c301ffc17a0c2c0a6186",
       "classification": "config"
     },
     {
@@ -259,13 +459,33 @@
       "classification": "config"
     },
     {
+      "path": "docs/ADMIN_AGENT_SCRIPT_REF.md",
+      "sha256": "sha256:dc1febfbeb9bf4e0d3bd748122d87776d81bdf2f037da3e7f04375a06b4a0485",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/AGENT_INDEX.md",
+      "sha256": "sha256:fb462bcf4a7dd2cd41e00efc2d71cf1a64452957aca71eec922925b24d0578bf",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/AGENT_OPERATIONS_GUIDE.md",
+      "sha256": "sha256:3c402ff47312c0597a986135367a19bd8a89619940953e9149002ca96b9a439b",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/AGENT_PACKAGE_GUIDE.md",
+      "sha256": "sha256:1629b5d01ebe2523c9b12e5f15cee3e4ba9fcfc2c8ce7f0d474cdd08aa8f71cc",
+      "classification": "documentation"
+    },
+    {
       "path": "docs/CP-ARCH-001_control_plane_overview.md",
       "sha256": "sha256:92e42ca1536b4b7c076862bb9d1f25f7d5a53ae8a14403c6893341dc7a33ba7e",
       "classification": "documentation"
     },
     {
       "path": "docs/CP-FIREWALL-001_builder_vs_built.md",
-      "sha256": "sha256:d746cdbd62dc6a439624808a2a59888508b20383875d63ec43d3dc8a7c1dbe72",
+      "sha256": "sha256:52e10c2666fa5408da4de460891e906715a0c6812d8fc4ae7d1edc2719c098f5",
       "classification": "documentation"
     },
     {
@@ -289,9 +509,19 @@
       "classification": "documentation"
     },
     {
+      "path": "docs/CROSSCUTTING.md",
+      "sha256": "sha256:354d0341d6cc90fbeb2ad13b2299f586e89351c223abb9d5f9f24360b6be16bb",
+      "classification": "documentation"
+    },
+    {
       "path": "docs/Framework 100 Development SDLC.txt",
       "sha256": "sha256:f7867c43ea642ffe61a6e1d16e84a1b4f871eae7699f4a9c2009308249bbd7de",
       "classification": "other"
+    },
+    {
+      "path": "docs/PACKAGE_COMPLIANCE.md",
+      "sha256": "sha256:905f8716d02988613d1461364c1b4fbdfb57d4c3b26d1ea8666058c1b11e446f",
+      "classification": "documentation"
     },
     {
       "path": "docs/PHASE-02_ACCEPTANCE.md",
@@ -309,6 +539,11 @@
       "classification": "documentation"
     },
     {
+      "path": "docs/PROMPT_ROUTER.md",
+      "sha256": "sha256:9cc027ff735a7d5488a81f0178544735d81ce8520ef27d705afaae10494df8df",
+      "classification": "documentation"
+    },
+    {
       "path": "docs/System_Structure.txt",
       "sha256": "sha256:1cf8a88dea874a7bfd59ae5c5fa9c9847c9500e68f746a1593332a8019634704",
       "classification": "other"
@@ -319,8 +554,33 @@
       "classification": "other"
     },
     {
+      "path": "docs/TODO_ADMIN_SEPARATION.md",
+      "sha256": "sha256:de5ddbcdfb9c5268b0e49c0b4947be7c9cf648f0c8c8cc7f51e6bb99dd5666f8",
+      "classification": "documentation"
+    },
+    {
       "path": "docs/developer_guide.md",
       "sha256": "sha256:f8fa3b461ea61f68c5524c59bf15ee524504bfd810f80747cd299a976b086e7f",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/AGENT_ARCHITECTURE_SESSION_20260204.md",
+      "sha256": "sha256:53ca7c4abfe9aba8f1c1f206c75b219e5010f721f66e27e86a1fe93c0a09ff3e",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/AGENT_CLASSES_REFERENCE.md",
+      "sha256": "sha256:ad634bacd3797efd580c207538dda53f7feedcb3658fee4fbf864b388a746ddf",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/LLM_AGENT_PATTERNS.md",
+      "sha256": "sha256:4e136785104233e12d66423b510ed1c3870f92b0c6c9838494b0ac19ddd5c298",
+      "classification": "documentation"
+    },
+    {
+      "path": "docs/notes/MEMORY_MODEL_HO_TIERS.md",
+      "sha256": "sha256:6c6250e71e5ada68138048d8fb8a5f2d2b1e51cf11fbd3700fb9e93bf4f237c1",
       "classification": "documentation"
     },
     {
@@ -329,13 +589,18 @@
       "classification": "other"
     },
     {
+      "path": "docs/operator_playbook.md",
+      "sha256": "sha256:1aa9ff2ac2800a47876e3daeb6cbbbce8268dad116f807c6d014bb54fcb5ea37",
+      "classification": "documentation"
+    },
+    {
       "path": "frameworks/FMWK-000_governance_framework.md",
       "sha256": "sha256:89ae8f7f270144a109414fea0bc04f884e0b89f081e155ec79b2cf967e62e35c",
       "classification": "law_doc"
     },
     {
       "path": "frameworks/FMWK-100_agent_development_standard.md",
-      "sha256": "sha256:c6eb6e86b4cdfac24f055d30dd7ee4166c80a8fadad79d53c9fe906fd1789ade",
+      "sha256": "sha256:43debf80f8b629c7a35a3bbd20d6b9d8b84640e8ae9d755ed3d6676a7ca6d443",
       "classification": "law_doc"
     },
     {
@@ -364,9 +629,59 @@
       "classification": "law_doc"
     },
     {
+      "path": "frameworks/FMWK-CHAT-001_chat_interface_governance.md",
+      "sha256": "sha256:b14e8e71b9905528382bd46c8992506e68add2eaec6c911082564ffc9826c422",
+      "classification": "law_doc"
+    },
+    {
       "path": "frameworks/FMWK-PKG-001_package_standard.md",
       "sha256": "sha256:e3b806831857449edeeb3350f2fa1fd4eee54cf42bf4e2aa9289b7feba45b5d5",
       "classification": "law_doc"
+    },
+    {
+      "path": "frameworks/FMWK-PROMPT-001_prompt_governance.md",
+      "sha256": "sha256:204f2fb072467415ec07b346d85f8156dd403ae7e2da700602cba32aba12f9d7",
+      "classification": "law_doc"
+    },
+    {
+      "path": "frameworks/FMWK-SHELL-001_shell_standard.md",
+      "sha256": "sha256:5e2e0a8b2c21c768ea5fac1f83f2c3643befbe082b069325e1174757a13f9a6e",
+      "classification": "law_doc"
+    },
+    {
+      "path": "governed_prompts/PRM-ADMIN-EXPLAIN-001.md",
+      "sha256": "sha256:9d40c7f9124a0fa147008e65736000d05b209e15a9fbe538777b49b9e4e2fc97",
+      "classification": "other"
+    },
+    {
+      "path": "governed_prompts/PRM-ADMIN-GENERAL-001.md",
+      "sha256": "sha256:5786163a5177f828a3519d2c44c3c64d0b50d2f9eb49d9d29a8beedc117872f8",
+      "classification": "other"
+    },
+    {
+      "path": "governed_prompts/PRM-ADMIN-VALIDATE-001.md",
+      "sha256": "sha256:77703b63385c7995e302d73aee0487fa0f6d0d836784ad32f1f462ad9e80aa38",
+      "classification": "other"
+    },
+    {
+      "path": "governed_prompts/PRM-CLASSIFY-001.md",
+      "sha256": "sha256:fe4b3319db85039a86389d089732f1752c7874dd8272cdb6273bff22bccb172b",
+      "classification": "other"
+    },
+    {
+      "path": "governed_prompts/PRM-FMWK-CAPABILITIES-001.md",
+      "sha256": "sha256:d801dd573a31859217ef007d1a8e731b23896a6fe26d13d95f49c0ea17c5f408",
+      "classification": "other"
+    },
+    {
+      "path": "governed_prompts/PRM-ROUTER-001.md",
+      "sha256": "sha256:61d4001a92681ae783fb7e5edf3e3870ca71a2512d119de8301a2f9ea99933f2",
+      "classification": "other"
+    },
+    {
+      "path": "lib/agent_helpers.py",
+      "sha256": "sha256:21079da55c043a5eeb93e42976ad150d3c456e9ca48caabb5e16d8617c27ffb9",
+      "classification": "library"
     },
     {
       "path": "lib/atomic.py",
@@ -394,6 +709,11 @@
       "classification": "library"
     },
     {
+      "path": "lib/hashing.py",
+      "sha256": "sha256:dacd9ec9c82e89dcff5542768fad16c4e15d5142461730245dcf851f54e1f443",
+      "classification": "library"
+    },
+    {
       "path": "lib/id_allocator.py",
       "sha256": "sha256:8b126651bde0ef01817fb8c38bae274574dcde16ea60f02be6b79863eaf374de",
       "classification": "library"
@@ -410,7 +730,7 @@
     },
     {
       "path": "lib/ledger_client.py",
-      "sha256": "sha256:08b8383443dc808aac182e563bd4c0cd8598b7942b916090510056d1f7cf1fbe",
+      "sha256": "sha256:900f8f6e84061ee82844eb0a6e9000340cceba2cc5c63a11a1944c4d2df0ca91",
       "classification": "library"
     },
     {
@@ -420,7 +740,7 @@
     },
     {
       "path": "lib/merkle.py",
-      "sha256": "sha256:3dbaaa28cc4c4abab37b9f1adbfe9e7c7625bf54b7b2ab992d050f2bc2b82a63",
+      "sha256": "sha256:5a3c471e2cd3049b1a1cf48509af1cd2c0767bd9c4bd884a6cf37096eaa6f432",
       "classification": "library"
     },
     {
@@ -435,12 +755,12 @@
     },
     {
       "path": "lib/packages.py",
-      "sha256": "sha256:88bb492db8436f841ba63bfbefcac709d8ee7f447d1abba321d80331cd143a5c",
+      "sha256": "sha256:3ff8741ab181f5c1e8c260d33a93ea2e0bad9d02b25028d8972be5cb77197dd0",
       "classification": "library"
     },
     {
       "path": "lib/paths.py",
-      "sha256": "sha256:b69f7f76e231bcbbb6a51793c2ca33dbcde0841187055ce263f6d9b7df584c0b",
+      "sha256": "sha256:3dc36d8cc1e3444e5be529033fd2b918c28ce26fcdac0c2fe6cd75d8f79156ed",
       "classification": "library"
     },
     {
@@ -449,8 +769,18 @@
       "classification": "library"
     },
     {
+      "path": "lib/preflight.py",
+      "sha256": "sha256:07c5237a437599e0a6139f392fae7342093af78e801142777477f54766c44567",
+      "classification": "library"
+    },
+    {
       "path": "lib/pristine.py",
       "sha256": "sha256:98ce81a6c2df5e9f838d76a662a8c376545334b774d00e35e324b323508bdde4",
+      "classification": "library"
+    },
+    {
+      "path": "lib/prompt_loader.py",
+      "sha256": "sha256:3fb9cdbdcd1d4fd48ec61cba120993e7fe998a3fdc544970b05f2c136905eae5",
       "classification": "library"
     },
     {
@@ -460,12 +790,17 @@
     },
     {
       "path": "lib/registry.py",
-      "sha256": "sha256:31ad6ab45921cc47e0678d8416e3395daf288c7fe81d4d70cc2a6bb956a20796",
+      "sha256": "sha256:9a057c95a48b40c5a1aff878d302b0937b9a6dc1c529ea2ca0dc34d737982e64",
       "classification": "library"
     },
     {
       "path": "lib/resolve.py",
       "sha256": "sha256:3ae724262c9e4a5c87d2c721b7839d3f0b114ad53cb5ba1c390f59469e018364",
+      "classification": "library"
+    },
+    {
+      "path": "lib/schema_validator.py",
+      "sha256": "sha256:5d75bb0b0f5d58a912a266f62c0a74e07d0cbe0c0ba37e2fcf90df155e3a6d00",
       "classification": "library"
     },
     {
@@ -484,28 +819,308 @@
       "classification": "library"
     },
     {
+      "path": "modules/admin_agent/README.md",
+      "sha256": "sha256:d468d97e6a3e33a31aa685b737da82332a9f56246a6ffd14f407ea4969237e74",
+      "classification": "module"
+    },
+    {
+      "path": "modules/admin_agent/agent.py",
+      "sha256": "sha256:a2b0336cd2990b7b23c5a686ce348d1818c307c3d79a366a435615c9b6007142",
+      "classification": "module"
+    },
+    {
+      "path": "modules/admin_agent/capabilities.json",
+      "sha256": "sha256:26db6eda844d950b4384411556952c0d9ee7dfa729901f0c23a61d8500ff8819",
+      "classification": "module"
+    },
+    {
+      "path": "modules/admin_agent/handlers/llm_assisted.py",
+      "sha256": "sha256:f18a4bdfdfbeab4b51347c68355cd6035787eda692d821ba7375a665fc70ec5e",
+      "classification": "module"
+    },
+    {
+      "path": "modules/admin_agent/handlers/tools_first.py",
+      "sha256": "sha256:b079171d1e6a55507861d4a2f8f1f7bfc45e6aac21966ad84e0d99004348a130",
+      "classification": "module"
+    },
+    {
+      "path": "modules/admin_agent/tools.py",
+      "sha256": "sha256:bdc6a0ed233a1b6522cf065535f8771a3041a1f72541331d6890617807753c2e",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/README.md",
+      "sha256": "sha256:5a2a6d6b86ebd065fb6fa3c44b3678f1f59aa3703822142f93d32eca2aa0ca65",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/capability.py",
+      "sha256": "sha256:9b6b122394b14e8c38312932c69c0418ffb13a3df021071e3899cbb0b034f3d9",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/exceptions.py",
+      "sha256": "sha256:1f88f52b0899032ee8ee5e1c5a3fda8cf81830f2f78e17b189359108ec814d6e",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/ledger_writer.py",
+      "sha256": "sha256:e2dc2a73527cb157d58ba6118e032cfcb1b60c4ecc96206722fe125c107227c2",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/memory.py",
+      "sha256": "sha256:ac18e02a758006f597484425d139ee2866b1aa6d542c3874ec9e305da99288ba",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/prompt_builder.py",
+      "sha256": "sha256:0cd00d44f9c9d3aad70e16c50d4876a7f9e78d1cdccf40262b742639e7c81df8",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/runner.py",
+      "sha256": "sha256:2dd9f6ae5b6a077918d0df868c228c2150814a49e91c8f1e5b54bfcdc010d2c2",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/sandbox.py",
+      "sha256": "sha256:ef6f10fbc2a37003f92a4b78121b4ef6426ae6a2f38331e21070dd6a965e5252",
+      "classification": "module"
+    },
+    {
+      "path": "modules/agent_runtime/session.py",
+      "sha256": "sha256:ae391f5d0e07c64c39f2ad9871dc9eadd78e994659624e2d433b63ee1a0429cd",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/__main__.py",
+      "sha256": "sha256:e4950f2e1320364d67c5a4d98242c1e9c71f682b3b52ec21166215d87cbe0fc9",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/classifier.py",
+      "sha256": "sha256:029bb360317727c189d299389c95b9d35ce7e84a9c9ba309cff4dc55f3bec217",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/browse.py",
+      "sha256": "sha256:744762022b57f69a62e783b2477563ca0ce54626b04560884d0e5283afca58b0",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/help.py",
+      "sha256": "sha256:36dbde435fc7e65021d9abc58dc58ae7a2fff606cb6332bffe2e247833638f24",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/ledger.py",
+      "sha256": "sha256:3099f625f59e8d04a49039f08cdb80ddd3f1a7f33879fce17b7e4c66999a70f4",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/packages.py",
+      "sha256": "sha256:728b9e7cd3f0bcb995994d06ba85c490eb04453cbf9842b1124f8bb1aecd76e6",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/handlers/search.py",
+      "sha256": "sha256:91871f2d9d944fd9bf6fdfbe5051442219693ed16399a666ae59107f4947820a",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/registry.py",
+      "sha256": "sha256:a203f3be43548fde885a0716bb785451cd652723a6b42b32e336b1f6785e38e5",
+      "classification": "module"
+    },
+    {
+      "path": "modules/chat_interface/session.py",
+      "sha256": "sha256:3ec96228902d1af57ee5207acebdcfbb639754b6a3cfee97ed0f43c4b09a571a",
+      "classification": "module"
+    },
+    {
       "path": "modules/hello_module/hello.py",
       "sha256": "sha256:5face1f2455f2b521cac0c7ae17f0175f3e00a07d0ac92da1cb90676492fc2c1",
       "classification": "module"
     },
     {
-      "path": "policies/attention_default.yaml",
+      "path": "modules/router/__main__.py",
+      "sha256": "sha256:4169f09eebeafe9ac1f035d6010e74cb7214eb2b4742fc159044ef1b6b92720a",
+      "classification": "module"
+    },
+    {
+      "path": "modules/router/capabilities.py",
+      "sha256": "sha256:f9971900f9062afe76f8570a282eca1ea22be1f35127bed37ec3150b50928696",
+      "classification": "module"
+    },
+    {
+      "path": "modules/router/decision.py",
+      "sha256": "sha256:946956b5a6616ff24093acdc07601d5f6d90aaba5f0fad5800e092950bb5b1f2",
+      "classification": "module"
+    },
+    {
+      "path": "modules/router/policy.py",
+      "sha256": "sha256:38b964d8e53ed081900361675b0a2989782a6a56bcbb26c7c2083da443ab0e7f",
+      "classification": "module"
+    },
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:fc0b35405a5bc53de84a0ece8bf64d2bbe9b5da6263d14b825b65742af2d8663",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/README.md",
+      "sha256": "sha256:3370683ce528604a58cf2543ce8085dfa91a5750e4f12e0b90493273eb073a0c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/__main__.py",
+      "sha256": "sha256:1cc3722cc7758e22ceafbd4dc7a1aad34316eb7d8f574e4dba16c0d14f96da16",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/capabilities.json",
+      "sha256": "sha256:144ad89343f424a7c8b965e03841bdb369f45232b4acfa6d5615303d75cbca6c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/chat_ui.py",
+      "sha256": "sha256:53c753f8cdb14a8038249f5fd0dcc2e0f59c3dde502fc2fe7e095a17d0373ceb",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/core.py",
+      "sha256": "sha256:41ff23864f5b8f6a2880c0ab7eb82181b1972c8853a98a1aa5fd3322165e5469",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/governance.py",
+      "sha256": "sha256:40566cd4f1a85a2199fb22dadf0235bc805a766be6c99dfd4b3394b3a58cefc7",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/memory.py",
+      "sha256": "sha256:828b215664433181047f1a784f256afcac3fda809727f3560e647c51a5fd1c39",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/notes.py",
+      "sha256": "sha256:7e13f04590b90a93e078b805192bbedcfb2e57a7617f299c2dc91a202fd34cb7",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/commands/signals.py",
+      "sha256": "sha256:02ae13d40b2fd9594bbbff827eb685a38c4b3e16f5b4027a3be833cfbeb19a15",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/interfaces.py",
+      "sha256": "sha256:b5baedaaecf36735128d1a6738d5d371530074a6c86454764486199b3229ab4c",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/operations.py",
+      "sha256": "sha256:1d32c1527d5cc802443aa374b83531b338db41b45ccb6968856ce63dd10b0382",
+      "classification": "module"
+    },
+    {
+      "path": "modules/shell/shell.py",
+      "sha256": "sha256:7d9ea19c29c314af7a1bbbed8baa9aec3d2d64d2bf6779545c321528fddaa6a2",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_auth/__main__.py",
+      "sha256": "sha256:a53ae641481d009fc92f264975124626701158b20cc20b45544c66761aeed9ec",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_auth/fingerprint.py",
+      "sha256": "sha256:3e772acd2fb0303e96d2eff9005ac608f61cd9d5a5150bb5ad2601af4c1d938f",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_auth/validator.py",
+      "sha256": "sha256:b3e2c5191bea683eeca09d5469169ad9f18ddf7d28bf3bf7e2fa9efb2d9f5109",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_evidence/README.md",
+      "sha256": "sha256:4db729306142c7f026d5c8b49a4b672af5715538c7047c01a3378f78cb84434f",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_evidence/__main__.py",
+      "sha256": "sha256:6e74399f4f327a9a300500c8de4bbf154e414e96965e51cf867f0ebc326d2063",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_evidence/envelope.py",
+      "sha256": "sha256:dae94aa8e3c65ac4eb28fe631dc4b7f6f07746365264d77c7454492f39f9fc14",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_evidence/hasher.py",
+      "sha256": "sha256:b07aa7c9f0688ed4d1a383deabb73b80ed2543065702d1acd1cf0ab125e72243",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_evidence/reference.py",
+      "sha256": "sha256:8804e65b5721781ee5a004f1398dbbae512ca5dd1bace99cecef3f3e8423cccb",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/__main__.py",
+      "sha256": "sha256:f73f76749709827ce8174f938866666f77032205942a80d6eaca9e63c8045ed3",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/client.py",
+      "sha256": "sha256:eacb8cd3d48c42712228690e6a9c6ec0999c0e44f3c074c819803ceca8ba2d3a",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/config.py",
+      "sha256": "sha256:2525bb6eb3e6159d6235eace2281d4b64f28990393056a57f4a27939ad9d9559",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/evidence.py",
+      "sha256": "sha256:464cb860fffa4d16c0f62782085fad0c97d6f3738b647d4bbbcbaa6235777108",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/provider.py",
+      "sha256": "sha256:66dd81aa04ec8d73998f26fe0bc2619003cd253ee5a6050cd3c0d6361b69a9ad",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/providers/anthropic.py",
+      "sha256": "sha256:453e6db4014299964651764a7332a2e78f64ebd0d0839ea34bba1cc954144b4f",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/providers/mock.py",
+      "sha256": "sha256:2d5abe4a709360bab3b16d646b0625c8eb7955dc81658cf925eeb12dfc915610",
+      "classification": "module"
+    },
+    {
+      "path": "scripts/policies/attention_default.yaml",
       "sha256": "sha256:dced8973850090c226698ca4ce57c491378a8576a0d57dee6913c7bfa8d51cab",
       "classification": "policy"
     },
     {
-      "path": "policies/install_policy.yaml",
+      "path": "scripts/policies/install_policy.yaml",
       "sha256": "sha256:445a48b15cfe3636d46089f297b51bd255c5192c18d6449896e63d05d1abbfe3",
       "classification": "policy"
     },
     {
       "path": "registries/control_plane_registry.csv",
-      "sha256": "sha256:6e6f1273c52f4c9c265910c09e239661cfcb28fb929d1ed278a3f45242287dd5",
+      "sha256": "sha256:af492f1ac9a9ba837b5cfc19d9e19f3194c761e83b29a13c48ba7e87253b607c",
       "classification": "registry"
     },
     {
       "path": "registries/frameworks_registry.csv",
-      "sha256": "sha256:7305f342dac0956e21088d230c337fd4a9ae9d9d6183418f8ce4482019899160",
+      "sha256": "sha256:8c1f0e531759a9859a1df052c0de2121134e856a25a5e1524a4962a2fa2f92d7",
       "classification": "registry"
     },
     {
@@ -514,13 +1129,28 @@
       "classification": "registry"
     },
     {
+      "path": "registries/prompts_registry.csv",
+      "sha256": "sha256:c378638c3dfc1f1b51a1f4650194bb86a3ed32c6eef426addcc29d910b08a376",
+      "classification": "registry"
+    },
+    {
       "path": "registries/specs_registry.csv",
-      "sha256": "sha256:ad9758e260730f7454b03a4c3cb93705cd0bb9303eb5b2020a2693867724b8da",
+      "sha256": "sha256:cc9b42b8219f46a0ff069dd3327d7e6094ccce5ebc6449c592c3b07e5e98c37d",
       "classification": "registry"
     },
     {
       "path": "schemas/attention_envelope.json",
       "sha256": "sha256:2bee888e7cf90ad964fef6c4bbc35338b446f97f3b1fe0ad645712d441bc72f1",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/chat_request.json",
+      "sha256": "sha256:49c4ca03b576ac09149c781de0cb5c9697e9f63d8db5dbb0f16d5a7052e4d004",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/chat_response.json",
+      "sha256": "sha256:516862103bfbe8053e0b48e9672b0ef5588667fdeca9335d08f2b006903ba9d0",
       "classification": "schema"
     },
     {
@@ -544,8 +1174,53 @@
       "classification": "schema"
     },
     {
+      "path": "schemas/route_policy.json",
+      "sha256": "sha256:e5c34bb59a1470ac42bd300efef2604a640e81af8c4c89d163f7f9bc07293f70",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/router_request.json",
+      "sha256": "sha256:e8770d07ec048978d352a7c2051c9a8021d9ab530793154dc06ec9e91e2bc4b9",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/router_response.json",
+      "sha256": "sha256:b5a3d7363c36f94bf748b9126be2d50dc3034976bf4758878e2fed7d441ae0cf",
+      "classification": "schema"
+    },
+    {
       "path": "schemas/spec.schema.json",
       "sha256": "sha256:870926666c847a214422ca1a4dcd85006a7a983c69a17c0e4167c09fb8d8f88c",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/stdlib_auth_request.json",
+      "sha256": "sha256:31f6d2e56e1606ed726add3fbda326d22b912dd3882819eaffe28b515eabf094",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/stdlib_auth_response.json",
+      "sha256": "sha256:c5fd06c9f69b1dc5b97ff370b8822678c197bfb103571461ad05971f6d4f8c71",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/stdlib_evidence_request.json",
+      "sha256": "sha256:a96987e0c273fea47a0710cf4be3fad830ca003c94e7ab75b6e10f2d88501d32",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/stdlib_evidence_response.json",
+      "sha256": "sha256:81c8f459657d7431a82d052cdd195d877e4e477dc719d87cb3e90391fa5c922a",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/stdlib_llm_request.json",
+      "sha256": "sha256:73f715a937895e2671ce687b667eeb0655e75e62e4411787fde0865f84769141",
+      "classification": "schema"
+    },
+    {
+      "path": "schemas/stdlib_llm_response.json",
+      "sha256": "sha256:2b6b14c76db601da13395f3f809e588122ac6d4fa97285354298af0ee8e10e02",
       "classification": "schema"
     },
     {
@@ -554,8 +1229,18 @@
       "classification": "schema"
     },
     {
+      "path": "scripts/agent_check.py",
+      "sha256": "sha256:2d979a90a07a81d2b4e381b3b2192255c63dfe39303aa1d218f2668d9bd85e8a",
+      "classification": "script"
+    },
+    {
       "path": "scripts/apply_work_order.py",
       "sha256": "sha256:146ffb80ccae08df6f7e11b59766df69d0f96b5a57b9d4004c04aed5bf81bbbf",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/chat.py",
+      "sha256": "sha256:1377edb7faaf650032ad6f4cca610351de0ce3c863985a4f9c2c5c5cf7963d4d",
       "classification": "script"
     },
     {
@@ -580,7 +1265,7 @@
     },
     {
       "path": "scripts/cp_version_checkpoint.py",
-      "sha256": "sha256:9894d979aa46970b7a1db000769d2c2bd19b37af3f2730b7dc3b73ee62dd394b",
+      "sha256": "sha256:0cea1bcbe2f693bbdf2238c1a6a62016e889e079bdaae3a515c540a9ff8be32c",
       "classification": "script"
     },
     {
@@ -625,12 +1310,12 @@
     },
     {
       "path": "scripts/gate_check.py",
-      "sha256": "sha256:c723c553778e3ce47761a764a710414e7b1c5d3d59dd0c8f28b6cda210597dae",
+      "sha256": "sha256:9da55a97bd9bf35f3de7f13a219025c49f29d37ebf9f7d1ce3987146a1a4261a",
       "classification": "script"
     },
     {
       "path": "scripts/generate_baseline_manifest.py",
-      "sha256": "sha256:aa59fb39b068a12946ccb2285cc6fdad2caa9da56670359f759ef54fd7f6047f",
+      "sha256": "sha256:1239284e62d2c25a63c5e8dc7b3934e89c57ca8248dfbabcdd0a705b89da62eb",
       "classification": "script"
     },
     {
@@ -640,12 +1325,12 @@
     },
     {
       "path": "scripts/install_baseline.py",
-      "sha256": "sha256:cae5d870de690aa05062c5c69cba886493e416b797100573eba5191864d601de",
+      "sha256": "sha256:086e0d8399063b928cc6e7020afbabb52ca8b105541edd5cbe7cb8165d2b1d25",
       "classification": "script"
     },
     {
       "path": "scripts/integrity_check.py",
-      "sha256": "sha256:09e88c78d75758631a0137be5ade702ef9301f66e0f668f85ea8ba3148d5cc16",
+      "sha256": "sha256:20f398c85879c611149213c962c5a3b32791c866167c87d281911ce9939dcf7b",
       "classification": "script"
     },
     {
@@ -669,13 +1354,18 @@
       "classification": "script"
     },
     {
+      "path": "scripts/mp.py",
+      "sha256": "sha256:0edf1c37662402781be3686fe99080c49dfc7315d3faa9c572adccb0d6e3ecf2",
+      "classification": "script"
+    },
+    {
       "path": "scripts/package_factory.py",
-      "sha256": "sha256:5178791fb40b43a4834fca45db59b70114cc2990a9bc5ba49c2189d39aafabe7",
+      "sha256": "sha256:2d9f84af38beeda04859ac979b7a2c0fc4dcf37d1a28860a2b4adaa6ebd7b8b5",
       "classification": "script"
     },
     {
       "path": "scripts/package_install.py",
-      "sha256": "sha256:6d54fa0c194b0cafbd7749d30cb0521b2b0e6a115b0f7ecb571cbe4fbc92b171",
+      "sha256": "sha256:704625d1789689c8787a92cee89dfc523c3766d5d54564ed222bbf07a6a50021",
       "classification": "script"
     },
     {
@@ -689,8 +1379,18 @@
       "classification": "script"
     },
     {
+      "path": "scripts/package_trace.sh",
+      "sha256": "sha256:8f9f53b252f7d8a03f8050b384594a1c2a23f8be42e09023e5c9e56ac699a90b",
+      "classification": "script"
+    },
+    {
       "path": "scripts/package_uninstall.py",
       "sha256": "sha256:ab1cde1c26a791de3a5c7762d58ed66341cd7e5b92b11a2b1826d67c47e31f17",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/pkgutil.py",
+      "sha256": "sha256:5030a25bcc9d6e6a4d00dd36411e059b2d94b0da53953290f925026605986de0",
       "classification": "script"
     },
     {
@@ -710,12 +1410,22 @@
     },
     {
       "path": "scripts/rebuild_derived_registries.py",
-      "sha256": "sha256:efe67e96aeee6d828c5f2e5019efbe5cf10a15dc3ef92587840171fb89849678",
+      "sha256": "sha256:df3abfd62e05127556195d83a0e2bd2f99fac348415992adc1929ba64d6abfba",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/remediate_orphans.py",
+      "sha256": "sha256:28a7e314b7fec2c36ce917933f0c7ad5072e50b3b6104a3c690ae5a86278cedd",
       "classification": "script"
     },
     {
       "path": "scripts/seal_guard.py",
       "sha256": "sha256:2c119f040625147b98bd44e004672efe2d97814d074f44208d41ee60363ea707",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/shell.py",
+      "sha256": "sha256:ae2a924da7c9a3c5ac3f7f0b8a9c5d68d481871cbc8f037faef670fa0a51edad",
       "classification": "script"
     },
     {
@@ -731,6 +1441,11 @@
     {
       "path": "scripts/test_uninstall.sh",
       "sha256": "sha256:ba1a1a5729af79649fc84792fd1aaa5b594c75376fab5d747ae78f1a21dee08e",
+      "classification": "script"
+    },
+    {
+      "path": "scripts/trace.py",
+      "sha256": "sha256:2545515426f91d2ea0d2f6c2dd63a7a64e9baf7b158c404be0e0bb4d2e95e18f",
       "classification": "script"
     },
     {
@@ -750,7 +1465,7 @@
     },
     {
       "path": "scripts/validate_packages.py",
-      "sha256": "sha256:c1a1969f3cf8e3667ad24b118cfb56cf48e7ad09d92cf1d2ae43e715229e6930",
+      "sha256": "sha256:657fbdda6c8a6c8cad4dd10ac26e86b43065af282014920f1a47644472e81284",
       "classification": "script"
     },
     {
@@ -765,7 +1480,7 @@
     },
     {
       "path": "scripts/verify_installed_state.py",
-      "sha256": "sha256:8bc6c294667794384924785da582769dd777f75bdf38f1a468778914bd46d916",
+      "sha256": "sha256:14846777efe0d450a5c5a652648df9c69a53db9fca02437cf10ab70c66497aa0",
       "classification": "script"
     },
     {
@@ -789,8 +1504,113 @@
       "classification": "script"
     },
     {
+      "path": "specs/SPEC-ADMIN-001/00_overview.md",
+      "sha256": "sha256:561e28e5afeb794e47ec75f956951756216ed9241d8d91f1d98a6e239eab1bc0",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/01_problem.md",
+      "sha256": "sha256:eacc43a1f48b6d74b6e061419a9fb56fd737a5de556b209a6605723d10c15370",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/02_solution.md",
+      "sha256": "sha256:e98d032f10c06ffc04a51e1cf861793c5ac7e56d191d4dedb25f30b581859cdc",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/03_requirements.md",
+      "sha256": "sha256:c3338e89a194e37273d05105bd3d5e7be095cee440c38a0adda227e66947b8d1",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/04_design.md",
+      "sha256": "sha256:b2f2ad9511d5a03ac9f70b0d0ef67ec8bb141528a49486004455a761136b5b42",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/05_testing.md",
+      "sha256": "sha256:20e84010ceff1db7d5c490d31f0a64de6995582f4372ea58f44385fecda7ee16",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/06_rollout.md",
+      "sha256": "sha256:4a22545c7ff60ca0431c21c2ab285d82de4fe816cb38e5e45bbaca873751cefc",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/07_registry.md",
+      "sha256": "sha256:b5710dd72884a05a4a327fe6e217f70c03443325becbf33f2900202ea2f8bdcd",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/08_commit.md",
+      "sha256": "sha256:11ab94e0de82f35f4c6c3b6d013806b74111e9acaad53f9fd37e9b6ad0283202",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-ADMIN-001/manifest.yaml",
+      "sha256": "sha256:5d415e14bcb137fb1123350a32eb48149c7a7e42001608c04cfc37a88eed912c",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/00_overview.md",
+      "sha256": "sha256:f51d7e7989cf93ad8aef996ac52e8e18e90b2aff370e503b1bc758d34004b2a9",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/01_problem.md",
+      "sha256": "sha256:f698cfeb03e8dd31810067078125a067e15864f30dbf253cdbe4a0b5073e6ff5",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/02_solution.md",
+      "sha256": "sha256:cf6d4579e658a05bf79919c3b1f1d375a043e2b0e871601d687d2ff0fa773ff4",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/03_requirements.md",
+      "sha256": "sha256:c781b815de5027b01f0e70be267f8f43e931849b5e7f75a8305ed6a3e6516c1b",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/04_design.md",
+      "sha256": "sha256:b8c743254c65a44e290d2371ed53cfe0e71ab91872e824321661c16f1cc2565c",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/05_testing.md",
+      "sha256": "sha256:fb93e4ad62c6106765b961a3e8fcd8df0f2dcf10d6cfa48d2c1cbb4c212d1caa",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/06_rollout.md",
+      "sha256": "sha256:b275d48050d6b4e31eccf39938ecb9307e2a98bcb504b5a03c9ee0c06e74bb88",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/07_registry.md",
+      "sha256": "sha256:e5ca6ba3915d936bf8a5034bc0d2215dac5aa5e91e31abcd425d48b8e345c4de",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/08_commit.md",
+      "sha256": "sha256:c42feda450ae8b8b07435eddbb3512c0f9162bbdceecb517794a19ea2f4ff3be",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-CHAT-001/manifest.yaml",
+      "sha256": "sha256:39aa618d88da9e633ebee0495ec8050935c8d2cd8f72ca7509e88edb9ef746a1",
+      "classification": "spec_manifest"
+    },
+    {
       "path": "specs/SPEC-CORE-001/manifest.yaml",
       "sha256": "sha256:10b1444da6fee92f41bc9c0928bcc4facf828c278a2a8ce738afb35c3e3a42f4",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-CORE-SCRIPTS-001/manifest.yaml",
+      "sha256": "sha256:1a5d6217c3f4b772f0c3d29a00404270b4f6c0b7bdd3fbf1dfd8bf285628374c",
       "classification": "spec_manifest"
     },
     {
@@ -799,8 +1619,63 @@
       "classification": "spec_manifest"
     },
     {
+      "path": "specs/SPEC-EVIDENCE-001/00_overview.md",
+      "sha256": "sha256:3361318aa606c0d30cb1da5dc72fc773061436e0f5e6646b2344a3bbb2212fef",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/01_problem.md",
+      "sha256": "sha256:74776160439c21cc8399fb8d63f9cfffcf095418a2f7b53b621de6442a8f5b18",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/02_solution.md",
+      "sha256": "sha256:46a273e2793f1ec7df354b4e24fbe3ef4c898aeaf931edc4ac6fea7e73f52edd",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/03_requirements.md",
+      "sha256": "sha256:d767fbcc4930cc04f785beb946472d2f37c35af1c190b09dc3257dee9a673a95",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/04_design.md",
+      "sha256": "sha256:e169cd82d1ec202b3b623aaac037e47e879da9c346914dbefd0a209a433ba0b4",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/05_testing.md",
+      "sha256": "sha256:71ed8977adab871f62ad66da14bae3e7df2af3b3d1a093c000f32651dc17385b",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/06_rollout.md",
+      "sha256": "sha256:66abad5159c9a417faeb2ea7e99dbf7816bf216d0a853a021440034180950a7a",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/07_registry.md",
+      "sha256": "sha256:a37251f37029c57db9999c2d6fca663de40a9ece44a0c4ebd98006ec941dee96",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/08_commit.md",
+      "sha256": "sha256:f1a7d56bf9eae001e1da7325f69a9004dcdaefaeab8bb1c30e64110ea4d3e2ad",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-EVIDENCE-001/manifest.yaml",
+      "sha256": "sha256:93d162c5ddf9c3dbf28e18773406d0e687291490d12b515328d5138779868c0f",
+      "classification": "spec_manifest"
+    },
+    {
       "path": "specs/SPEC-FMWK-001/manifest.yaml",
       "sha256": "sha256:bf20e2d5326edeed212404c2e6fb2308b98efe6e552567ca098e6fae707a9c9b",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-FMWK-CAPS-001/manifest.yaml",
+      "sha256": "sha256:7e56ddc3a26c2f9d33345019eb055362014f79c89da76979f14f1947b64487fe",
       "classification": "spec_manifest"
     },
     {
@@ -811,6 +1686,11 @@
     {
       "path": "specs/SPEC-GENESIS-001/manifest.yaml",
       "sha256": "sha256:8db128ee4c6a8335164a8761fb109955f0f68e80b7cfd6730039b4f3b4018639",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-INSPECT-001/manifest.yaml",
+      "sha256": "sha256:eb6c344ecb4758ab072f06a023f102834dccc80984c4153d1d7147c78a248fea",
       "classification": "spec_manifest"
     },
     {
@@ -839,13 +1719,178 @@
       "classification": "spec_manifest"
     },
     {
+      "path": "specs/SPEC-PROMPT-001/00_overview.md",
+      "sha256": "sha256:2e9a9e1d56593ef18c34e69b0497cbe2ca38c2cad41494a0e4b64656465fe075",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/01_problem.md",
+      "sha256": "sha256:10cedbd4c77dd5b6999a2d9884543b779fea3f6efdf4e2c9b2fbf854d805317d",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/02_solution.md",
+      "sha256": "sha256:0e40857880d93f1c1749a9ec41d5bd77f5e66c43eb2eb2b3df43648ba7f78dfe",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/03_requirements.md",
+      "sha256": "sha256:6e98cb01e92b4fc41ed0e0e0fe6fa3dfb1a4e7332f19f6e28917a89e64db7c2b",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/04_design.md",
+      "sha256": "sha256:1991a393c19e1ac63412e77af97fb3169895772c4f1a4f8c48fdfb838a7a3170",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/05_testing.md",
+      "sha256": "sha256:d30be62eb536f5854c433cb48d78767515bb2c8c6c974779f835646e54f7d4da",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/06_rollout.md",
+      "sha256": "sha256:72aa2c31f5a29ccfe85d7edf219b42d0aa397beea0b1bc677ca281100e35c976",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/07_registry.md",
+      "sha256": "sha256:c7f7a0278930807d57b323f73fc033214ef2ccf8377877e10f9f158f621c262d",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-PROMPT-001/08_commit.md",
+      "sha256": "sha256:e46cd407cca2f1a0ae8199ec0e257f828bfdc273533b3ba75f4852f468e04e49",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RATE-MGMT-001/manifest.yaml",
+      "sha256": "sha256:b4ad08d44624629ca94a35fff180637391450b9cea7f1760ebdb187d388b7b00",
+      "classification": "spec_manifest"
+    },
+    {
       "path": "specs/SPEC-REG-001/manifest.yaml",
       "sha256": "sha256:44563f78e4a2c4f863c999583f44e17d0b8fd5ae7847b9030317d5056b788222",
       "classification": "spec_manifest"
     },
     {
+      "path": "specs/SPEC-ROUTER-001/manifest.yaml",
+      "sha256": "sha256:7f7bd245fad48777f58b08fa1850629b30b133b6490902c63f78f34c97e2d3b8",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-ROUTER-FIX-001/manifest.yaml",
+      "sha256": "sha256:ca4af2e016abb9309051c68903bd94f0bf9f2ad62737948872f9af1c630f3a20",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-ROUTER-PURE-001/manifest.yaml",
+      "sha256": "sha256:5bbae300280a1cc4659e8d84ba8ca4025303119eeeba9edc6fa99675b72aefd4",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/00_overview.md",
+      "sha256": "sha256:e1293992c3e1cd949b843292c5e638cfc7b2d8f757bd963b1e87823ede412813",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/01_problem.md",
+      "sha256": "sha256:1327b0967dddc3992e5a16b72fa53bf147d959586779972324d36a13749108bb",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/02_solution.md",
+      "sha256": "sha256:4a8ca117585e79b4edf89967aa332ae9e30ca6af4747bcbda7eba1ce2286b00f",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/03_requirements.md",
+      "sha256": "sha256:bde4df8bf931abdeec1a5db08b0530e01c29715447a7f09e504be2151a08a8f5",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/04_design.md",
+      "sha256": "sha256:4ac2ed63d9e7f28bcf408f84bf7721997cb3c56ee6334fbdecfdb409ed42d48a",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/05_testing.md",
+      "sha256": "sha256:73437dbaa22fbcad75e6517747b050f4a20bc7f6cfeb939f39e7796131807759",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/06_rollout.md",
+      "sha256": "sha256:61f1baf1e7b76f5ed583aeda164f6bf7f54caa843a29067a2a82ea827b6493df",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/07_registry.md",
+      "sha256": "sha256:f8294876793abb800343726155a816b75b1f9cbd52577b3c9b2d7cb2a45ecc70",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/08_commit.md",
+      "sha256": "sha256:0359c3dfec3f50a38b9e87a66d3decc0c6913f34d2f4854bee85e4dcb31c7b76",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-RUNTIME-001/manifest.yaml",
+      "sha256": "sha256:8b31a3558322abb94412e368b3cd408cbee3919f610ff1bd1e31adcf5a2ac394",
+      "classification": "spec_manifest"
+    },
+    {
       "path": "specs/SPEC-SEC-001/manifest.yaml",
       "sha256": "sha256:a76805b0304837420a9656467c7bcb04c086b56bb775feab29a9e628d7baddd3",
+      "classification": "spec_manifest"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/00_overview.md",
+      "sha256": "sha256:6e321bf24a19059f4cc56779c693c6be730d50c2cdce75b7687ded6a2dd73e72",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/01_problem.md",
+      "sha256": "sha256:b074ab1ba9951853f7c1f797b6d592887da13175b81480cec5db333537fefa4f",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/02_solution.md",
+      "sha256": "sha256:f56fda095147a5a247118e6bee9b29dc939a741e76aa478b54003b73513402b8",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/03_requirements.md",
+      "sha256": "sha256:b548ecc11df86159a19b377bbeda357bd1f30493e6bedc84418092799fda1000",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/04_design.md",
+      "sha256": "sha256:e883c0ca28377c3999eff89b70cfeb67cc387c690fc6c576fdf6459f10ea0956",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/05_testing.md",
+      "sha256": "sha256:384d06e95208d83e231346d69107535344225c0b14a6b34734acbb909b57163c",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/06_rollout.md",
+      "sha256": "sha256:91c0097fd65885de6995ae12096e96541e19cc958e2146fcd45647bc42e6faa3",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/07_registry.md",
+      "sha256": "sha256:ae7edae41179c5e787967489273b078731ff27c296cd84f8085de4588fb2eacd",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/08_commit.md",
+      "sha256": "sha256:a72b53e84894e678048d483434e2e063fabd6e5dd70c2926743394c328f19f23",
+      "classification": "spec_asset"
+    },
+    {
+      "path": "specs/SPEC-SHELL-001/manifest.yaml",
+      "sha256": "sha256:c78bcba5e69694dc98326724a6020ab4ed294f94bb8b2bd2af783a1813f5e8f8",
       "classification": "spec_manifest"
     },
     {
@@ -857,6 +1902,26 @@
       "path": "specs/SPEC-VER-001/manifest.yaml",
       "sha256": "sha256:5709fb1d17b4d871adbe41221e0872b81d97d991458e13076319d0b4f745c430",
       "classification": "spec_manifest"
+    },
+    {
+      "path": "tests/test_admin_agent.py",
+      "sha256": "sha256:7beccbd21025a445bc198240169438a511b3436a2594c364b0384b2a798e65eb",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_admin_llm_assisted.py",
+      "sha256": "sha256:23cd702e39cc69b1daab610f2020e89fccce5ce62a274ae20fe102dead4c71d1",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_agent_helpers.py",
+      "sha256": "sha256:9993b8812f64ae320d687a21dd0d1805ba109808c63105a2f8b2be023b6c75c2",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_agent_runtime.py",
+      "sha256": "sha256:956a79d72e0a022b144d2175c222e4130546793283c62533bd79f182f2fa7e01",
+      "classification": "test"
     },
     {
       "path": "tests/test_auth.py",
@@ -879,13 +1944,23 @@
       "classification": "test"
     },
     {
+      "path": "tests/test_chat_interface.py",
+      "sha256": "sha256:445a043b9a94e8eb300d4006a2ff78623c5f6136eb9736ab6828402cd808a641",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_chat_session.py",
+      "sha256": "sha256:edfa451bfb2450ef44fbf924f8e743fe69c0aed4c4a6500994af5a41a71b20ca",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_cross_tier_provenance.py",
       "sha256": "sha256:f5428c7e1dcab8989ff6f13f07bf994b7af2630719118c71c948299539262990",
       "classification": "test"
     },
     {
       "path": "tests/test_factory_canary.py",
-      "sha256": "sha256:3b9686ebe78c596eb5f7df0c7acf2e8d49bb2729aed99fccf88b2fa43d1fbfc7",
+      "sha256": "sha256:626c6d03dc289f7321d4f49c33783cced6adcdbfd2ded0747576e1a0bfdebcb7",
       "classification": "test"
     },
     {
@@ -914,6 +1989,11 @@
       "classification": "test"
     },
     {
+      "path": "tests/test_hashing.py",
+      "sha256": "sha256:1ede88512482e695e2243fb1959d2d9feb565985cd939f221f262d134f99df8f",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_idempotency.py",
       "sha256": "sha256:9444c6b1c27e3bd8932fcab196aa49a3de0fc352fe37265053e79869dfc1abce",
       "classification": "test"
@@ -939,18 +2019,23 @@
       "classification": "test"
     },
     {
+      "path": "tests/test_no_direct_llm.py",
+      "sha256": "sha256:fccac2c79cba66e8be9f6b783180e0aba5b88b9e8661bd91db6cf56b6ac9f703",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_packages.py",
-      "sha256": "sha256:5736f29d7cf95aae622827b38e1f5a8ac9b82e465d674ca5dbd81f8f989890a6",
+      "sha256": "sha256:dc4164931eb2c781fadef256ab7f35a5c5bb3d0a730d7dcf228a413e684f6a43",
       "classification": "test"
     },
     {
       "path": "tests/test_phase1_baseline.py",
-      "sha256": "sha256:804808ef6d8538e4fd31bf559285d3089e7e4753aee70eef1e81524e4a69faf6",
+      "sha256": "sha256:e84fea1a3e7f392feeb2f30244d1b001555f113f12eab7aac4bbe4afb0a31ef9",
       "classification": "test"
     },
     {
       "path": "tests/test_phase1b_package_install.py",
-      "sha256": "sha256:3fd3a60004dd457f100425a5c0802b0b3249a62a30960c6d0f58321a68b36e2a",
+      "sha256": "sha256:646d54d127fdb9a5b905a4ccb7cdf10454f45ab63930b097324b31cf5f496e05",
       "classification": "test"
     },
     {
@@ -959,8 +2044,18 @@
       "classification": "test"
     },
     {
+      "path": "tests/test_pkgutil.py",
+      "sha256": "sha256:3d66233362f31a5e90698ac2c5c594f0c295536450f2a0b585990b1dc9ee4a96",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_plane.py",
       "sha256": "sha256:d79bbbf62c85dbc9a8ecc365baa6dbb6b5fdabe2e1b60a1a8ed781d51eb20cbb",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_preflight.py",
+      "sha256": "sha256:841b2061eb5ba4a7c4d3c61c13e982c8087500c0403e766b203c8e538facb25f",
       "classification": "test"
     },
     {
@@ -969,13 +2064,88 @@
       "classification": "test"
     },
     {
+      "path": "tests/test_prompt_loader.py",
+      "sha256": "sha256:8ebfe7ef41d12f943ea68d66a14396db6e21a654635e093fb8cd32819a8112c5",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_prompt_tracking.py",
+      "sha256": "sha256:47c5effb253906c9c9ba8d79baad33c8b7950fe55b96dfb3d0470965637798c1",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_provenance.py",
       "sha256": "sha256:178afaabd31fb82ddc7702284d42916bf85e75a9ae0e6bd335d1b7425f0b88f4",
       "classification": "test"
     },
     {
+      "path": "tests/test_router.py",
+      "sha256": "sha256:66553f12b36dde3ae9737e46b630511d38a00b2486a4f9bf90cbc7e8b535454b",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_router_admin_contract.py",
+      "sha256": "sha256:4e475fd201715566a7383d54d5255c9165cfa589a711c9e47b50bd600b21c1a7",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_sandbox_failclosed.py",
+      "sha256": "sha256:96a5f1ca08dbfcaf492f86207df560a3a0b04d4ac9b89aed0a58ca0284686065",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_shell.py",
+      "sha256": "sha256:de8924e577760dfc70bbbc3e55677330226b0fce4912640873d06fb2b248ef01",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_shell_commands.py",
+      "sha256": "sha256:804f62dcaf6e23e0cf456db71fe5f588b00f0295f220663f72539fbcc7e259b7",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_shell_pipe.py",
+      "sha256": "sha256:69e190e5afb1996dd687070f46abaca9da4905935c71ffa1afa50a1188842e4d",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_stdlib_auth.py",
+      "sha256": "sha256:9d434c30d8dc0c6659f38bc43bfc8b2896f2f2993cc00fa0161aff9d4c125818",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_stdlib_auth_pipe.py",
+      "sha256": "sha256:860c2799ea298d474c32b57816be5f5f0fa720f783595ae42d770ff34380a414",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_stdlib_evidence.py",
+      "sha256": "sha256:699ae78263753f3820551964deae566e43ea4de42209a6a31b7a79b766c93a19",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_stdlib_evidence_pipe.py",
+      "sha256": "sha256:69935ab49edb6123a8f850d1845d410a414a04de5f15df1cf7bcbfc5b1e9e9c6",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_stdlib_llm.py",
+      "sha256": "sha256:f6eddfe32eb396d760ddfead29d0721a4094f9803b93553bcb0fcd59b28d2d49",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_stdlib_llm_mock.py",
+      "sha256": "sha256:67dd519f034bf65fa5b81461895c9e27e731df97fd5a11e5d5b7f9bea01c723a",
+      "classification": "test"
+    },
+    {
       "path": "tests/test_tier_ledger.py",
       "sha256": "sha256:03085cd1cf1e8f8d45e9007b9b347fdcc2bdc194304c2bc75633597b88ba9320",
+      "classification": "test"
+    },
+    {
+      "path": "tests/test_trace.py",
+      "sha256": "sha256:df3b44b95d8a580201758236969147783e05a779a60170c1cbebb94aed9c7a9f",
       "classification": "test"
     }
   ],
@@ -986,13 +2156,14 @@
       "scripts/",
       "frameworks/",
       "schemas/",
-      "policies/",
+      "scripts/policies/",
       "registries/",
       "modules/",
       "tests/",
       "specs/",
       "config/",
-      "docs/"
+      "docs/",
+      "governed_prompts/"
     ],
     "exclusion_patterns": [
       "**/__pycache__/**",
@@ -1005,7 +2176,7 @@
     ],
     "hash_algorithm": "sha256",
     "hash_format_version": "1.0",
-    "generated_at": "2026-02-03T07:27:24.993798+00:00",
+    "generated_at": "2026-02-07T06:39:21.584714+00:00",
     "generator": "generate_baseline_manifest.py",
     "generator_version": "1.0.0",
     "plane_context": "HO3",

@@ -5,7 +5,7 @@ Concise excerpts for concepts explicitly described as cross-cutting across the C
 
 ## Attention Envelopes (Control_Plane_v2)
 - **Schema description:** “Schema for attention envelopes - cross-cutting concern containers for agent coordination.” (`schemas/attention_envelope.json`)
-- **Policy description:** Default attention policy “defines … routing and handling rules for cross-cutting concerns in the control plane chain.” (`policies/attention_default.yaml`)
+- **Policy description:** Default attention policy “defines … routing and handling rules for cross-cutting concerns in the control plane chain.” (`scripts/policies/attention_default.yaml`)
 - **Role:** Attention envelopes carry escalations/compliance/audit/notifications across planes (HO1–HO3); governed at HO3, consumed by lower tiers; validated via `scripts/validate_attention_policy.py`.
 
 ## Memory as Cross-Cutting (AI_ARCH archive)

@@ -126,7 +126,7 @@
         "policy": {
           "type": "array",
           "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
-          "default": ["policies/**/*.yaml", "policies/**/*.json"],
+          "default": ["scripts/policies/**/*.yaml", "scripts/policies/**/*.json"],
           "description": "Glob patterns for policy files"
         },
         "framework": {

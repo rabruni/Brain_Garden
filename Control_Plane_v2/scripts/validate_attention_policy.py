@@ -7,7 +7,7 @@ attention-specific rules.
 
 Usage:
     python3 scripts/validate_attention_policy.py
-    python3 scripts/validate_attention_policy.py --policy policies/attention_default.yaml
+    python3 scripts/validate_attention_policy.py --policy scripts/policies/attention_default.yaml
     python3 scripts/validate_attention_policy.py --strict
 """
 from __future__ import annotations
@@ -281,7 +281,7 @@ def validate_attention_policy(policy: Dict[str, Any]) -> Tuple[List[ValidationEr
 
 def find_policy_files() -> List[Path]:
     """Find all attention policy files."""
-    policies_dir = CONTROL_PLANE / "policies"
+    policies_dir = CONTROL_PLANE / "scripts" / "policies"
     if not policies_dir.exists():
         return []
 

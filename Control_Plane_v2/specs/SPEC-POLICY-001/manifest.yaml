@@ -6,8 +6,8 @@ version: 1.0.0
 plane_id: ho3
 
 assets:
-  - policies/attention_default.yaml
-  - policies/install_policy.yaml
+  - scripts/policies/attention_default.yaml
+  - scripts/policies/install_policy.yaml
   - scripts/validate_attention_policy.py
   - scripts/validate_install_policy.py
   - schemas/attention_envelope.json
