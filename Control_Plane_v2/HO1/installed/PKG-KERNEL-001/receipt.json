@@ -1,0 +1,8 @@
+{
+  "package_id": "PKG-KERNEL-001",
+  "package_type": "kernel",
+  "tier": "HO1",
+  "installed_at": "2026-02-04T02:51:39.326804+00:00",
+  "manifest_hash": "sha256:c7e854f02e941482ded4b4a48be56e8ac1baaa878c052ee5860a8b6549bcd9a0",
+  "assets_count": 9
+}

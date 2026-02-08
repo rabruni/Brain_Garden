@@ -3,2432 +3,1494 @@
     {
       "classification": "config",
       "file_path": "config/control_plane_chain.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8c10c15935a50014c32c633e32a349b357b081c17f5a44535714989b93243993"
     },
     {
       "classification": "config",
       "file_path": "config/governed_roots.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fd0c6af549d139a6afab53e1a24e1f234ab907a3ffbdaf9138652b62e101b667"
+      "sha256": "sha256:8150b125f03d321c34a12854026341e7a40c1cc30d347dc27ead4c825d37a55f"
     },
     {
       "classification": "config",
       "file_path": "config/kernel_files.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:a77ee22812090de59efdce4c8b05f601d470c5efaa74b203ebec9bb96234b8f1"
     },
     {
       "classification": "config",
       "file_path": "config/registry_policy.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:d34f53c5df80fd973e21f438249d6aa12ef2e48774f5981b106e88c8550519b2"
     },
     {
       "classification": "config",
       "file_path": "config/router_policy.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:bec506e4f2aa453c40dff869b913a4f434ddbebdd049c301ffc17a0c2c0a6186"
     },
     {
       "classification": "config",
       "file_path": "config/signing_keys.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:50a5fd69254794d39ab3cdd8278bb647659ddb08d3e818c56d73b8fb495dc57e"
     },
     {
       "classification": "config",
       "file_path": "config/trusted_keys.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b2748f8998dfa3f7e2cee4efb13aa72798d60428ea7adcc212b32eb6b7194a37"
     },
     {
-      "classification": "documentation",
-      "file_path": "docs/ADMIN_AGENT_SCRIPT_REF.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:dc1febfbeb9bf4e0d3bd748122d87776d81bdf2f037da3e7f04375a06b4a0485"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/AGENT_INDEX.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fb462bcf4a7dd2cd41e00efc2d71cf1a64452957aca71eec922925b24d0578bf"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/AGENT_OPERATIONS_GUIDE.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3c402ff47312c0597a986135367a19bd8a89619940953e9149002ca96b9a439b"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/AGENT_PACKAGE_GUIDE.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1629b5d01ebe2523c9b12e5f15cee3e4ba9fcfc2c8ce7f0d474cdd08aa8f71cc"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CP-ARCH-001_control_plane_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:92e42ca1536b4b7c076862bb9d1f25f7d5a53ae8a14403c6893341dc7a33ba7e"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CP-FIREWALL-001_builder_vs_built.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:52e10c2666fa5408da4de460891e906715a0c6812d8fc4ae7d1edc2719c098f5"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CP-IMPL-001_governance_implementation_plan.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:aa8c9cfcb8d178cc94c80fe5df49c93acd024385f69cef91c70da22ef12056d1"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CP-LEDGER-001_tiered_ledger_model.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:08cf7fa8a1d7add4ff2c89a87a44b9028026c17a3ee2f9de25d704fa31f85919"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CP-PKG-001_framework_and_package_spec.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b15c54142f88bf9afcd51d61f08df6adf7f8f9745ebf1bad1c5c3136909a0911"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CP-SDLC-QUAL-001_feedback_governance.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b61017b68aaaa0f7fedfde72193f0b6df2c25b01df92a8f21cf96538b9234bc3"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/CROSSCUTTING.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:354d0341d6cc90fbeb2ad13b2299f586e89351c223abb9d5f9f24360b6be16bb"
-    },
-    {
-      "classification": "other",
-      "file_path": "docs/Framework 100 Development SDLC.txt",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f7867c43ea642ffe61a6e1d16e84a1b4f871eae7699f4a9c2009308249bbd7de"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/PACKAGE_COMPLIANCE.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:905f8716d02988613d1461364c1b4fbdfb57d4c3b26d1ea8666058c1b11e446f"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/PHASE-02_ACCEPTANCE.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:dca58b3be2ad5b8b4be8e319efa76011b8f8e721909934525f85bb7dbe3ed956"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/PHASE-02_PLAYBOOK.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:495f4a253f529c516adfc42a747ca84d3e01f2e90c1c1cab34e944566577158a"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/PHASE-02_SYSTEM.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:df9ad53466b65b7f51c625b9a404566377078a66820198f8002f2a08a04afbba"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/PROMPT_ROUTER.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:9cc027ff735a7d5488a81f0178544735d81ce8520ef27d705afaae10494df8df"
-    },
-    {
-      "classification": "other",
-      "file_path": "docs/System_Structure.txt",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1cf8a88dea874a7bfd59ae5c5fa9c9847c9500e68f746a1593332a8019634704"
-    },
-    {
-      "classification": "other",
-      "file_path": "docs/System_Structure.txt.bak",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:4eb0672b33e210b2672c246604ada3f042ecc7869d82194d0c020317eb9ba445"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/TODO_ADMIN_SEPARATION.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:de5ddbcdfb9c5268b0e49c0b4947be7c9cf648f0c8c8cc7f51e6bb99dd5666f8"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/developer_guide.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f8fa3b461ea61f68c5524c59bf15ee524504bfd810f80747cd299a976b086e7f"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/notes/AGENT_ARCHITECTURE_SESSION_20260204.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:53ca7c4abfe9aba8f1c1f206c75b219e5010f721f66e27e86a1fe93c0a09ff3e"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/notes/AGENT_CLASSES_REFERENCE.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ad634bacd3797efd580c207538dda53f7feedcb3658fee4fbf864b388a746ddf"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/notes/LLM_AGENT_PATTERNS.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:4e136785104233e12d66423b510ed1c3870f92b0c6c9838494b0ac19ddd5c298"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/notes/MEMORY_MODEL_HO_TIERS.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:6c6250e71e5ada68138048d8fb8a5f2d2b1e51cf11fbd3700fb9e93bf4f237c1"
-    },
-    {
-      "classification": "other",
-      "file_path": "docs/notes_Framework.txt",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3747a0b5ff0606fe18384fa193f9b7ce15e06dcbae39305250e8e7c84c94a97e"
-    },
-    {
-      "classification": "documentation",
-      "file_path": "docs/operator_playbook.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1aa9ff2ac2800a47876e3daeb6cbbbce8268dad116f807c6d014bb54fcb5ea37"
-    },
-    {
       "classification": "law_doc",
       "file_path": "frameworks/FMWK-000_governance_framework.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:89ae8f7f270144a109414fea0bc04f884e0b89f081e155ec79b2cf967e62e35c"
     },
     {
       "classification": "law_doc",
       "file_path": "frameworks/FMWK-100_agent_development_standard.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:43debf80f8b629c7a35a3bbd20d6b9d8b84640e8ae9d755ed3d6676a7ca6d443"
     },
     {
       "classification": "law_doc",
-      "file_path": "frameworks/FMWK-101_altitude_depth_standard.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3fa8ac765ebf5ab3799c14a1413c2a43071a9911325ab4e78f3fcc345d471c35"
-    },
-    {
-      "classification": "law_doc",
-      "file_path": "frameworks/FMWK-102_altitude_convention.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:317dc34313c7a1f3fd2ea91e44b17ceff2ffabc4571eb377ed892876ac51da5d"
-    },
-    {
-      "classification": "law_doc",
       "file_path": "frameworks/FMWK-107_package_management_standard.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:0e1f46e060474e4803eac7c2e918930e7468fb71f548cf362175114c8cc8b0f5"
+      "sha256": "sha256:f2d0c6c87a6182012082338f842c9fec174e51088ffbcd49782d4d8da4c423b8"
     },
     {
       "classification": "law_doc",
       "file_path": "frameworks/FMWK-200_ledger_protocol.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8d8fbb43b0eba9e4e3037a03f9c5ec94592169278bb4068c036e1d6c81583c47"
     },
     {
       "classification": "law_doc",
       "file_path": "frameworks/FMWK-ATT-001_provenance_attestation_standard.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:c662c87e74d97065c9deb7ac87588ae7f54a71a552a63dc813ce6210b8093502"
     },
     {
       "classification": "law_doc",
-      "file_path": "frameworks/FMWK-CHAT-001_chat_interface_governance.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b14e8e71b9905528382bd46c8992506e68add2eaec6c911082564ffc9826c422"
-    },
-    {
-      "classification": "law_doc",
       "file_path": "frameworks/FMWK-PKG-001_package_standard.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:e3b806831857449edeeb3350f2fa1fd4eee54cf42bf4e2aa9289b7feba45b5d5"
     },
     {
       "classification": "law_doc",
       "file_path": "frameworks/FMWK-PROMPT-001_prompt_governance.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:204f2fb072467415ec07b346d85f8156dd403ae7e2da700602cba32aba12f9d7"
     },
     {
-      "classification": "law_doc",
-      "file_path": "frameworks/FMWK-SHELL-001_shell_standard.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5e2e0a8b2c21c768ea5fac1f83f2c3643befbe082b069325e1174757a13f9a6e"
-    },
-    {
-      "classification": "other",
-      "file_path": "governed_prompts/PRM-ADMIN-EXPLAIN-001.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:9d40c7f9124a0fa147008e65736000d05b209e15a9fbe538777b49b9e4e2fc97"
-    },
-    {
-      "classification": "other",
-      "file_path": "governed_prompts/PRM-ADMIN-GENERAL-001.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5786163a5177f828a3519d2c44c3c64d0b50d2f9eb49d9d29a8beedc117872f8"
-    },
-    {
-      "classification": "other",
-      "file_path": "governed_prompts/PRM-ADMIN-VALIDATE-001.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:77703b63385c7995e302d73aee0487fa0f6d0d836784ad32f1f462ad9e80aa38"
-    },
-    {
-      "classification": "other",
-      "file_path": "governed_prompts/PRM-CLASSIFY-001.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fe4b3319db85039a86389d089732f1752c7874dd8272cdb6273bff22bccb172b"
-    },
-    {
-      "classification": "other",
-      "file_path": "governed_prompts/PRM-FMWK-CAPABILITIES-001.md",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:d801dd573a31859217ef007d1a8e731b23896a6fe26d13d95f49c0ea17c5f408"
-    },
-    {
-      "classification": "other",
-      "file_path": "governed_prompts/PRM-ROUTER-001.md",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:61d4001a92681ae783fb7e5edf3e3870ca71a2512d119de8301a2f9ea99933f2"
-    },
-    {
       "classification": "library",
       "file_path": "lib/agent_helpers.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:21079da55c043a5eeb93e42976ad150d3c456e9ca48caabb5e16d8617c27ffb9"
     },
     {
       "classification": "library",
       "file_path": "lib/atomic.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:7b947dba595665f2a9d3e72e3fac2e708f2280a244cfd0a6af032b71e4c421ff"
+      "sha256": "sha256:0efa08ddbbd100873c3a2fca18f57c4b6e7f4a2aeff74f4e74beeac1efe03b76"
     },
     {
       "classification": "library",
       "file_path": "lib/auth.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2782efdac5de93f5be462fd3a65be231a6d764e45ec1848eb621120bdc9bdf77"
+      "sha256": "sha256:d00bf1be2dedf2b4c5377504065cf3fc184ef8404666c797c9b352758eecd23d"
     },
     {
       "classification": "library",
       "file_path": "lib/authz.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:85f3691f60f728eac1eb5b2687c85ba4a6970b2de7d0acd1aeea6a8f58f919cd"
+      "sha256": "sha256:5247ea61a5a664f6246edcc8ad015f02912f1334b8c1f372bd9ac9e85a30d33b"
     },
     {
       "classification": "library",
       "file_path": "lib/cursor.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:cac3aea353f7d4ad6cf87610115d501c98c01e95eeba9d2ea59d78ae679141d0"
+      "sha256": "sha256:0cc86c68abc4dd11e0412477a9154938ed753845ed0b693e5531bfc47a2e529f"
     },
     {
       "classification": "library",
       "file_path": "lib/gate_operations.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fe8774ec68c13154ed1bdd77d719f6e30a618a8aae3be2196497706e83705e5c"
+      "sha256": "sha256:10936bfb5e5fefe02873ae16414f4c73b3c4b4a3a3379e83383f665a74e5e7c9"
     },
     {
       "classification": "library",
       "file_path": "lib/hashing.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:dacd9ec9c82e89dcff5542768fad16c4e15d5142461730245dcf851f54e1f443"
+      "sha256": "sha256:dcf32029fd7f6ddd283a76fa78e09f7a99257c8172ece0aeaaed05174f78319a"
     },
     {
       "classification": "library",
       "file_path": "lib/id_allocator.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:8b126651bde0ef01817fb8c38bae274574dcde16ea60f02be6b79863eaf374de"
+      "sha256": "sha256:6dbc329da6612b9713ac96ef154abccd72a55853cd7864562b7531b71877ce94"
     },
     {
       "classification": "library",
       "file_path": "lib/install_auth.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b5a2b6cbb8a869285766ba7479ca67c68e713bcce8399cfd53997684c87d6955"
+      "sha256": "sha256:231f83c0f148098a856bff9702d1d1aa8f8204addf8ae8180f579774b92dabea"
     },
     {
       "classification": "library",
       "file_path": "lib/integrity.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:6fec3da36761c2a9d51b9562d9088c59dcce304eadad648fc0f5869be385a616"
+      "sha256": "sha256:2d43eb01e0766995d8f8ffe92d1de0967fee76834ac533fca683b66aa5adbb0c"
     },
     {
       "classification": "library",
       "file_path": "lib/ledger_client.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:900f8f6e84061ee82844eb0a6e9000340cceba2cc5c63a11a1944c4d2df0ca91"
+      "sha256": "sha256:f653fdcd030f87ad9559c78c2a3bcc939bddc4fa1b342952f8846ee275e08a6f"
     },
     {
       "classification": "library",
       "file_path": "lib/ledger_factory.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:4c2e657afee1995a177153326d2cb090d6649da008c8e1932207b9dbf5c6010d"
+      "sha256": "sha256:46ea72cdc5a6e660af3c48c8705345bf4b2428a324671024e240514d03470eac"
     },
     {
       "classification": "library",
       "file_path": "lib/merkle.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5a3c471e2cd3049b1a1cf48509af1cd2c0767bd9c4bd884a6cf37096eaa6f432"
+      "sha256": "sha256:0570aef220eb5e2fc235d7e8f72b0b227bcf80de9d3edd0d45fdb4d53f656185"
     },
     {
       "classification": "library",
       "file_path": "lib/output.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:8ab6916f7bc06be2fa75328860947e56df71f846eb7bf87cee7f187bf08e6d63"
+      "sha256": "sha256:975e64f70280c6806f912377d1fd14003560d1ec6d1e6d993e8b31124e7aae6a"
     },
     {
       "classification": "library",
       "file_path": "lib/package_audit.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:35515331e9ef09e053170e548d0b12450813413a6980f0e03e06d3b015fa39c6"
+      "sha256": "sha256:e8d593aa99abc1ff33be61d95c83af79d7ba98b8f39220d9b86e0c6ae10627c3"
     },
     {
       "classification": "library",
       "file_path": "lib/packages.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3ff8741ab181f5c1e8c260d33a93ea2e0bad9d02b25028d8972be5cb77197dd0"
+      "sha256": "sha256:953f42d6dee6b7f2eaac6ec6732c5e3eac36c20382ed20c761a54714d78d9118"
     },
     {
       "classification": "library",
       "file_path": "lib/paths.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3dc36d8cc1e3444e5be529033fd2b918c28ce26fcdac0c2fe6cd75d8f79156ed"
+      "sha256": "sha256:b51688491505b6444d53b4f6504a64441f63f9725a035844e9aff8f7931a898a"
     },
     {
       "classification": "library",
       "file_path": "lib/plane.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:4714b558ebdaba37d1ed4c58b45058e6a92eacaab2b2f1dc7b83d204590858ce"
+      "sha256": "sha256:4bd7a5d34a5f50b3ee755086bdec79bf6773abf51c40763096bcca02db7084bc"
     },
     {
       "classification": "library",
       "file_path": "lib/preflight.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:07c5237a437599e0a6139f392fae7342093af78e801142777477f54766c44567"
+      "sha256": "sha256:79e2873eb9e09241dd2995f2d3d79361269ac43be575ea9a6ecdd6234d8f20b6"
     },
     {
       "classification": "library",
       "file_path": "lib/pristine.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:98ce81a6c2df5e9f838d76a662a8c376545334b774d00e35e324b323508bdde4"
+      "sha256": "sha256:412f39d45eb20381315392570bf2b29ce17939a8736001fe863e199d417a1956"
     },
     {
       "classification": "library",
       "file_path": "lib/prompt_loader.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:3fb9cdbdcd1d4fd48ec61cba120993e7fe998a3fdc544970b05f2c136905eae5"
     },
     {
       "classification": "library",
       "file_path": "lib/provenance.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:db7649941a123ee06747ff50684e5f0c5f269752567ddfcd9d559be3be0bae98"
+      "sha256": "sha256:2685d2afb6528dbe37f72058c71bda3a72d0ea429cf3236334f7d93550c9d555"
     },
     {
       "classification": "library",
       "file_path": "lib/registry.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:9a057c95a48b40c5a1aff878d302b0937b9a6dc1c529ea2ca0dc34d737982e64"
+      "sha256": "sha256:facd666bc107422bc4d266de846676b03dd6f9bb1552470e72bda49d786d4968"
     },
     {
       "classification": "library",
       "file_path": "lib/resolve.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3ae724262c9e4a5c87d2c721b7839d3f0b114ad53cb5ba1c390f59469e018364"
+      "sha256": "sha256:f8691067c0c7fce59e857d7f7366aca8ac605d3f1e189d172d4d27fdb0ecbb36"
     },
     {
       "classification": "library",
       "file_path": "lib/schema_validator.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5d75bb0b0f5d58a912a266f62c0a74e07d0cbe0c0ba37e2fcf90df155e3a6d00"
+      "sha256": "sha256:646f6c142d9705363249215d9089062df137238e0236eec0e0a157751d218a1f"
     },
     {
       "classification": "library",
       "file_path": "lib/signing.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:d248bb777f231434413bfd53b89c22584182567185c864c33e31d300a96316b7"
+      "sha256": "sha256:e7ba123162e7e8a1351d06bafe66860bf5af09993b9862cabb44b6736af3ed9d"
     },
     {
       "classification": "library",
       "file_path": "lib/tier_manifest.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ab939caf2de18839ec2d8ba2334e8d34892bffb65773636fbad3d16abf8e3941"
+      "sha256": "sha256:b851c29b926ea7a8ceebbb631251f6c16a9fe9c74678a8518543ea3d753a278c"
     },
     {
       "classification": "library",
       "file_path": "lib/workspace.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2d8b8594dab1349a94831990a4ea08e746e58473a8177b9bfe3f287f3918b1a5"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/admin_agent/README.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:d468d97e6a3e33a31aa685b737da82332a9f56246a6ffd14f407ea4969237e74"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/admin_agent/agent.py",
-      "installed_at": "2026-02-07T05:48:46.034263+00:00",
-      "owner_package_id": "PKG-CONFIRM-REMOVE-001",
-      "sha256": "sha256:a2b0336cd2990b7b23c5a686ce348d1818c307c3d79a366a435615c9b6007142"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/admin_agent/capabilities.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:26db6eda844d950b4384411556952c0d9ee7dfa729901f0c23a61d8500ff8819"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/admin_agent/handlers/llm_assisted.py",
-      "installed_at": "2026-02-07T02:43:43.736576+00:00",
-      "owner_package_id": "PKG-GENERAL-HANDLER-001",
-      "sha256": "sha256:f18a4bdfdfbeab4b51347c68355cd6035787eda692d821ba7375a665fc70ec5e"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/admin_agent/handlers/tools_first.py",
-      "installed_at": "2026-02-07T05:48:46.034263+00:00",
-      "owner_package_id": "PKG-CONFIRM-REMOVE-001",
-      "sha256": "sha256:b079171d1e6a55507861d4a2f8f1f7bfc45e6aac21966ad84e0d99004348a130"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/admin_agent/tools.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:bdc6a0ed233a1b6522cf065535f8771a3041a1f72541331d6890617807753c2e"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/README.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5a2a6d6b86ebd065fb6fa3c44b3678f1f59aa3703822142f93d32eca2aa0ca65"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/capability.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:9b6b122394b14e8c38312932c69c0418ffb13a3df021071e3899cbb0b034f3d9"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/exceptions.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1f88f52b0899032ee8ee5e1c5a3fda8cf81830f2f78e17b189359108ec814d6e"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/ledger_writer.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e2dc2a73527cb157d58ba6118e032cfcb1b60c4ecc96206722fe125c107227c2"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/memory.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ac18e02a758006f597484425d139ee2866b1aa6d542c3874ec9e305da99288ba"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/prompt_builder.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:0cd00d44f9c9d3aad70e16c50d4876a7f9e78d1cdccf40262b742639e7c81df8"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/runner.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2dd9f6ae5b6a077918d0df868c228c2150814a49e91c8f1e5b54bfcdc010d2c2"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/sandbox.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ef6f10fbc2a37003f92a4b78121b4ef6426ae6a2f38331e21070dd6a965e5252"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/agent_runtime/session.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ae391f5d0e07c64c39f2ad9871dc9eadd78e994659624e2d433b63ee1a0429cd"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/__main__.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e4950f2e1320364d67c5a4d98242c1e9c71f682b3b52ec21166215d87cbe0fc9"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/chat_interface/classifier.py",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:029bb360317727c189d299389c95b9d35ce7e84a9c9ba309cff4dc55f3bec217"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/handlers/browse.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:744762022b57f69a62e783b2477563ca0ce54626b04560884d0e5283afca58b0"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/handlers/help.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:36dbde435fc7e65021d9abc58dc58ae7a2fff606cb6332bffe2e247833638f24"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/handlers/ledger.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3099f625f59e8d04a49039f08cdb80ddd3f1a7f33879fce17b7e4c66999a70f4"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/handlers/packages.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:728b9e7cd3f0bcb995994d06ba85c490eb04453cbf9842b1124f8bb1aecd76e6"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/handlers/search.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:91871f2d9d944fd9bf6fdfbe5051442219693ed16399a666ae59107f4947820a"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/registry.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:a203f3be43548fde885a0716bb785451cd652723a6b42b32e336b1f6785e38e5"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/chat_interface/session.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3ec96228902d1af57ee5207acebdcfbb639754b6a3cfee97ed0f43c4b09a571a"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/hello_module/hello.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5face1f2455f2b521cac0c7ae17f0175f3e00a07d0ac92da1cb90676492fc2c1"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/router/__main__.py",
-      "installed_at": "2026-02-07T02:17:01.778715+00:00",
-      "owner_package_id": "PKG-ROUTER-PURE-001",
-      "sha256": "sha256:4169f09eebeafe9ac1f035d6010e74cb7214eb2b4742fc159044ef1b6b92720a"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/router/capabilities.py",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:f9971900f9062afe76f8570a282eca1ea22be1f35127bed37ec3150b50928696"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/router/decision.py",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:946956b5a6616ff24093acdc07601d5f6d90aaba5f0fad5800e092950bb5b1f2"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/router/policy.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:38b964d8e53ed081900361675b0a2989782a6a56bcbb26c7c2083da443ab0e7f"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/router/prompt_router.py",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:fc0b35405a5bc53de84a0ece8bf64d2bbe9b5da6263d14b825b65742af2d8663"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/README.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3370683ce528604a58cf2543ce8085dfa91a5750e4f12e0b90493273eb073a0c"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/__main__.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1cc3722cc7758e22ceafbd4dc7a1aad34316eb7d8f574e4dba16c0d14f96da16"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/capabilities.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:144ad89343f424a7c8b965e03841bdb369f45232b4acfa6d5615303d75cbca6c"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/chat_ui.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:53c753f8cdb14a8038249f5fd0dcc2e0f59c3dde502fc2fe7e095a17d0373ceb"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/commands/core.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:41ff23864f5b8f6a2880c0ab7eb82181b1972c8853a98a1aa5fd3322165e5469"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/commands/governance.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:40566cd4f1a85a2199fb22dadf0235bc805a766be6c99dfd4b3394b3a58cefc7"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/commands/memory.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:828b215664433181047f1a784f256afcac3fda809727f3560e647c51a5fd1c39"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/commands/notes.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:7e13f04590b90a93e078b805192bbedcfb2e57a7617f299c2dc91a202fd34cb7"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/commands/signals.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:02ae13d40b2fd9594bbbff827eb685a38c4b3e16f5b4027a3be833cfbeb19a15"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/interfaces.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b5baedaaecf36735128d1a6738d5d371530074a6c86454764486199b3229ab4c"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/operations.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1d32c1527d5cc802443aa374b83531b338db41b45ccb6968856ce63dd10b0382"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/shell/shell.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:7d9ea19c29c314af7a1bbbed8baa9aec3d2d64d2bf6779545c321528fddaa6a2"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_auth/__main__.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:a53ae641481d009fc92f264975124626701158b20cc20b45544c66761aeed9ec"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_auth/fingerprint.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:3e772acd2fb0303e96d2eff9005ac608f61cd9d5a5150bb5ad2601af4c1d938f"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_auth/validator.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b3e2c5191bea683eeca09d5469169ad9f18ddf7d28bf3bf7e2fa9efb2d9f5109"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_evidence/README.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:4db729306142c7f026d5c8b49a4b672af5715538c7047c01a3378f78cb84434f"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_evidence/__main__.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:6e74399f4f327a9a300500c8de4bbf154e414e96965e51cf867f0ebc326d2063"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_evidence/envelope.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:dae94aa8e3c65ac4eb28fe631dc4b7f6f07746365264d77c7454492f39f9fc14"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_evidence/hasher.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b07aa7c9f0688ed4d1a383deabb73b80ed2543065702d1acd1cf0ab125e72243"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_evidence/reference.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:8804e65b5721781ee5a004f1398dbbae512ca5dd1bace99cecef3f3e8423cccb"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/__main__.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f73f76749709827ce8174f938866666f77032205942a80d6eaca9e63c8045ed3"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/client.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:eacb8cd3d48c42712228690e6a9c6ec0999c0e44f3c074c819803ceca8ba2d3a"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/config.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2525bb6eb3e6159d6235eace2281d4b64f28990393056a57f4a27939ad9d9559"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/evidence.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:464cb860fffa4d16c0f62782085fad0c97d6f3738b647d4bbbcbaa6235777108"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/provider.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:66dd81aa04ec8d73998f26fe0bc2619003cd253ee5a6050cd3c0d6361b69a9ad"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/providers/anthropic.py",
-      "installed_at": "2026-02-06T23:40:30.132796+00:00",
-      "owner_package_id": "PKG-RATE-MGMT-001",
-      "sha256": "sha256:453e6db4014299964651764a7332a2e78f64ebd0d0839ea34bba1cc954144b4f"
-    },
-    {
-      "classification": "module",
-      "file_path": "modules/stdlib_llm/providers/mock.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2d5abe4a709360bab3b16d646b0625c8eb7955dc81658cf925eeb12dfc915610"
-    },
-    {
-      "classification": "policy",
-      "file_path": "scripts/policies/attention_default.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:dced8973850090c226698ca4ce57c491378a8576a0d57dee6913c7bfa8d51cab"
-    },
-    {
-      "classification": "policy",
-      "file_path": "scripts/policies/install_policy.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:445a48b15cfe3636d46089f297b51bd255c5192c18d6449896e63d05d1abbfe3"
+      "sha256": "sha256:d7d150e830b3e9733bc5a8e75eb0bc15de6e47e832eef9a8c4377c9b85f92b55"
     },
     {
       "classification": "registry",
       "file_path": "registries/control_plane_registry.csv",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:af492f1ac9a9ba837b5cfc19d9e19f3194c761e83b29a13c48ba7e87253b607c"
+      "sha256": "sha256:74dee0b1159359869c001e58e30cbd7ebd1b4d90f22819da171c9d9023cb39f3"
     },
     {
       "classification": "registry",
       "file_path": "registries/frameworks_registry.csv",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:8c1f0e531759a9859a1df052c0de2121134e856a25a5e1524a4962a2fa2f92d7"
+      "sha256": "sha256:1a6f7f2977cde6354726f09839dc6f75c1bd3d26b30cf64e715d6226095b687b"
     },
     {
       "classification": "registry",
       "file_path": "registries/packages_registry.csv",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ae46379b8b2d65770b4840640ff6dfa97936614b486f75cf784aa391f23e444c"
+      "sha256": "sha256:1ef392bc45d77f0e691f39e17ecc5c4c401f01abed8578ecda835b295cd3111d"
     },
     {
       "classification": "registry",
       "file_path": "registries/prompts_registry.csv",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:c378638c3dfc1f1b51a1f4650194bb86a3ed32c6eef426addcc29d910b08a376"
     },
     {
       "classification": "registry",
       "file_path": "registries/specs_registry.csv",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:cc9b42b8219f46a0ff069dd3327d7e6094ccce5ebc6449c592c3b07e5e98c37d"
+      "sha256": "sha256:6fb9e952de05b651fb3956c1693e415e59f64eafe07314361106bd71fbce25c0"
     },
     {
       "classification": "schema",
       "file_path": "schemas/attention_envelope.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2bee888e7cf90ad964fef6c4bbc35338b446f97f3b1fe0ad645712d441bc72f1"
     },
     {
       "classification": "schema",
       "file_path": "schemas/chat_request.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:49c4ca03b576ac09149c781de0cb5c9697e9f63d8db5dbb0f16d5a7052e4d004"
     },
     {
       "classification": "schema",
       "file_path": "schemas/chat_response.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:516862103bfbe8053e0b48e9672b0ef5588667fdeca9335d08f2b006903ba9d0"
     },
     {
       "classification": "schema",
       "file_path": "schemas/cp_status.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8939b7f97b6393d59cc06bc5c65ef67f482d2a5fbaa15116041af962f49875ac"
     },
     {
       "classification": "schema",
       "file_path": "schemas/framework.schema.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:875f404560f202204f39d41ed24b1ae46efb0221d1ce33f03337e3f0d6b41b3e"
     },
     {
       "classification": "schema",
       "file_path": "schemas/package_manifest.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:36409bc20d58a7abae2823cfa23036dca0fcacffdd5eb5d63b131495300196db"
+      "sha256": "sha256:aca81037e01de61582023029ad9f958ddf4e61134569bcfd0d83eda32572e0e2"
     },
     {
       "classification": "schema",
       "file_path": "schemas/policy.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:67a6bee8dbdd86551ab83a365b295071ec6b0f3141c07a8eb2fad9395a15b286"
     },
     {
       "classification": "schema",
       "file_path": "schemas/route_policy.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:e5c34bb59a1470ac42bd300efef2604a640e81af8c4c89d163f7f9bc07293f70"
     },
     {
       "classification": "schema",
       "file_path": "schemas/router_request.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:e8770d07ec048978d352a7c2051c9a8021d9ab530793154dc06ec9e91e2bc4b9"
     },
     {
       "classification": "schema",
       "file_path": "schemas/router_response.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b5a3d7363c36f94bf748b9126be2d50dc3034976bf4758878e2fed7d441ae0cf"
     },
     {
       "classification": "schema",
       "file_path": "schemas/spec.schema.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:870926666c847a214422ca1a4dcd85006a7a983c69a17c0e4167c09fb8d8f88c"
     },
     {
       "classification": "schema",
       "file_path": "schemas/stdlib_auth_request.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:31f6d2e56e1606ed726add3fbda326d22b912dd3882819eaffe28b515eabf094"
     },
     {
       "classification": "schema",
       "file_path": "schemas/stdlib_auth_response.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:c5fd06c9f69b1dc5b97ff370b8822678c197bfb103571461ad05971f6d4f8c71"
     },
     {
       "classification": "schema",
       "file_path": "schemas/stdlib_evidence_request.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:a96987e0c273fea47a0710cf4be3fad830ca003c94e7ab75b6e10f2d88501d32"
     },
     {
       "classification": "schema",
       "file_path": "schemas/stdlib_evidence_response.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:81c8f459657d7431a82d052cdd195d877e4e477dc719d87cb3e90391fa5c922a"
     },
     {
       "classification": "schema",
       "file_path": "schemas/stdlib_llm_request.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:73f715a937895e2671ce687b667eeb0655e75e62e4411787fde0865f84769141"
     },
     {
       "classification": "schema",
       "file_path": "schemas/stdlib_llm_response.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2b6b14c76db601da13395f3f809e588122ac6d4fa97285354298af0ee8e10e02"
     },
     {
       "classification": "schema",
       "file_path": "schemas/work_order.schema.json",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:6e180fb621e142cb6dd1773c8c16016df426b808d47324cbee78b7d2a24d4fbf"
     },
     {
       "classification": "script",
       "file_path": "scripts/agent_check.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2d979a90a07a81d2b4e381b3b2192255c63dfe39303aa1d218f2668d9bd85e8a"
+      "sha256": "sha256:9f5168bab294777a689d073109651ed62660d39c5a1663d2723272b4a1b975c6"
     },
     {
       "classification": "script",
       "file_path": "scripts/apply_work_order.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:146ffb80ccae08df6f7e11b59766df69d0f96b5a57b9d4004c04aed5bf81bbbf"
     },
     {
       "classification": "script",
-      "file_path": "scripts/chat.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1377edb7faaf650032ad6f4cca610351de0ce3c863985a4f9c2c5c5cf7963d4d"
-    },
-    {
-      "classification": "script",
       "file_path": "scripts/compute_wo_hash.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:9215d729fe2b722150dd863d701e213e1c605bd29a8261d352dc14be2a4c0c6f"
     },
     {
       "classification": "script",
       "file_path": "scripts/cp_init_auth.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8cf32f7003686832a13d63e1db48732f34bf47dbb9d183052821c127b721d2f6"
     },
     {
       "classification": "script",
       "file_path": "scripts/cp_inspect.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:bbe2320cf201824d41c1e6986e27efb7ea92147668df47f7da8263ed43d38b07"
     },
     {
       "classification": "script",
       "file_path": "scripts/cp_plane.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0285def070450a7ba5345a987c12303977c316fcea09b15f2b1b3c9e00991302"
     },
     {
       "classification": "script",
       "file_path": "scripts/cp_version_checkpoint.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0cea1bcbe2f693bbdf2238c1a6a62016e889e079bdaae3a515c540a9ff8be32c"
     },
     {
       "classification": "script",
       "file_path": "scripts/cp_version_list.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b0d3cfede7247236d158f5bd221bc3184f36bc73338ec23d3db1713a10c3bb52"
     },
     {
       "classification": "script",
       "file_path": "scripts/cp_version_rollback.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:d7956ae96c30a454cd57e23a3e19d641f0ea312ee72d62243205508aadd6f147"
     },
     {
       "classification": "script",
       "file_path": "scripts/g0k_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:66bf2185ddf3622504827dc79db2e2472f7d0838ee3c4665f6e1aeb13166269c"
     },
     {
       "classification": "script",
       "file_path": "scripts/g2_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:83c19bead37682f8464f19a138dd849039078ec69fe65f1aff0c309919bd4a3a"
     },
     {
       "classification": "script",
       "file_path": "scripts/g3_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:5092a3fb51604e02bca1dace9f72831e51a516c8117bad110eb7c26a74bf8430"
     },
     {
       "classification": "script",
       "file_path": "scripts/g4_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:94bd41a6e5316a7447978d537ee1b2395e27f74be5d42f008f8370d21488d9ca"
     },
     {
       "classification": "script",
       "file_path": "scripts/g5_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:7cacd44aa63466ad29704513d15f4c8eb7c7fdc3d0d12b4f26906fa4ad6c25d0"
     },
     {
       "classification": "script",
       "file_path": "scripts/g6_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:62521b41b9f540c1fad3b654b4f5930e359a7674fb4d420159a306783d210513"
     },
     {
       "classification": "script",
       "file_path": "scripts/gate_check.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:9da55a97bd9bf35f3de7f13a219025c49f29d37ebf9f7d1ce3987146a1a4261a"
+      "sha256": "sha256:fca153f3e6591885f1a66c99e6f31eacb52dad449e60ec37a7167d13740518d4"
     },
     {
       "classification": "script",
       "file_path": "scripts/generate_baseline_manifest.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1239284e62d2c25a63c5e8dc7b3934e89c57ca8248dfbabcdd0a705b89da62eb"
+      "sha256": "sha256:e4ce8501b839715b1be3249a2d7c81fbfdf53754b86eb8403f759102cda732f3"
     },
     {
       "classification": "script",
       "file_path": "scripts/genesis_bootstrap.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:75fc80fb72b6b5dfa282b44b59571849b8b6b92e9546b53d2a360b7b686a4222"
     },
     {
       "classification": "script",
       "file_path": "scripts/install_baseline.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:086e0d8399063b928cc6e7020afbabb52ca8b105541edd5cbe7cb8165d2b1d25"
     },
     {
       "classification": "script",
       "file_path": "scripts/integrity_check.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:20f398c85879c611149213c962c5a3b32791c866167c87d281911ce9939dcf7b"
     },
     {
       "classification": "script",
       "file_path": "scripts/kernel_build.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:6d9f595f56c50a7164f300eaf6bff5786680567a658ed0188400d8c94d020120"
     },
     {
       "classification": "script",
       "file_path": "scripts/kernel_install.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:78397447fd395289d010715e9672f987655549ad2e21cdbf74362b82094682db"
     },
     {
       "classification": "script",
       "file_path": "scripts/ledger_repair.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:160c0ac271d7b0d3c2a51bbb93e86b09950a2488ddd5231a22c1292a013f86ad"
     },
     {
       "classification": "script",
       "file_path": "scripts/ledger_tier.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:f66ae70c53d87c84ca2ea16bfc79dd124b837b09d8a796d9653361a0da46ec49"
     },
     {
       "classification": "script",
       "file_path": "scripts/mp.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0edf1c37662402781be3686fe99080c49dfc7315d3faa9c572adccb0d6e3ecf2"
     },
     {
       "classification": "script",
       "file_path": "scripts/package_factory.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2d9f84af38beeda04859ac979b7a2c0fc4dcf37d1a28860a2b4adaa6ebd7b8b5"
     },
     {
       "classification": "script",
       "file_path": "scripts/package_install.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:704625d1789689c8787a92cee89dfc523c3766d5d54564ed222bbf07a6a50021"
     },
     {
       "classification": "script",
       "file_path": "scripts/package_pack.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:f472a989cf3d1e618473278eb47874155ea76339254555891ea5fb66f97f7963"
     },
     {
       "classification": "script",
       "file_path": "scripts/package_sync.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:5fc6b646b8948595d4973a5ee446f03e88cacfe1d20039a1e246979007d16eee"
     },
     {
       "classification": "script",
       "file_path": "scripts/package_trace.sh",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8f9f53b252f7d8a03f8050b384594a1c2a23f8be42e09023e5c9e56ac699a90b"
     },
     {
       "classification": "script",
       "file_path": "scripts/package_uninstall.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:ab1cde1c26a791de3a5c7762d58ed66341cd7e5b92b11a2b1826d67c47e31f17"
     },
     {
       "classification": "script",
       "file_path": "scripts/pkgutil.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:5030a25bcc9d6e6a4d00dd36411e059b2d94b0da53953290f925026605986de0"
+      "sha256": "sha256:1c0deb65dff541da6d301f82022c4ef880c509642a9e80f41b3ddb62c6119001"
+    },
+    {
+      "classification": "policy",
+      "file_path": "scripts/policies/attention_default.yaml",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:dced8973850090c226698ca4ce57c491378a8576a0d57dee6913c7bfa8d51cab"
+    },
+    {
+      "classification": "policy",
+      "file_path": "scripts/policies/install_policy.yaml",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:445a48b15cfe3636d46089f297b51bd255c5192c18d6449896e63d05d1abbfe3"
     },
     {
       "classification": "script",
       "file_path": "scripts/pristine_rebuild_drill.sh",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fb8677ef2764ad6b2228ab8bf136c896bb7b798c3d35df97d554e20c8564eef3"
+      "sha256": "sha256:436c54d912592a19da54bffeaa45840b02461335ef46fbcb30155036356fec1c"
     },
     {
       "classification": "script",
       "file_path": "scripts/quarantine_orphans.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:af2f7ecf654ce7773d6e7bf36ac2e026b794839453b9487bafa96c1d6ff59e2c"
     },
     {
       "classification": "script",
       "file_path": "scripts/rebuild_derived.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:396115ea32588e431aaa7449fb9196776040816ea0f6f47e6af910b562567bb8"
     },
     {
       "classification": "script",
       "file_path": "scripts/rebuild_derived_registries.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:df3abfd62e05127556195d83a0e2bd2f99fac348415992adc1929ba64d6abfba"
     },
     {
       "classification": "script",
-      "file_path": "scripts/remediate_orphans.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:28a7e314b7fec2c36ce917933f0c7ad5072e50b3b6104a3c690ae5a86278cedd"
-    },
-    {
-      "classification": "script",
       "file_path": "scripts/seal_guard.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2c119f040625147b98bd44e004672efe2d97814d074f44208d41ee60363ea707"
     },
     {
-      "classification": "script",
-      "file_path": "scripts/shell.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "classification": "other",
+      "file_path": "scripts/templates/agent/capabilities.yaml.j2",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ae2a924da7c9a3c5ac3f7f0b8a9c5d68d481871cbc8f037faef670fa0a51edad"
+      "sha256": "sha256:88a9041a70f0124709aba2b91b81fdcf0c8f7731bf809007f233dd78cc58cde6"
+    },
+    {
+      "classification": "other",
+      "file_path": "scripts/templates/agent/manifest.json.j2",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:26dce0f19478f2ac017874ca4a9c8f07bd632aff5f579c0d2d9bbdd1a5b49cc7"
+    },
+    {
+      "classification": "other",
+      "file_path": "scripts/templates/agent/prompts/system.md",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:88f22b7768c6e32a143e20b30b2b2f3363c411a266cd17ac0656221f20d31764"
+    },
+    {
+      "classification": "other",
+      "file_path": "scripts/templates/agent/prompts/turn.md",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:98f8c3dede8511d27182980a5fc682920874e5704a06cd342c4e2e1814e9ae5a"
+    },
+    {
+      "classification": "other",
+      "file_path": "scripts/templates/standard/manifest.json.j2",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
+      "owner_package_id": "PKG-BASELINE-HO3-000",
+      "sha256": "sha256:5c301a71b9aec8a3417fbe04f0428669a4f7da6697dc82778720bc790ff455d4"
     },
     {
       "classification": "script",
       "file_path": "scripts/test_install.sh",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:aa0fedee45483f801ff1b3f370cce8fcc783059d5077c907f02d2524ba272a21"
     },
     {
       "classification": "script",
       "file_path": "scripts/test_pack.sh",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:4c81eeed41afefacab2650387c84f86f4aea34bb816c2b440985071c7b934abb"
     },
     {
       "classification": "script",
       "file_path": "scripts/test_uninstall.sh",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:ba1a1a5729af79649fc84792fd1aaa5b594c75376fab5d747ae78f1a21dee08e"
     },
     {
       "classification": "script",
       "file_path": "scripts/trace.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2545515426f91d2ea0d2f6c2dd63a7a64e9baf7b158c404be0e0bb4d2e95e18f"
     },
     {
       "classification": "script",
       "file_path": "scripts/validate_attention_policy.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:30b2949e2c03668eede1efe211ebd7e51449916dbeae5ca242ce24e26bb0b5cc"
+      "sha256": "sha256:2c31593d038ee415bfc84b23e77ed8c2633582a4574521d632040beaf7fc0bed"
     },
     {
       "classification": "script",
       "file_path": "scripts/validate_install_policy.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e4c6e7d8a5d27c90fe37c26143dde4b98d06cf40a323f7c6e23dccac56548ad9"
+      "sha256": "sha256:07b0e144ee019db8a90ae6119e99758b6597bae91b38dc43ef375dec737902ae"
     },
     {
       "classification": "script",
       "file_path": "scripts/validate_package_manifest.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:d77112637317b8b9da2340d04c27638a99781665bd5b5b1c75e55b3468c70dd1"
     },
     {
       "classification": "script",
       "file_path": "scripts/validate_packages.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:657fbdda6c8a6c8cad4dd10ac26e86b43065af282014920f1a47644472e81284"
     },
     {
       "classification": "script",
       "file_path": "scripts/validate_tier_deps.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0f34f85ecd5bbb7e2b998524ab0d82ce8f5dcb72ee4cccb7dd8418fb02b2de92"
     },
     {
       "classification": "script",
       "file_path": "scripts/validate_work_order.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0f294c8befa3d5db74482a7b8caaffdf813a9f23886f5cca36b36fefdfff92ad"
     },
     {
       "classification": "script",
       "file_path": "scripts/verify_installed_state.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:14846777efe0d450a5c5a652648df9c69a53db9fca02437cf10ab70c66497aa0"
     },
     {
       "classification": "script",
       "file_path": "scripts/verify_integrity.sh",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:350d38f889b900b36b5161cf7ceda6e58932b3e9907b64a4d4852bfb013131fa"
     },
     {
       "classification": "script",
       "file_path": "scripts/wo_approve.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:1c312dfa169be84e88db5c38adb4631d22b1ed11fa8e94ad22fe8aab67ba8ece"
     },
     {
       "classification": "script",
       "file_path": "scripts/wo_keygen.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2d703d92faa6ad27a3d12e1f8f178b7e08ebdaca42e69123a5e79299a4169614"
     },
     {
       "classification": "script",
       "file_path": "scripts/wo_verify.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:5f57b63a0751a81b860a85094a6584650f695754b8866734162c05872f3004cc"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/00_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:561e28e5afeb794e47ec75f956951756216ed9241d8d91f1d98a6e239eab1bc0"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/01_problem.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:eacc43a1f48b6d74b6e061419a9fb56fd737a5de556b209a6605723d10c15370"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/02_solution.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:e98d032f10c06ffc04a51e1cf861793c5ac7e56d191d4dedb25f30b581859cdc"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/03_requirements.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:c3338e89a194e37273d05105bd3d5e7be095cee440c38a0adda227e66947b8d1"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/04_design.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b2f2ad9511d5a03ac9f70b0d0ef67ec8bb141528a49486004455a761136b5b42"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/05_testing.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:20e84010ceff1db7d5c490d31f0a64de6995582f4372ea58f44385fecda7ee16"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/06_rollout.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:4a22545c7ff60ca0431c21c2ab285d82de4fe816cb38e5e45bbaca873751cefc"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/07_registry.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b5710dd72884a05a4a327fe6e217f70c03443325becbf33f2900202ea2f8bdcd"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-ADMIN-001/08_commit.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:11ab94e0de82f35f4c6c3b6d013806b74111e9acaad53f9fd37e9b6ad0283202"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-ADMIN-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:5d415e14bcb137fb1123350a32eb48149c7a7e42001608c04cfc37a88eed912c"
     },
     {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/00_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f51d7e7989cf93ad8aef996ac52e8e18e90b2aff370e503b1bc758d34004b2a9"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/01_problem.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f698cfeb03e8dd31810067078125a067e15864f30dbf253cdbe4a0b5073e6ff5"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/02_solution.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:cf6d4579e658a05bf79919c3b1f1d375a043e2b0e871601d687d2ff0fa773ff4"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/03_requirements.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:c781b815de5027b01f0e70be267f8f43e931849b5e7f75a8305ed6a3e6516c1b"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/04_design.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b8c743254c65a44e290d2371ed53cfe0e71ab91872e824321661c16f1cc2565c"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/05_testing.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fb93e4ad62c6106765b961a3e8fcd8df0f2dcf10d6cfa48d2c1cbb4c212d1caa"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/06_rollout.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b275d48050d6b4e31eccf39938ecb9307e2a98bcb504b5a03c9ee0c06e74bb88"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/07_registry.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e5ca6ba3915d936bf8a5034bc0d2215dac5aa5e91e31abcd425d48b8e345c4de"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-CHAT-001/08_commit.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:c42feda450ae8b8b07435eddbb3512c0f9162bbdceecb517794a19ea2f4ff3be"
-    },
-    {
-      "classification": "spec_manifest",
-      "file_path": "specs/SPEC-CHAT-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:39aa618d88da9e633ebee0495ec8050935c8d2cd8f72ca7509e88edb9ef746a1"
-    },
-    {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-CORE-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:10b1444da6fee92f41bc9c0928bcc4facf828c278a2a8ce738afb35c3e3a42f4"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-CORE-SCRIPTS-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:1a5d6217c3f4b772f0c3d29a00404270b4f6c0b7bdd3fbf1dfd8bf285628374c"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-DOC-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:362105507bec5ab40489f7070a0d05cda66276547cce9271e7abfdc871b5915a"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/00_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:3361318aa606c0d30cb1da5dc72fc773061436e0f5e6646b2344a3bbb2212fef"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/01_problem.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:74776160439c21cc8399fb8d63f9cfffcf095418a2f7b53b621de6442a8f5b18"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/02_solution.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:46a273e2793f1ec7df354b4e24fbe3ef4c898aeaf931edc4ac6fea7e73f52edd"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/03_requirements.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:d767fbcc4930cc04f785beb946472d2f37c35af1c190b09dc3257dee9a673a95"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/04_design.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:e169cd82d1ec202b3b623aaac037e47e879da9c346914dbefd0a209a433ba0b4"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/05_testing.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:71ed8977adab871f62ad66da14bae3e7df2af3b3d1a093c000f32651dc17385b"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/06_rollout.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:66abad5159c9a417faeb2ea7e99dbf7816bf216d0a853a021440034180950a7a"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/07_registry.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:a37251f37029c57db9999c2d6fca663de40a9ece44a0c4ebd98006ec941dee96"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-EVIDENCE-001/08_commit.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:f1a7d56bf9eae001e1da7325f69a9004dcdaefaeab8bb1c30e64110ea4d3e2ad"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-EVIDENCE-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:93d162c5ddf9c3dbf28e18773406d0e687291490d12b515328d5138779868c0f"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-FMWK-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:bf20e2d5326edeed212404c2e6fb2308b98efe6e552567ca098e6fae707a9c9b"
+      "sha256": "sha256:6cdda674e45802aabda0512b0c02cd449a77ba137d3d6066e3aef41df8d4737a"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-FMWK-CAPS-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:7e56ddc3a26c2f9d33345019eb055362014f79c89da76979f14f1947b64487fe"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-GATE-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:59581474c279bb9d145b3dc9720e1f20753caa57dbb956baa36450fdd2165c78"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-GENESIS-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8db128ee4c6a8335164a8761fb109955f0f68e80b7cfd6730039b4f3b4018639"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-INSPECT-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:eb6c344ecb4758ab072f06a023f102834dccc80984c4153d1d7147c78a248fea"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-INT-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:36464a6ec336a760100f7da549f2b9c7349d4db8e0575c86dc08edcf8afd4cda"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-LEDGER-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:446fe7b3f24a5ec698874e64f40436061056ad5b77e03be79b6ea21b2d1a80c8"
+      "sha256": "sha256:ced011a69e5db9eaa78a8f0f0a270710cff1f680e0a2bf4f8e0ccaacbb8473ca"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-PKG-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:df98bebd4d9f201e831be7c8f689dac74ff855556ce747bca0d102e39bb3e8d4"
+      "sha256": "sha256:5030cb52d686ee91ae3ea6fdae109ed227b9291272bde39938f33391f86f3f30"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-PLANE-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:a7e1b348b4900355edb3eab8fdf1b720210097cfcda93c570f40523185faf601"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-POLICY-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b397c4f902c2ee0a7a23cb33472eef4ad847fa5fddafa9e082065501cab0f79c"
+      "sha256": "sha256:8face5cc9e337a46ba260f1acf03687243b1c8237e7517d3511ccd0d5050630a"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/00_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:2e9a9e1d56593ef18c34e69b0497cbe2ca38c2cad41494a0e4b64656465fe075"
+      "sha256": "sha256:9d44521e7c63253c1f85b8e406a86892f2d4bbcf904344a82b86d7fa0d452836"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/01_problem.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:10cedbd4c77dd5b6999a2d9884543b779fea3f6efdf4e2c9b2fbf854d805317d"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/02_solution.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0e40857880d93f1c1749a9ec41d5bd77f5e66c43eb2eb2b3df43648ba7f78dfe"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/03_requirements.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:6e98cb01e92b4fc41ed0e0e0fe6fa3dfb1a4e7332f19f6e28917a89e64db7c2b"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/04_design.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:1991a393c19e1ac63412e77af97fb3169895772c4f1a4f8c48fdfb838a7a3170"
+      "sha256": "sha256:939bd95948ad2f618064d6b88c377531208cc9594e469df9f66a3c1e577d4fb2"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/05_testing.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:d30be62eb536f5854c433cb48d78767515bb2c8c6c974779f835646e54f7d4da"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/06_rollout.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:72aa2c31f5a29ccfe85d7edf219b42d0aa397beea0b1bc677ca281100e35c976"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/07_registry.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:c7f7a0278930807d57b323f73fc033214ef2ccf8377877e10f9f158f621c262d"
+      "sha256": "sha256:ddc86d4bd83ecd0f1a38adde76ece66c72591180c1cd8fd620c56a62c3f93598"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-PROMPT-001/08_commit.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e46cd407cca2f1a0ae8199ec0e257f828bfdc273533b3ba75f4852f468e04e49"
+      "sha256": "sha256:12e6a272242f502834d5579f8311470e4a6fc0f02282feff6e8095e7bbff31cf"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-RATE-MGMT-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b4ad08d44624629ca94a35fff180637391450b9cea7f1760ebdb187d388b7b00"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-REG-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:44563f78e4a2c4f863c999583f44e17d0b8fd5ae7847b9030317d5056b788222"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-ROUTER-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:7f7bd245fad48777f58b08fa1850629b30b133b6490902c63f78f34c97e2d3b8"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-ROUTER-FIX-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:ca4af2e016abb9309051c68903bd94f0bf9f2ad62737948872f9af1c630f3a20"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-ROUTER-PURE-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:5bbae300280a1cc4659e8d84ba8ca4025303119eeeba9edc6fa99675b72aefd4"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/00_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e1293992c3e1cd949b843292c5e638cfc7b2d8f757bd963b1e87823ede412813"
+      "sha256": "sha256:708e7a111e86d455ba7e0426744c8a901f1c63339f4b91bda2ea90082e5072cd"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/01_problem.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:1327b0967dddc3992e5a16b72fa53bf147d959586779972324d36a13749108bb"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/02_solution.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:4a8ca117585e79b4edf89967aa332ae9e30ca6af4747bcbda7eba1ce2286b00f"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/03_requirements.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:bde4df8bf931abdeec1a5db08b0530e01c29715447a7f09e504be2151a08a8f5"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/04_design.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:4ac2ed63d9e7f28bcf408f84bf7721997cb3c56ee6334fbdecfdb409ed42d48a"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/05_testing.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:73437dbaa22fbcad75e6517747b050f4a20bc7f6cfeb939f39e7796131807759"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/06_rollout.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:61f1baf1e7b76f5ed583aeda164f6bf7f54caa843a29067a2a82ea827b6493df"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/07_registry.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:f8294876793abb800343726155a816b75b1f9cbd52577b3c9b2d7cb2a45ecc70"
     },
     {
       "classification": "spec_asset",
       "file_path": "specs/SPEC-RUNTIME-001/08_commit.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0359c3dfec3f50a38b9e87a66d3decc0c6913f34d2f4854bee85e4dcb31c7b76"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-RUNTIME-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:8b31a3558322abb94412e368b3cd408cbee3919f610ff1bd1e31adcf5a2ac394"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-SEC-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:a76805b0304837420a9656467c7bcb04c086b56bb775feab29a9e628d7baddd3"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/00_overview.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:6e321bf24a19059f4cc56779c693c6be730d50c2cdce75b7687ded6a2dd73e72"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/01_problem.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b074ab1ba9951853f7c1f797b6d592887da13175b81480cec5db333537fefa4f"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/02_solution.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f56fda095147a5a247118e6bee9b29dc939a741e76aa478b54003b73513402b8"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/03_requirements.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:b548ecc11df86159a19b377bbeda357bd1f30493e6bedc84418092799fda1000"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/04_design.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:e883c0ca28377c3999eff89b70cfeb67cc387c690fc6c576fdf6459f10ea0956"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/05_testing.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:384d06e95208d83e231346d69107535344225c0b14a6b34734acbb909b57163c"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/06_rollout.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:91c0097fd65885de6995ae12096e96541e19cc958e2146fcd45647bc42e6faa3"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/07_registry.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:ae7edae41179c5e787967489273b078731ff27c296cd84f8085de4588fb2eacd"
-    },
-    {
-      "classification": "spec_asset",
-      "file_path": "specs/SPEC-SHELL-001/08_commit.md",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:a72b53e84894e678048d483434e2e063fabd6e5dd70c2926743394c328f19f23"
-    },
-    {
-      "classification": "spec_manifest",
-      "file_path": "specs/SPEC-SHELL-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:c78bcba5e69694dc98326724a6020ab4ed294f94bb8b2bd2af783a1813f5e8f8"
+      "sha256": "sha256:eaeb98d5e95888027aafb9bf1cf3662ec3139d6e7000712c11385e5a90ad57a8"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-TEST-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b3e65e1d0c22ea3c69d51a4aea58b55919bddf9ee912bb46de620b94572eb9d9"
     },
     {
       "classification": "spec_manifest",
       "file_path": "specs/SPEC-VER-001/manifest.yaml",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:5709fb1d17b4d871adbe41221e0872b81d97d991458e13076319d0b4f745c430"
     },
     {
-      "classification": "other",
-      "file_path": "tests/test_admin_agent.py",
-      "installed_at": "2026-02-07T06:39:10.520885+00:00",
-      "owner_package_id": "PKG-TEST-ROUTER-CAPS-001",
-      "sha256": "sha256:7beccbd21025a445bc198240169438a511b3436a2594c364b0384b2a798e65eb"
-    },
-    {
-      "classification": "other",
-      "file_path": "tests/test_admin_llm_assisted.py",
-      "installed_at": "2026-02-07T06:39:10.520885+00:00",
-      "owner_package_id": "PKG-TEST-ROUTER-CAPS-001",
-      "sha256": "sha256:23cd702e39cc69b1daab610f2020e89fccce5ce62a274ae20fe102dead4c71d1"
-    },
-    {
       "classification": "test",
       "file_path": "tests/test_agent_helpers.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:9993b8812f64ae320d687a21dd0d1805ba109808c63105a2f8b2be023b6c75c2"
     },
     {
       "classification": "test",
-      "file_path": "tests/test_agent_runtime.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:956a79d72e0a022b144d2175c222e4130546793283c62533bd79f182f2fa7e01"
-    },
-    {
-      "classification": "test",
       "file_path": "tests/test_auth.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0b7ff06830c223a9f60325cbe6e02195f9428f3bdd173647837cc39190d078bf"
     },
     {
       "classification": "test",
       "file_path": "tests/test_authz.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:c54710f518ed1866199d90e4165167a7322c5ad25fb7f39a5891e6de4b53a22b"
     },
     {
       "classification": "test",
       "file_path": "tests/test_chain.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:209e0a5e914c8b53a31d5e6ec1d9eb295efc58a125a8e2a89ddfe1de624eb365"
     },
     {
       "classification": "test",
       "file_path": "tests/test_chain_genesis.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:f69bbc638497402d4acd828ecdfbd98f5b91de54429c7ffb028435dfb8dde0e5"
     },
     {
-      "classification": "other",
-      "file_path": "tests/test_chat_interface.py",
-      "installed_at": "2026-02-07T06:39:10.520885+00:00",
-      "owner_package_id": "PKG-TEST-ROUTER-CAPS-001",
-      "sha256": "sha256:445a043b9a94e8eb300d4006a2ff78623c5f6136eb9736ab6828402cd808a641"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_chat_session.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:edfa451bfb2450ef44fbf924f8e743fe69c0aed4c4a6500994af5a41a71b20ca"
-    },
-    {
       "classification": "test",
       "file_path": "tests/test_cross_tier_provenance.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:f5428c7e1dcab8989ff6f13f07bf994b7af2630719118c71c948299539262990"
     },
     {
       "classification": "test",
       "file_path": "tests/test_factory_canary.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:626c6d03dc289f7321d4f49c33783cced6adcdbfd2ded0747576e1a0bfdebcb7"
     },
     {
       "classification": "test",
       "file_path": "tests/test_g2_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b58849c27c180999d20e0895b710e4dbe1bea56b7951da0f7f9e1773100bb9d3"
     },
     {
       "classification": "test",
       "file_path": "tests/test_g3_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:005c88f23004f8f2adc173621b4454c15f266f8b5e6a998a039916052d6e5275"
     },
     {
       "classification": "test",
       "file_path": "tests/test_g4_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:dd437ffe65dec7c5849160042141c9181ea1b5e25cbdab441af95eda44693d93"
     },
     {
       "classification": "test",
       "file_path": "tests/test_g5_gate.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:a3347e855521cbdd000632c2f8985fc2b08ea34d80f8f8c5aaa5e4f3cf434560"
     },
     {
       "classification": "test",
       "file_path": "tests/test_g6_full.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:1361e848eeccf7b0b4f08ff90a1329c41ac0a4878151575d063520d686681a6e"
     },
     {
       "classification": "test",
       "file_path": "tests/test_hashing.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:1ede88512482e695e2243fb1959d2d9feb565985cd939f221f262d134f99df8f"
     },
     {
       "classification": "test",
       "file_path": "tests/test_idempotency.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:9444c6b1c27e3bd8932fcab196aa49a3de0fc352fe37265053e79869dfc1abce"
     },
     {
       "classification": "test",
       "file_path": "tests/test_kernel_parity.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:2188bedf9f87c4dc6a3ec96bfb23c009d4c8941acde06190b34be15339fb30d7"
     },
     {
       "classification": "test",
       "file_path": "tests/test_ledger_chain.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:c88f6049118d8694944e8a683d80ce9cb456117a4c7f41ff9e62cd15f3024989"
     },
     {
       "classification": "test",
       "file_path": "tests/test_manifest_v11.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:549203dec511e113203b27ce7c24af58f793aa110e02455f2ec785e20cbcf30f"
     },
     {
       "classification": "test",
       "file_path": "tests/test_multiplane.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:9d542d6fb0c5d1db038c56dc24cbe260ee6533d066a15ca143caf2981394ccce"
     },
     {
       "classification": "test",
-      "file_path": "tests/test_no_direct_llm.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:fccac2c79cba66e8be9f6b783180e0aba5b88b9e8661bd91db6cf56b6ac9f703"
-    },
-    {
-      "classification": "test",
       "file_path": "tests/test_packages.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:dc4164931eb2c781fadef256ab7f35a5c5bb3d0a730d7dcf228a413e684f6a43"
     },
     {
       "classification": "test",
       "file_path": "tests/test_phase1_baseline.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:e84fea1a3e7f392feeb2f30244d1b001555f113f12eab7aac4bbe4afb0a31ef9"
     },
     {
       "classification": "test",
       "file_path": "tests/test_phase1b_package_install.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:646d54d127fdb9a5b905a4ccb7cdf10454f45ab63930b097324b31cf5f496e05"
     },
     {
       "classification": "test",
       "file_path": "tests/test_phase3_summary.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:b350891ab9e9dfd8378fa765f19297af8efac7564d8b4c1e351f42ea9525261e"
     },
     {
       "classification": "test",
       "file_path": "tests/test_pkgutil.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:3d66233362f31a5e90698ac2c5c594f0c295536450f2a0b585990b1dc9ee4a96"
     },
     {
       "classification": "test",
       "file_path": "tests/test_plane.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:d79bbbf62c85dbc9a8ecc365baa6dbb6b5fdabe2e1b60a1a8ed781d51eb20cbb"
     },
     {
       "classification": "test",
       "file_path": "tests/test_preflight.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:841b2061eb5ba4a7c4d3c61c13e982c8087500c0403e766b203c8e538facb25f"
     },
     {
       "classification": "test",
       "file_path": "tests/test_pristine.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:0ee9afba03de9b9e360f7d4369588a35820a1b9c50ddc271f373c0d9180a1b93"
     },
     {
       "classification": "test",
-      "file_path": "tests/test_prompt_loader.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:8ebfe7ef41d12f943ea68d66a14396db6e21a654635e093fb8cd32819a8112c5"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_prompt_tracking.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:47c5effb253906c9c9ba8d79baad33c8b7950fe55b96dfb3d0470965637798c1"
-    },
-    {
-      "classification": "test",
       "file_path": "tests/test_provenance.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:178afaabd31fb82ddc7702284d42916bf85e75a9ae0e6bd335d1b7425f0b88f4"
     },
     {
-      "classification": "other",
-      "file_path": "tests/test_router.py",
-      "installed_at": "2026-02-07T06:39:10.520885+00:00",
-      "owner_package_id": "PKG-TEST-ROUTER-CAPS-001",
-      "sha256": "sha256:66553f12b36dde3ae9737e46b630511d38a00b2486a4f9bf90cbc7e8b535454b"
-    },
-    {
-      "classification": "other",
-      "file_path": "tests/test_router_admin_contract.py",
-      "installed_at": "2026-02-07T06:39:10.520885+00:00",
-      "owner_package_id": "PKG-TEST-ROUTER-CAPS-001",
-      "sha256": "sha256:4e475fd201715566a7383d54d5255c9165cfa589a711c9e47b50bd600b21c1a7"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_sandbox_failclosed.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:96a5f1ca08dbfcaf492f86207df560a3a0b04d4ac9b89aed0a58ca0284686065"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_shell.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:de8924e577760dfc70bbbc3e55677330226b0fce4912640873d06fb2b248ef01"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_shell_commands.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:804f62dcaf6e23e0cf456db71fe5f588b00f0295f220663f72539fbcc7e259b7"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_shell_pipe.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:69e190e5afb1996dd687070f46abaca9da4905935c71ffa1afa50a1188842e4d"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_stdlib_auth.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:9d434c30d8dc0c6659f38bc43bfc8b2896f2f2993cc00fa0161aff9d4c125818"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_stdlib_auth_pipe.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:860c2799ea298d474c32b57816be5f5f0fa720f783595ae42d770ff34380a414"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_stdlib_evidence.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:699ae78263753f3820551964deae566e43ea4de42209a6a31b7a79b766c93a19"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_stdlib_evidence_pipe.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:69935ab49edb6123a8f850d1845d410a414a04de5f15df1cf7bcbfc5b1e9e9c6"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_stdlib_llm.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:f6eddfe32eb396d760ddfead29d0721a4094f9803b93553bcb0fcd59b28d2d49"
-    },
-    {
-      "classification": "test",
-      "file_path": "tests/test_stdlib_llm_mock.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
-      "owner_package_id": "PKG-BASELINE-HO3-000",
-      "sha256": "sha256:67dd519f034bf65fa5b81461895c9e27e731df97fd5a11e5d5b7f9bea01c723a"
-    },
-    {
       "classification": "test",
       "file_path": "tests/test_tier_ledger.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:03085cd1cf1e8f8d45e9007b9b347fdcc2bdc194304c2bc75633597b88ba9320"
     },
     {
       "classification": "test",
       "file_path": "tests/test_trace.py",
-      "installed_at": "2026-02-03T06:11:46.817227+00:00",
+      "installed_at": "2026-02-03T04:22:48.636971+00:00",
       "owner_package_id": "PKG-BASELINE-HO3-000",
       "sha256": "sha256:df3b44b95d8a580201758236969147783e05a779a60170c1cbebb94aed9c7a9f"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/router/__init__.py",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:d661176f413fd9fa09f760059ff902f27c0c77dcd5bf26a0b51104f1e58bdf3a"
-    },
-    {
-      "classification": "other",
-      "file_path": "modules/chat_interface/__init__.py",
-      "installed_at": "2026-02-07T06:17:02.777618+00:00",
-      "owner_package_id": "PKG-ROUTER-CAPS-001",
-      "sha256": "sha256:ff728ed968b4a283aaa4577ddb4bbecd4cc7324e6480f186279863f251c4e5c1"
     }
   ],
-  "rebuilt_at": "2026-02-07T21:52:40.554226+00:00"
+  "rebuilt_at": "2026-02-08T02:49:08.274566+00:00"
 }

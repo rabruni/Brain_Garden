@@ -1,0 +1,31 @@
+{
+  "package_id": "PKG-GENERAL-TEST-001",
+  "package_type": "standard",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-ROUTER-PURE-001",
+  "plane_id": "ho3",
+  "install_targets": [
+    {
+      "namespace": "tests",
+      "target_id": "general-test-001",
+      "files": [
+        "tests/test_router_admin_contract.py"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "tests/test_router_admin_contract.py",
+      "sha256": "sha256:07be4910444fac5d5ce937ffbf68d14b803a9b47109a06c8884a68ad65d78171"
+    }
+  ],
+  "dependencies": [
+    "PKG-ROUTER-PURE-TESTS-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-07T03:10:00.000000+00:00",
+    "author": "raymondbruni",
+    "description": "Update test_general_handler_with_stub_provider to match new general() handler that uses complete() with PRM-ADMIN-GENERAL-001"
+  }
+}

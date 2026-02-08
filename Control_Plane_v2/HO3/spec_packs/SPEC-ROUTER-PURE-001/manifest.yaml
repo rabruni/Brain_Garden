@@ -1,0 +1,20 @@
+spec_id: SPEC-ROUTER-PURE-001
+title: "Refactor Router to Pure Routing"
+framework_id: FMWK-100
+status: active
+version: 1.0.0
+plane_id: ho3
+
+assets:
+  - modules/router/decision.py
+  - modules/router/__main__.py
+  - modules/admin_agent/agent.py
+
+invariants:
+  - "Router only classifies and maps to handler name"
+  - "Handler lookup does not depend on mode"
+  - "Router does not select prompt packs or execution modes"
+
+acceptance:
+  tests:
+    - "pytest tests/test_router*.py tests/test_admin_llm_assisted.py -v"

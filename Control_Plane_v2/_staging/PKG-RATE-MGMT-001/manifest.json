@@ -1,0 +1,28 @@
+{
+  "package_id": "PKG-RATE-MGMT-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "spec_id": "SPEC-RATE-MGMT-001",
+  "plane_id": "ho3",
+  "package_type": "module",
+  "assets": [
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:0506ea1037cf04c688b3f42fceadd67853c2e49c001e81aa28d82614213ffcce",
+      "classification": "module"
+    },
+    {
+      "path": "modules/stdlib_llm/providers/anthropic.py",
+      "sha256": "sha256:453e6db4014299964651764a7332a2e78f64ebd0d0839ea34bba1cc954144b4f",
+      "classification": "module"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000"
+  ],
+  "metadata": {
+    "description": "Rate management: configure Anthropic client (max_retries=5, explicit timeout), wire router default to anthropic",
+    "work_order": "WO-RATE-MGMT-001"
+  },
+  "manifest_hash": "sha256:136baa8e6674285fe9694744d0858a3a295fa153961094d4da425e87f9e13465"
+}

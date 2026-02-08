@@ -1,0 +1,7 @@
+# Registry delta for PKG-TEST-RATE-MGMT-001
+# Generated: 2026-02-06T23:54:38.654595+00:00
+# Archive: PKG-TEST-RATE-MGMT-001.tar.gz
+# Digest: 7572460238577b55d92978e5a632b1ca74d39815f9a00a28460952e6d97f97c6
+
+file_path,owner_package_id,sha256,classification
+tests/test_router_admin_contract.py,PKG-TEST-RATE-MGMT-001,sha256:f5c3fba757aa7086559e1bf16754645c26c80782f07fecf5cd0969b81b43e635,test

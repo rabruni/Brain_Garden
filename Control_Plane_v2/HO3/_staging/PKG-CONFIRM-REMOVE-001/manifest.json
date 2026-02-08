@@ -1,0 +1,43 @@
+{
+  "package_id": "PKG-CONFIRM-REMOVE-001",
+  "package_type": "standard",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-ROUTER-PURE-001",
+  "plane_id": "ho3",
+  "install_targets": [
+    {
+      "namespace": "modules",
+      "target_id": "confirm-remove-001",
+      "files": [
+        "modules/admin_agent/handlers/tools_first.py",
+        "modules/admin_agent/agent.py",
+        "tests/test_router_admin_contract.py"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "modules/admin_agent/handlers/tools_first.py",
+      "sha256": "sha256:b079171d1e6a55507861d4a2f8f1f7bfc45e6aac21966ad84e0d99004348a130"
+    },
+    {
+      "path": "modules/admin_agent/agent.py",
+      "sha256": "sha256:a2b0336cd2990b7b23c5a686ce348d1818c307c3d79a366a435615c9b6007142"
+    },
+    {
+      "path": "tests/test_router_admin_contract.py",
+      "sha256": "sha256:ac8e1272ba2ad9e63ca6132ea8afd342c6cf29c3101f0adb07b986cf0c4f7258"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000",
+    "PKG-ROUTER-PURE-001",
+    "PKG-GENERAL-TEST-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-07T05:42:00.000000+00:00",
+    "author": "raymondbruni",
+    "description": "Remove confirmation gate from read-only tools_first handlers and agent.py authorization extraction"
+  }
+}

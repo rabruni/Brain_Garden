@@ -1,0 +1,70 @@
+{
+  "package_id": "PKG-ROUTER-CAPS-001",
+  "package_type": "standard",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-FMWK-CAPS-001",
+  "plane_id": "ho3",
+  "install_targets": [
+    {
+      "namespace": "modules",
+      "target_id": "router-caps-001",
+      "files": [
+        "governed_prompts/PRM-FMWK-CAPABILITIES-001.md",
+        "governed_prompts/PRM-ROUTER-001.md",
+        "modules/router/capabilities.py",
+        "modules/router/prompt_router.py",
+        "modules/router/decision.py",
+        "modules/router/__init__.py",
+        "modules/chat_interface/__init__.py",
+        "modules/chat_interface/classifier.py"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "governed_prompts/PRM-FMWK-CAPABILITIES-001.md",
+      "sha256": "sha256:d801dd573a31859217ef007d1a8e731b23896a6fe26d13d95f49c0ea17c5f408"
+    },
+    {
+      "path": "governed_prompts/PRM-ROUTER-001.md",
+      "sha256": "sha256:61d4001a92681ae783fb7e5edf3e3870ca71a2512d119de8301a2f9ea99933f2"
+    },
+    {
+      "path": "modules/router/capabilities.py",
+      "sha256": "sha256:f9971900f9062afe76f8570a282eca1ea22be1f35127bed37ec3150b50928696"
+    },
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:fc0b35405a5bc53de84a0ece8bf64d2bbe9b5da6263d14b825b65742af2d8663"
+    },
+    {
+      "path": "modules/router/decision.py",
+      "sha256": "sha256:946956b5a6616ff24093acdc07601d5f6d90aaba5f0fad5800e092950bb5b1f2"
+    },
+    {
+      "path": "modules/router/__init__.py",
+      "sha256": "sha256:d661176f413fd9fa09f760059ff902f27c0c77dcd5bf26a0b51104f1e58bdf3a"
+    },
+    {
+      "path": "modules/chat_interface/__init__.py",
+      "sha256": "sha256:ff728ed968b4a283aaa4577ddb4bbecd4cc7324e6480f186279863f251c4e5c1"
+    },
+    {
+      "path": "modules/chat_interface/classifier.py",
+      "sha256": "sha256:029bb360317727c189d299389c95b9d35ce7e84a9c9ba309cff4dc55f3bec217"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000",
+    "PKG-RATE-MGMT-001",
+    "PKG-ROUTER-PURE-001",
+    "PKG-ROUTER-PARAM-001",
+    "PKG-CONFIRM-REMOVE-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-07T06:00:00.000000+00:00",
+    "author": "raymondbruni",
+    "description": "Pre-router framework capability gathering with LLM-based intent extraction from framework registry"
+  }
+}

@@ -1,0 +1,9 @@
+# Registry delta for PKG-CONFIRM-REMOVE-001
+# Generated: 2026-02-07T05:48:40.401447+00:00
+# Archive: PKG-CONFIRM-REMOVE-001.tar.gz
+# Digest: e937a720905fe602cbc17b332960603ae701a16b984e063b261dd2cefff39af9
+
+file_path,owner_package_id,sha256,classification
+modules/admin_agent/handlers/tools_first.py,PKG-CONFIRM-REMOVE-001,sha256:b079171d1e6a55507861d4a2f8f1f7bfc45e6aac21966ad84e0d99004348a130,other
+modules/admin_agent/agent.py,PKG-CONFIRM-REMOVE-001,sha256:a2b0336cd2990b7b23c5a686ce348d1818c307c3d79a366a435615c9b6007142,other
+tests/test_router_admin_contract.py,PKG-CONFIRM-REMOVE-001,sha256:ac8e1272ba2ad9e63ca6132ea8afd342c6cf29c3101f0adb07b986cf0c4f7258,other

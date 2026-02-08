@@ -1,0 +1,43 @@
+spec_id: SPEC-EVIDENCE-001
+title: "Evidence Emission Standard Library"
+framework_id: FMWK-100
+status: draft
+version: 0.1.0
+plane_id: ho3
+tier: T0
+
+assets:
+  - modules/stdlib_evidence/__init__.py
+  - modules/stdlib_evidence/hasher.py
+  - modules/stdlib_evidence/envelope.py
+  - modules/stdlib_evidence/reference.py
+  - modules/stdlib_evidence/__main__.py
+  - schemas/stdlib_evidence_request.json
+  - schemas/stdlib_evidence_response.json
+
+interfaces:
+  - name: hash_json
+    description: Compute deterministic SHA256 hash of JSON object
+  - name: hash_file
+    description: Compute SHA256 hash of file contents
+  - name: build_evidence
+    description: Build evidence envelope with required linkage fields
+  - name: build_reference
+    description: Build artifact reference for ledger entries
+
+invariants:
+  - "Hash of identical input MUST produce identical output"
+  - "Evidence MUST include session_id and turn_number"
+  - "CLI MUST read stdin and write stdout only"
+  - "Module MUST have no filesystem side effects"
+
+acceptance:
+  tests:
+    - "pytest tests/test_stdlib_evidence.py tests/test_stdlib_evidence_pipe.py -v"
+  checks:
+    - "python3 -c 'from modules.stdlib_evidence import hash_json; print(hash_json({}))'"
+
+non_goals:
+  - "This spec does NOT handle ledger writing"
+  - "This spec does NOT implement capability enforcement"
+  - "This spec does NOT provide LLM integration"

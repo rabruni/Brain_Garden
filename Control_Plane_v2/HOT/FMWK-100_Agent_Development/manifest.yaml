@@ -1,0 +1,9 @@
+framework_id: FMWK-100
+title: Agent Development Standard
+version: "1.0.0"
+status: active
+ring: resident
+plane_id: hot
+created_at: "2026-01-30T00:00:00Z"
+assets:
+  - agent_development_standard.md

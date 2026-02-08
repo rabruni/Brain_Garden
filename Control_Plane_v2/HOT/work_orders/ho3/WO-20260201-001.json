@@ -1,0 +1,54 @@
+{
+  "work_order_id": "WO-20260201-001",
+  "type": "code_change",
+  "plane_id": "ho3",
+  "spec_id": "SPEC-CORE-001",
+  "framework_id": "FMWK-000",
+  "title": "Implement FMWK-000 Governance Framework",
+  "description": "Initial implementation of the Control Plane Governance Framework v2 including schemas, gates, and work order infrastructure.",
+  "scope": {
+    "allowed_files": [
+      "config/governed_roots.json",
+      "schemas/work_order.schema.json",
+      "schemas/framework.schema.json",
+      "schemas/spec.schema.json",
+      "scripts/compute_wo_hash.py",
+      "scripts/validate_work_order.py",
+      "scripts/apply_work_order.py",
+      "scripts/gate_check.py",
+      "lib/workspace.py",
+      "lib/atomic.py"
+    ],
+    "forbidden_files": [
+      "registries/control_plane_registry.csv"
+    ]
+  },
+  "constraints": {
+    "no_new_deps_unless": "Required for core functionality",
+    "no_api_change_unless": "Breaking change approved"
+  },
+  "acceptance": {
+    "tests": [
+      "python3 -c \"from lib.workspace import IsolatedWorkspace; print('OK')\"",
+      "python3 -c \"from lib.atomic import AtomicTransaction; print('OK')\""
+    ],
+    "checks": [
+      "python3 scripts/validate_work_order.py --wo WO-20260201-001"
+    ]
+  },
+  "outputs": {
+    "files": [
+      "config/governed_roots.json",
+      "schemas/work_order.schema.json",
+      "schemas/framework.schema.json",
+      "schemas/spec.schema.json"
+    ],
+    "registry_entries": []
+  },
+  "metadata": {
+    "author": "system",
+    "created_at": "2026-02-01T12:00:00Z",
+    "priority": "P0",
+    "tags": ["governance", "mvp-1"]
+  }
+}

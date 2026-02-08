@@ -1,0 +1,1 @@
+{"event_type": "turn_evidence", "session_id": "SES-20260206-8f8eef85", "turn_number": 1, "timestamp": "2026-02-06T05:59:58.469505+00:00", "declared_reads": [], "declared_writes": [], "external_calls": [], "error": "name 'datetime' is not defined", "previous_hash": "", "entry_hash": "sha256:a9e11a6b89b2612e2135f0852031c2cfd118890e5502b8578614b422e1f71d54"}

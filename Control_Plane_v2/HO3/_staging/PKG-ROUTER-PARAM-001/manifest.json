@@ -1,0 +1,32 @@
+{
+  "package_id": "PKG-ROUTER-PARAM-001",
+  "package_type": "standard",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-ROUTER-PURE-001",
+  "plane_id": "ho3",
+  "install_targets": [
+    {
+      "namespace": "modules",
+      "target_id": "router-param-001",
+      "files": [
+        "modules/router/prompt_router.py"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:73738bd07007bbc11873783d6ae20090543ea1e8caa8900f6566b346129545b0"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000",
+    "PKG-RATE-MGMT-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-07T05:52:01.696114+00:00",
+    "author": "raymondbruni",
+    "description": "Parameterize hardcoded PRM-ROUTER-001 prompt pack ID via ROUTER_PROMPT_PACK env var"
+  }
+}

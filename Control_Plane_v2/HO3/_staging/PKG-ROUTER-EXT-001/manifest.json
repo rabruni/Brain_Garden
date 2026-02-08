@@ -1,0 +1,23 @@
+{
+  "package_id": "PKG-ROUTER-EXT-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "spec_id": "SPEC-ROUTER-001",
+  "plane_id": "ho3",
+  "package_type": "module",
+  "assets": [
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:c03c1d4d8fecd14b6363c45db8227a9beafc1c92ee576bbb35183a46e50559f1",
+      "classification": "module"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000"
+  ],
+  "metadata": {
+    "description": "Router prompt handling and extensions",
+    "created_by": "remediate_orphans.py",
+    "created_at": "2026-02-06T01:06:30.405119+00:00"
+  }
+}

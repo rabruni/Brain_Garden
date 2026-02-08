@@ -1,0 +1,32 @@
+{
+  "work_order_id": "WO-TEST-001",
+  "type": "code_change",
+  "plane_id": "ho3",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "description": "Test Work Order for Phase 3 gate validation",
+  "scope": {
+    "allowed_files": [
+      "lib/paths.py"
+    ],
+    "forbidden_files": []
+  },
+  "constraints": {
+    "no_new_deps_unless": "dependency_add",
+    "no_api_change_unless": "spec_delta",
+    "no_file_create_unless": "spec_delta"
+  },
+  "acceptance": {
+    "tests": [
+      "python3 -c \"import sys; sys.exit(0)\"",
+      "echo 'Acceptance test passed'"
+    ],
+    "checks": []
+  },
+  "outputs": {
+    "files": [
+      "lib/paths.py"
+    ],
+    "registry_entries": []
+  }
+}

@@ -59,7 +59,7 @@ from lib.packages import pack, sha256_file
 
 # === Constants ===
 STAGING_DIR = CONTROL_PLANE / "_staging"
-TEMPLATES_DIR = CONTROL_PLANE / "templates"
+TEMPLATES_DIR = CONTROL_PLANE / "scripts" / "templates"
 
 
 def ensure_staging_dir() -> Path:

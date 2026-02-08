@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "router_request.json",
+  "title": "Router Request",
+  "description": "Request schema for the Query Router CLI",
+  "type": "object",
+  "oneOf": [
+    {
+      "description": "Route query operation",
+      "properties": {
+        "operation": {
+          "const": "route"
+        },
+        "query": {
+          "type": "string",
+          "description": "User query to route"
+        },
+        "capabilities": {
+          "type": "object",
+          "description": "Agent capabilities dict",
+          "properties": {
+            "llm_assisted": {
+              "type": "object",
+              "description": "LLM-assisted capabilities",
+              "properties": {
+                "validate": { "type": "boolean" },
+                "summarize": { "type": "boolean" },
+                "explain": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "session_llm_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Current LLM call count for session"
+        }
+      },
+      "required": ["query"]
+    },
+    {
+      "description": "Classify query operation",
+      "properties": {
+        "operation": {
+          "const": "classify"
+        },
+        "query": {
+          "type": "string",
+          "description": "User query to classify"
+        }
+      },
+      "required": ["operation", "query"]
+    },
+    {
+      "description": "List handlers operation",
+      "properties": {
+        "operation": {
+          "const": "list_handlers"
+        }
+      },
+      "required": ["operation"]
+    }
+  ]
+}

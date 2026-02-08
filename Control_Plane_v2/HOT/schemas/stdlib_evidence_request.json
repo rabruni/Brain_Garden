@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stdlib_evidence_request.json",
+  "title": "Evidence Stdlib Request",
+  "description": "Request schema for the Evidence Emission Standard Library CLI",
+  "type": "object",
+  "oneOf": [
+    {
+      "description": "Build evidence envelope operation",
+      "properties": {
+        "operation": {
+          "const": "build_evidence"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Session identifier (e.g., SES-abc123)",
+          "pattern": "^SES-[a-zA-Z0-9]+$"
+        },
+        "turn_number": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Turn number within session (1-indexed)"
+        },
+        "input": {
+          "description": "Input data to hash"
+        },
+        "output": {
+          "description": "Output data to hash"
+        },
+        "work_order_id": {
+          "type": "string",
+          "description": "Optional work order reference",
+          "pattern": "^WO-[a-zA-Z0-9]+$"
+        },
+        "declared_reads": {
+          "type": "array",
+          "description": "Optional list of read file records",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "hash": { "type": "string" }
+            },
+            "required": ["path", "hash"]
+          }
+        },
+        "declared_writes": {
+          "type": "array",
+          "description": "Optional list of write file records",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "hash": { "type": "string" },
+              "size": { "type": "integer" }
+            },
+            "required": ["path", "hash"]
+          }
+        },
+        "external_calls": {
+          "type": "array",
+          "description": "Optional list of external call records",
+          "items": {
+            "type": "object",
+            "properties": {
+              "request_id": { "type": "string" },
+              "provider": { "type": "string" },
+              "model": { "type": "string" },
+              "cached": { "type": "boolean" }
+            }
+          }
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "Optional execution duration in milliseconds"
+        }
+      },
+      "required": ["session_id", "turn_number", "input", "output"]
+    },
+    {
+      "description": "Hash operation",
+      "properties": {
+        "operation": {
+          "const": "hash"
+        },
+        "data": {
+          "description": "Data to hash (will be JSON-serialized if object)"
+        }
+      },
+      "required": ["operation", "data"]
+    },
+    {
+      "description": "Build reference operation",
+      "properties": {
+        "operation": {
+          "const": "reference"
+        },
+        "artifact_id": {
+          "type": "string",
+          "description": "Artifact identifier"
+        },
+        "hash": {
+          "type": "string",
+          "description": "Hash of the artifact"
+        },
+        "artifact_type": {
+          "type": "string",
+          "enum": ["package", "framework", "spec", "file"],
+          "description": "Optional type of artifact"
+        },
+        "path": {
+          "type": "string",
+          "description": "Optional path to artifact"
+        }
+      },
+      "required": ["operation", "artifact_id", "hash"]
+    }
+  ]
+}

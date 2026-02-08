@@ -1,0 +1,11 @@
+# Registry delta for PKG-TEST-ROUTER-CAPS-001
+# Generated: 2026-02-07T06:39:05.238323+00:00
+# Archive: PKG-TEST-ROUTER-CAPS-001.tar.gz
+# Digest: 57ee8dbbca2a68b321d97f8d06dc52f73ea554a1dae3ff4ff3e59c5ed80e921b
+
+file_path,owner_package_id,sha256,classification
+tests/test_router.py,PKG-TEST-ROUTER-CAPS-001,sha256:66553f12b36dde3ae9737e46b630511d38a00b2486a4f9bf90cbc7e8b535454b,other
+tests/test_router_admin_contract.py,PKG-TEST-ROUTER-CAPS-001,sha256:4e475fd201715566a7383d54d5255c9165cfa589a711c9e47b50bd600b21c1a7,other
+tests/test_chat_interface.py,PKG-TEST-ROUTER-CAPS-001,sha256:445a043b9a94e8eb300d4006a2ff78623c5f6136eb9736ab6828402cd808a641,other
+tests/test_admin_agent.py,PKG-TEST-ROUTER-CAPS-001,sha256:7beccbd21025a445bc198240169438a511b3436a2594c364b0384b2a798e65eb,other
+tests/test_admin_llm_assisted.py,PKG-TEST-ROUTER-CAPS-001,sha256:23cd702e39cc69b1daab610f2020e89fccce5ce62a274ae20fe102dead4c71d1,other

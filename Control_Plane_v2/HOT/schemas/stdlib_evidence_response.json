@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stdlib_evidence_response.json",
+  "title": "Evidence Stdlib Response",
+  "description": "Response schema for the Evidence Emission Standard Library CLI",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok", "error"],
+      "description": "Operation status"
+    },
+    "result": {
+      "description": "Operation result (present on success)",
+      "oneOf": [
+        {
+          "description": "build_evidence result",
+          "type": "object",
+          "properties": {
+            "input_hash": { "type": "string" },
+            "output_hash": { "type": "string" },
+            "evidence": { "$ref": "#/$defs/evidence" }
+          },
+          "required": ["input_hash", "output_hash", "evidence"]
+        },
+        {
+          "description": "hash result",
+          "type": "object",
+          "properties": {
+            "hash": { "type": "string" }
+          },
+          "required": ["hash"]
+        },
+        {
+          "description": "reference result",
+          "type": "object",
+          "properties": {
+            "reference": { "$ref": "#/$defs/reference" }
+          },
+          "required": ["reference"]
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "description": "Error details (present on error)",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable error message"
+        },
+        "details": {
+          "description": "Additional error details"
+        }
+      },
+      "required": ["code", "message"]
+    },
+    "evidence": {
+      "$ref": "#/$defs/evidence",
+      "description": "Evidence envelope for this operation"
+    }
+  },
+  "required": ["status"],
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "description": "Evidence envelope with required linkage fields",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "Session identifier"
+        },
+        "turn_number": {
+          "type": "integer",
+          "description": "Turn number within session"
+        },
+        "work_order_id": {
+          "type": "string",
+          "description": "Optional work order reference"
+        },
+        "input_hash": {
+          "type": "string",
+          "description": "Hash of input"
+        },
+        "output_hash": {
+          "type": "string",
+          "description": "Hash of output"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "Execution duration in milliseconds"
+        },
+        "declared_reads": {
+          "type": "array",
+          "description": "Files read during operation",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "hash": { "type": "string" }
+            }
+          }
+        },
+        "declared_writes": {
+          "type": "array",
+          "description": "Files written during operation",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "hash": { "type": "string" },
+              "size": { "type": "integer" }
+            }
+          }
+        },
+        "external_calls": {
+          "type": "array",
+          "description": "External calls made during operation",
+          "items": {
+            "type": "object",
+            "properties": {
+              "request_id": { "type": "string" },
+              "provider": { "type": "string" },
+              "model": { "type": "string" },
+              "cached": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "required": ["timestamp"]
+    },
+    "reference": {
+      "type": "object",
+      "description": "Artifact reference",
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "description": "Artifact identifier"
+        },
+        "hash": {
+          "type": "string",
+          "description": "Hash of the artifact"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Reference creation timestamp"
+        },
+        "artifact_type": {
+          "type": "string",
+          "description": "Type of artifact"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path to artifact"
+        }
+      },
+      "required": ["artifact_id", "hash", "timestamp"]
+    }
+  }
+}

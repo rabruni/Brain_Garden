@@ -1,0 +1,24 @@
+{
+  "package_id": "PKG-RATE-MGMT-001",
+  "origin": "INSTALLER",
+  "package_type": "module",
+  "plane_id": "ho3",
+  "installed_at": "2026-02-06T23:40:30.129045+00:00",
+  "manifest_hash": "sha256:08356998adad3afaafe5df79f3045dd49fad7dfb8b7ae04545741e560fd14bfa",
+  "archive_hash": "sha256:9a425d172da1b6eed5bfe0c93e69ba2de56a28ad35778b20f4cabf1f35723af5",
+  "assets_count": 2,
+  "work_order_id": null,
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "receipt_version": "1.0",
+  "files": [
+    {
+      "path": "modules/router/prompt_router.py",
+      "sha256": "sha256:0506ea1037cf04c688b3f42fceadd67853c2e49c001e81aa28d82614213ffcce"
+    },
+    {
+      "path": "modules/stdlib_llm/providers/anthropic.py",
+      "sha256": "sha256:453e6db4014299964651764a7332a2e78f64ebd0d0839ea34bba1cc954144b4f"
+    }
+  ]
+}

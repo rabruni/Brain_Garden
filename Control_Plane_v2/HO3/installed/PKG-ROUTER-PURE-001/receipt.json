@@ -1,0 +1,28 @@
+{
+  "package_id": "PKG-ROUTER-PURE-001",
+  "origin": "INSTALLER",
+  "package_type": "standard",
+  "plane_id": "ho3",
+  "installed_at": "2026-02-07T02:17:01.774005+00:00",
+  "manifest_hash": "sha256:819fb2d1d07f187bfed2ba0a1e821bfce2c3b187b7c27b815dbab2cc2f5dd5b5",
+  "archive_hash": "sha256:753a8e9ad2a743db83a01358fae484702128a01e00e480668d38c7bdc7f38d23",
+  "assets_count": 3,
+  "work_order_id": null,
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "receipt_version": "1.0",
+  "files": [
+    {
+      "path": "modules/admin_agent/agent.py",
+      "sha256": "sha256:6a2b5614c9c6001fbb985c895d1ff3e2f9a62c737bc09ee2dc758cc03c877659"
+    },
+    {
+      "path": "modules/router/decision.py",
+      "sha256": "sha256:84eb858d5b0c939f0d8b914c0f91b8aff3c84b2b4c252590a4f70c6814e143e6"
+    },
+    {
+      "path": "modules/router/__main__.py",
+      "sha256": "sha256:4169f09eebeafe9ac1f035d6010e74cb7214eb2b4742fc159044ef1b6b92720a"
+    }
+  ]
+}

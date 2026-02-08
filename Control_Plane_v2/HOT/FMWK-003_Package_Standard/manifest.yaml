@@ -1,0 +1,10 @@
+framework_id: FMWK-003
+title: Package Standard
+version: "1.0.0"
+status: active
+ring: kernel
+plane_id: hot
+previous_id: FMWK-PKG-001
+created_at: "2026-01-31T00:00:00Z"
+assets:
+  - package_standard.md

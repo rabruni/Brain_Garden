@@ -1,0 +1,24 @@
+{
+  "package_id": "PKG-TEST-RATE-MGMT-001",
+  "schema_version": "1.2",
+  "version": "1.0.0",
+  "spec_id": "SPEC-RATE-MGMT-001",
+  "plane_id": "ho3",
+  "package_type": "test",
+  "assets": [
+    {
+      "path": "tests/test_router_admin_contract.py",
+      "sha256": "sha256:f5c3fba757aa7086559e1bf16754645c26c80782f07fecf5cd0969b81b43e635",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-BASELINE-HO3-000",
+    "PKG-RATE-MGMT-001"
+  ],
+  "metadata": {
+    "description": "Update router default test: mock -> anthropic (matches PKG-RATE-MGMT-001)",
+    "work_order": "WO-RATE-MGMT-001"
+  },
+  "manifest_hash": "sha256:6c0a818b201247e710650e3967b28baad9ad5fd6159fdf8c78f0e041319fd86b"
+}
