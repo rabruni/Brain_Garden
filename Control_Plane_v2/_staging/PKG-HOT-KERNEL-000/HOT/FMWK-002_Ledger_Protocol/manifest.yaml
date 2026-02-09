@@ -1,0 +1,27 @@
+framework_id: FMWK-002
+title: Ledger Protocol Standard
+version: "1.1.0"
+status: active
+ring: kernel
+plane_id: hot
+previous_id: FMWK-200
+created_at: "2026-01-30T00:00:00Z"
+assets:
+  - ledger_protocol.md
+expected_specs:
+  - SPEC-LEDGER-001
+invariants:
+  - level: MUST
+    statement: Ledger entries MUST be append-only
+  - level: MUST NOT
+    statement: Ledger entries MUST NOT be modified after write
+  - level: MUST
+    statement: Every ledger entry MUST have a valid hash chain
+path_authorizations:
+  - "HOT/kernel/ledger_client.py"
+  - "HOT/kernel/ledger_factory.py"
+  - "HOT/ledger/*.jsonl"
+required_gates:
+  - G0
+  - G1
+  - G6

@@ -1,0 +1,41 @@
+{
+  "package_id": "PKG-GENESIS-000",
+  "package_type": "genesis",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-GENESIS-001",
+  "plane_id": "ho3",
+  "assets": [
+    {
+      "path": "HOT/scripts/genesis_bootstrap.py",
+      "sha256": "sha256:75fc80fb72b6b5dfa282b44b59571849b8b6b92e9546b53d2a360b7b686a4222",
+      "classification": "script"
+    },
+    {
+      "path": "HOT/config/bootstrap_sequence.json",
+      "sha256": "sha256:354ed1b2f592dcc505f140c1bd7b5de2605028a3086156a54608d1d024a0575a",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/seed_registry.json",
+      "sha256": "sha256:2533fc191542bf790579ef12d75f78927078651084cf3cdbd243a797f6aa9870",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/schemas/package_manifest_l0.json",
+      "sha256": "sha256:796609116c537df39df3f9edd2329ea0364eff4f44e2fcb62add285bdb5fca90",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/tests/test_genesis_bootstrap.py",
+      "sha256": "sha256:8fe9c3df23f4497539fd61873ac781090cda34a46001d8c739913cfc122c4f30",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [],
+  "metadata": {
+    "created_at": "2026-02-09T04:00:00+00:00",
+    "author": "genesis",
+    "description": "Bootstrap pre-seed: contains genesis_bootstrap.py and configs needed to cold-boot the control plane"
+  }
+}

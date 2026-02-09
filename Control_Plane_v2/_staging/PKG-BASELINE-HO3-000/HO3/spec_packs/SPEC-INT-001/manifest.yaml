@@ -1,0 +1,36 @@
+spec_id: SPEC-INT-001
+title: Integrity & Merkle
+framework_id: FMWK-000
+status: active
+version: 1.0.0
+plane_id: ho3
+assets:
+- HOT/kernel/merkle.py
+- HOT/kernel/integrity.py
+- HOT/kernel/hashing.py
+- HOT/scripts/integrity_check.py
+- HO3/scripts/verify_integrity.sh
+- HOT/tests/test_hashing.py
+interfaces:
+- name: compute_file_hash
+  description: Compute SHA256 hash of file contents
+- name: compute_merkle_root
+  description: Compute Merkle root from sorted file hashes
+- name: verify_integrity
+  description: Verify registry vs filesystem integrity
+invariants:
+- Hash computation MUST be deterministic
+- Merkle roots MUST be computed from sorted inputs
+- Integrity check MUST fail-closed on any mismatch
+acceptance:
+  tests:
+  - pytest tests/test_integrity.py
+  checks:
+  - python3 scripts/integrity_check.py --verify
+dependencies:
+- spec_id: SPEC-CORE-001
+  interfaces:
+  - get_control_plane_root
+non_goals:
+- This spec does NOT handle encryption
+- This spec does NOT handle key management

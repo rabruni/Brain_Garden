@@ -1,0 +1,61 @@
+{
+  "package_id": "PKG-KERNEL-001",
+  "package_type": "kernel",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-GENESIS-001",
+  "plane_id": "ho3",
+  "assets": [
+    {
+      "path": "HOT/kernel/cursor.py",
+      "sha256": "sha256:76a77f76e99d9f35e526b155e69e21f88b904111ef0528d4f3d5521f8de4626c",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/integrity.py",
+      "sha256": "sha256:6bc548c0054268d176642b4a1e0a805f0fc3ab61c36327053d53a0fd3cf2e8e9",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/ledger_client.py",
+      "sha256": "sha256:abd03e41818ffd007fbaf23d0b586e0ea8466805c00adada07a3200aaed98770",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/ledger_factory.py",
+      "sha256": "sha256:2216857cfb9190f196fe4f42b7d11916c4a8ab106e06f33ee4a3a526c517c61b",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/merkle.py",
+      "sha256": "sha256:879d72f7e37c8211e388c624db8be98d62f804935c6a3758f3d9192388e69bdd",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/output.py",
+      "sha256": "sha256:8ab6916f7bc06be2fa75328860947e56df71f846eb7bf87cee7f187bf08e6d63",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/paths.py",
+      "sha256": "sha256:4ae8a13146b402da2a3475b050ac2b7bd2e3eb6782d1a841ce3ea717cd1ca27c",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/registry.py",
+      "sha256": "sha256:a78cff8b0b37ab690668dccbb8e61491c6406acd7450d7ec85103d62887b8bb8",
+      "classification": "library"
+    },
+    {
+      "path": "HO3/scripts/trace.py",
+      "sha256": "sha256:dc717bdcb7b5b3111b0654a8adfac53f72abe8fbced83718eb1ce13d61028b17",
+      "classification": "script"
+    }
+  ],
+  "dependencies": [],
+  "metadata": {
+    "created_at": "2026-02-09T04:00:00+00:00",
+    "author": "genesis",
+    "description": "Kernel files (paths.py, registry.py, etc.) \u2014 unlocks package_install.py"
+  }
+}

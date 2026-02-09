@@ -1,0 +1,11 @@
+# Registry delta for PKG-GENESIS-000
+# Generated: 2026-02-09T05:01:38.432002+00:00
+# Archive: PKG-GENESIS-000.tar.gz
+# Digest: b4a1d99e3210fb8ec7cda58ae48ba4811672e43182b8f8d7d0bf050d1a5d2d8d
+
+file_path,owner_package_id,sha256,classification
+HOT/scripts/genesis_bootstrap.py,PKG-GENESIS-000,sha256:75fc80fb72b6b5dfa282b44b59571849b8b6b92e9546b53d2a360b7b686a4222,script
+HOT/config/bootstrap_sequence.json,PKG-GENESIS-000,sha256:354ed1b2f592dcc505f140c1bd7b5de2605028a3086156a54608d1d024a0575a,config
+HOT/config/seed_registry.json,PKG-GENESIS-000,sha256:2533fc191542bf790579ef12d75f78927078651084cf3cdbd243a797f6aa9870,config
+HOT/schemas/package_manifest_l0.json,PKG-GENESIS-000,sha256:796609116c537df39df3f9edd2329ea0364eff4f44e2fcb62add285bdb5fca90,schema
+HOT/tests/test_genesis_bootstrap.py,PKG-GENESIS-000,sha256:8fe9c3df23f4497539fd61873ac781090cda34a46001d8c739913cfc122c4f30,test
