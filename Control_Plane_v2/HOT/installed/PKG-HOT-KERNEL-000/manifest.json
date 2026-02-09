@@ -4,7 +4,7 @@
   "title": "HOT Tier Baseline",
   "description": "Owns all files in the HOT tier (kernel, scripts, config, schemas, frameworks)",
   "plane_id": "hot",
-  "created_at": "2026-02-08T04:26:09+00:00",
+  "created_at": "2026-02-08T06:34:15+00:00",
   "assets": [
     {
       "path": "HOT/kernel/atomic.py",
@@ -28,7 +28,7 @@
     },
     {
       "path": "HOT/kernel/gate_operations.py",
-      "sha256": "sha256:887c6fd7943efecb83f011bdab097b2abf26d808f9d034291fe48e617b37391e",
+      "sha256": "sha256:cbec7df0aaa3c9cd8f218df95c8b4d6b4d28cb0589224d8b3ea1e86b66cd24c3",
       "classification": "library"
     },
     {
@@ -83,17 +83,17 @@
     },
     {
       "path": "HOT/kernel/paths.py",
-      "sha256": "sha256:85fe2608a9b8f0746f54d6a05f7d536bc32d9b2915dbceea67ec49f8af574185",
+      "sha256": "sha256:e26e50239b08e21bbd4e7b37be8427c2259c650ec8f0d94c5781da66426ff053",
       "classification": "library"
     },
     {
       "path": "HOT/kernel/plane.py",
-      "sha256": "sha256:eb269bd0c78db2bd2533fd53e83621a24f737e509faeb2246825023f3997f226",
+      "sha256": "sha256:d8361d881208dead92ff642308f5cda4ad41c289630c1e075ed77682e94c5716",
       "classification": "library"
     },
     {
       "path": "HOT/kernel/preflight.py",
-      "sha256": "sha256:8818d847be0ca802859536c1ab2a799f61dd06e3cf8232b3f32962ae5fc422a8",
+      "sha256": "sha256:837aab64ff143a6b7fbc0bd96b6f1048d26472cf8dd994c816a3bcee0ce5f515",
       "classification": "library"
     },
     {
@@ -163,7 +163,7 @@
     },
     {
       "path": "HOT/scripts/cp_version_checkpoint.py",
-      "sha256": "sha256:0b20d715d58a3301632a50c15bdf42f63a945f9e2be9fd0bd8404dddcdbb6f7b",
+      "sha256": "sha256:dd982ef66230b588a4015ce70529bdd514c0119366f08ddd069c5ee912465be5",
       "classification": "script"
     },
     {
@@ -173,12 +173,12 @@
     },
     {
       "path": "HOT/scripts/cp_version_rollback.py",
-      "sha256": "sha256:1ae0062ad56d407b700b3fab37a0d8cbc008f7d73e24dfb78987d798a47b60fb",
+      "sha256": "sha256:d7c7b98548cce33493fde6ccbc3762c4fdbcddb1efa1766d9ae023b1cf2ed622",
       "classification": "script"
     },
     {
       "path": "HOT/scripts/g0k_gate.py",
-      "sha256": "sha256:66bf2185ddf3622504827dc79db2e2472f7d0838ee3c4665f6e1aeb13166269c",
+      "sha256": "sha256:5639f29af7bec8d6cbf44df39e492675a81de28919e7ec24ab0d4f30e4cba197",
       "classification": "script"
     },
     {
@@ -208,7 +208,7 @@
     },
     {
       "path": "HOT/scripts/gate_check.py",
-      "sha256": "sha256:4c3b20068c2ae53f7139e724daace33ecf3401a712b95d893d83a0aea6465638",
+      "sha256": "sha256:31a51f7b341bd608495db02e799b9c754e0e1fac71deb92f14418537dbdc9b3e",
       "classification": "script"
     },
     {
@@ -283,12 +283,12 @@
     },
     {
       "path": "HOT/config/governed_roots.json",
-      "sha256": "sha256:8150b125f03d321c34a12854026341e7a40c1cc30d347dc27ead4c825d37a55f",
+      "sha256": "sha256:148970d0cf98cbed8bb104dc60ea3681d4475277441cb848150729a6e9fc058d",
       "classification": "config"
     },
     {
       "path": "HOT/config/kernel_files.json",
-      "sha256": "sha256:a77ee22812090de59efdce4c8b05f601d470c5efaa74b203ebec9bb96234b8f1",
+      "sha256": "sha256:f002c6fd0d315c9f9a4f9fa239f9ff317cd7bdd6af53ba9f71205e7d46e8ef3b",
       "classification": "config"
     },
     {

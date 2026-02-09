@@ -119,10 +119,11 @@ class TestReplicatedManifest:
     """Tests for kernel manifest replication to all tiers."""
 
     TIERS = ["HO3", "HO2", "HO1"]
+    CP_ROOT = CONTROL_PLANE_ROOT.parent  # Control_Plane_v2/
     TIER_PATHS = {
-        "HO3": CONTROL_PLANE_ROOT / "installed" / "PKG-KERNEL-001" / "manifest.json",
-        "HO2": CONTROL_PLANE_ROOT / "planes" / "ho2" / "installed" / "PKG-KERNEL-001" / "manifest.json",
-        "HO1": CONTROL_PLANE_ROOT / "planes" / "ho1" / "installed" / "PKG-KERNEL-001" / "manifest.json",
+        "HO3": CP_ROOT / "HO3" / "installed" / "PKG-KERNEL-001" / "manifest.json",
+        "HO2": CP_ROOT / "HO2" / "installed" / "PKG-KERNEL-001" / "manifest.json",
+        "HO1": CP_ROOT / "HO1" / "installed" / "PKG-KERNEL-001" / "manifest.json",
     }
 
     def test_kernel_manifest_exists_on_all_tiers(self, plane_root):
@@ -168,10 +169,11 @@ class TestReplicatedManifest:
 class TestLedgerEvents:
     """Tests for kernel install ledger events."""
 
+    CP_ROOT = CONTROL_PLANE_ROOT.parent  # Control_Plane_v2/
     TIER_LEDGERS = {
-        "HO3": CONTROL_PLANE_ROOT / "ledger" / "kernel.jsonl",
-        "HO2": CONTROL_PLANE_ROOT / "planes" / "ho2" / "ledger" / "kernel.jsonl",
-        "HO1": CONTROL_PLANE_ROOT / "planes" / "ho1" / "ledger" / "kernel.jsonl",
+        "HO3": CP_ROOT / "HO3" / "ledger" / "kernel.jsonl",
+        "HO2": CP_ROOT / "HO2" / "ledger" / "kernel.jsonl",
+        "HO1": CP_ROOT / "HO1" / "ledger" / "kernel.jsonl",
     }
 
     def test_kernel_ledger_exists_on_all_tiers(self, plane_root):

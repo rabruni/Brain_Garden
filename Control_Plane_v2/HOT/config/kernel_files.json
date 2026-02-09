@@ -4,15 +4,14 @@
   "package_id": "PKG-KERNEL-001",
   "package_type": "kernel",
   "files": [
-    "lib/paths.py",
-    "lib/output.py",
-    "lib/cursor.py",
-    "lib/merkle.py",
-    "lib/integrity.py",
-    "lib/ledger_client.py",
-    "lib/ledger_factory.py",
-    "lib/registry.py",
-    "scripts/trace.py"
+    "kernel/paths.py",
+    "kernel/output.py",
+    "kernel/cursor.py",
+    "kernel/merkle.py",
+    "kernel/integrity.py",
+    "kernel/ledger_client.py",
+    "kernel/ledger_factory.py",
+    "kernel/registry.py"
   ],
   "constraints": {
     "immutable_across_tiers": true,

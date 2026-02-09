@@ -13,7 +13,9 @@ from pathlib import Path
 import pytest
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONTROL_PLANE_ROOT = SCRIPT_DIR.parent
+CONTROL_PLANE_ROOT = SCRIPT_DIR.parent          # HOT/
+CP_ROOT = CONTROL_PLANE_ROOT.parent             # Control_Plane_v2/
+TRACE_SCRIPT = str(CP_ROOT / "HO3" / "scripts" / "trace.py")
 sys.path.insert(0, str(CONTROL_PLANE_ROOT))
 
 
@@ -23,8 +25,8 @@ class TestExplainFramework:
     def test_explain_fmwk_000_returns_framework_info(self):
         """FMWK-000 should return framework with specs and files."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "FMWK-000", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "FMWK-000", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -38,8 +40,8 @@ class TestExplainFramework:
     def test_explain_framework_includes_specs(self):
         """Framework explanation should list specs under it."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "FMWK-000", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "FMWK-000", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -53,25 +55,24 @@ class TestExplainFile:
     """Test --explain for files."""
 
     def test_explain_merkle_returns_file_info(self):
-        """lib/merkle.py should return file with ownership chain."""
+        """HOT/kernel/merkle.py should return file with ownership info."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "lib/merkle.py", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "HOT/kernel/merkle.py", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
         assert result.returncode == 0
         data = json.loads(result.stdout)
         assert data["type"] == "file"
-        assert data["data"]["path"] == "lib/merkle.py"
-        assert data["data"]["ownership"]["spec_id"] == "SPEC-INT-001"
-        assert data["data"]["ownership"]["framework_id"] == "FMWK-000"
+        assert data["data"]["path"] == "HOT/kernel/merkle.py"
+        assert data["data"]["ownership"]["package"] == "PKG-KERNEL-001"
 
     def test_explain_file_includes_hash_verification(self):
         """File explanation should include hash verification status."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "lib/merkle.py", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "HOT/kernel/merkle.py", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -83,8 +84,8 @@ class TestExplainFile:
     def test_explain_file_includes_functions(self):
         """Python file explanation should list functions."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "lib/merkle.py", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "HOT/kernel/merkle.py", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -100,8 +101,8 @@ class TestExplainPackage:
     def test_explain_kernel_returns_package_info(self):
         """PKG-KERNEL-001 should return package with files and tier status."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "PKG-KERNEL-001", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "PKG-KERNEL-001", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -113,8 +114,8 @@ class TestExplainPackage:
     def test_kernel_includes_tier_status(self):
         """Kernel package should show tier installation status."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "PKG-KERNEL-001", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "PKG-KERNEL-001", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -126,21 +127,21 @@ class TestExplainPackage:
     def test_kernel_includes_files(self):
         """Kernel package should list its files."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "PKG-KERNEL-001", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "PKG-KERNEL-001", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
         data = json.loads(result.stdout)
         file_paths = [f["path"] for f in data["data"]["files"]]
-        assert "lib/merkle.py" in file_paths
-        assert "lib/ledger_client.py" in file_paths
+        assert "HOT/kernel/merkle.py" in file_paths
+        assert "HOT/kernel/ledger_client.py" in file_paths
 
     def test_kernel_parity_status(self):
         """Kernel package should report parity status."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "PKG-KERNEL-001", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "PKG-KERNEL-001", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -155,8 +156,8 @@ class TestExplainSpec:
     def test_explain_spec_returns_spec_info(self):
         """SPEC-INT-001 should return spec with framework and files."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "SPEC-INT-001", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "SPEC-INT-001", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -173,8 +174,8 @@ class TestInventory:
     def test_inventory_returns_valid_output(self):
         """Inventory should return framework list."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--inventory", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--inventory", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -186,8 +187,8 @@ class TestInventory:
     def test_inventory_includes_total_files(self):
         """Inventory should count total files."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--inventory", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--inventory", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -198,8 +199,8 @@ class TestInventory:
     def test_inventory_includes_packages(self):
         """Inventory should list packages."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--inventory", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--inventory", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -213,8 +214,8 @@ class TestVerify:
     def test_verify_returns_check_results(self):
         """Verify should return list of checks."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--verify", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--verify", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -226,8 +227,8 @@ class TestVerify:
     def test_verify_includes_kernel_parity(self):
         """Verify should check kernel parity."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--verify", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--verify", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -238,8 +239,8 @@ class TestVerify:
     def test_verify_exit_code_matches_result(self):
         """Exit code should be 0 if passed, 1 if failed."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--verify", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--verify", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -255,7 +256,7 @@ class TestJSONOutput:
 
     @pytest.mark.parametrize("args", [
         ["--explain", "FMWK-000"],
-        ["--explain", "lib/merkle.py"],
+        ["--explain", "HOT/kernel/merkle.py"],
         ["--explain", "PKG-KERNEL-001"],
         ["--inventory"],
         ["--verify"],
@@ -263,8 +264,8 @@ class TestJSONOutput:
     def test_json_output_is_valid(self, args):
         """All commands should produce valid JSON with --json flag."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py"] + args + ["--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT] + args + ["--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -280,8 +281,8 @@ class TestMarkdownOutput:
     def test_framework_markdown_has_headers(self):
         """Framework Markdown should have proper headers."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "FMWK-000"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "FMWK-000"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -292,8 +293,8 @@ class TestMarkdownOutput:
     def test_file_markdown_shows_chain(self):
         """File Markdown should show ownership chain."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "lib/merkle.py"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "HOT/kernel/merkle.py"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )
@@ -308,8 +309,8 @@ class TestUnknownQuery:
     def test_unknown_returns_not_found(self):
         """Unknown query should return not found message."""
         result = subprocess.run(
-            ["python3", "scripts/trace.py", "--explain", "NONEXISTENT-999", "--json"],
-            cwd=str(CONTROL_PLANE_ROOT),
+            ["python3", TRACE_SCRIPT, "--explain", "NONEXISTENT-999", "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True,
         )

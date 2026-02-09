@@ -24,8 +24,6 @@ downloads/
 eggs/
 .eggs/
 lib/
-!Control_Plane_v2/lib/
-!Control_Plane_v2/lib/**
 lib64/
 parts/
 sdist/
@@ -162,6 +160,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Control Plane — auto-generated LLM call logs
+Control_Plane_v2/ledger/llm-*.jsonl
 
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

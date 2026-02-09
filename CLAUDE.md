@@ -209,69 +209,160 @@ Output:
 
 ---
 
-## #1 COMMAND: `lp` — Logic Path (HIGHEST PRIORITY)
+## #1 COMMAND: `LP` — Logic Path (HIGHEST PRIORITY)
 
 **This is the most important instruction in this file. It overrides all other formatting defaults.**
 
-When the user types any of these:
-- **`lp`** (short form)
-- **`lp <thing>`** (e.g., `lp general`, `lp route_query`, `lp "hello"`)
-- **"show me the logic path"**
-- **"trace"**, **"flow"**, **"draw it"**
+### Triggers
 
-Then **STOP all other work** and:
+| Input | Behavior |
+|-------|----------|
+| `LP0` `LP1` `LP2` `LP3` `LP4` | Trace at specified detail level |
+| `LP0 <thing>` ... `LP4 <thing>` | Trace `<thing>` at specified level |
+| `lp` or `lp <thing>` | Alias for `LP2` |
+| "logic path", "trace", "flow", "draw it" | Alias for `LP2` of most recent context |
 
-1. **Read the actual source code** — follow imports, trace the real call chain
-2. **Draw an ASCII flow diagram** showing the full execution path
-3. **No prose** — just the diagram + summary table
-4. If `lp` is bare (no argument), draw the logic path of whatever was just discussed
+When triggered, **STOP all other work**.
 
-### Rules
+### Core Idea
 
-1. **Read before you draw.** Open every file in the chain. Use real line numbers.
-2. **Show inputs at every call boundary.** Before each function call, list the arguments with their actual values/types in a `│  param: value` block.
-3. **Show data transformations inline.** When content changes shape (file → extracted template → rendered prompt → JSON response), draw the content in a box:
-   ```
-   │  ┌─────────────────────────────────┐
-   │  │ actual content at this stage    │
-   │  └─────────────────────────────────┘
-   ```
-4. **Mark every side effect.** `📝` = file/ledger write, `→` = subprocess/API call, `← LLM CALL #N` = LLM invocation.
-5. **End with two tables:** a "journey" table showing how data transforms stage-by-stage, and a "effects" table listing all writes/calls.
+LP traces the REAL path for a prompt-driven action:
+1. **Resolve** the `<thing>` reference to a code artifact
+2. **Find the instantiation** (where the prompt/tool is invoked)
+3. **Determine which handler/script** was selected
+4. **Open only the files on that selected path**
 
-### Format spec
+LP is **READ-ONLY** — no writes, no formatting, no staging, no external calls.
+
+### `<thing>` Resolution Order
+
+1. **Prompt name/description** → find in prompt registry / governed_prompts
+2. **Function/method name** → find definition in source
+3. **File path** → trace from that entrypoint
+4. **Quoted user input** (e.g., `"hello"`) → trace as if that input entered the system
+5. **Bare** (no argument) → trace whatever was most recently discussed
+
+If the reference is **ambiguous** (multiple candidates) or **unresolvable** (not found), **fail-closed**: emit what was found and ask — do not guess.
+
+### Modes
+
+- `LP2 <thing>` — **Static trace** (default). Source reading only. Output labeled `STATIC TRACE`.
+- `LP2 run <command>` — **Runtime trace**. Uses runtime instrumentation/logs if available. Output labeled `RUNTIME TRACE`. If instrumentation/logs are not available, **FAIL-CLOSED** (do not guess).
+
+`static` is implicit and never needs to be typed. Only spell out `run` for instrumented tracing.
+
+### Detail Levels
+
+| Level | Content | Use case |
+|-------|---------|----------|
+| `LP0` | Files/modules only | "What's involved?" |
+| `LP1` | + functions/methods with `[file:line]` | "Where does it go?" |
+| `LP2` | + call boundaries (params: type + source, returns, side-effect markers) | **Default sweet spot** |
+| `LP3` | + data transformation boxes (capped: 20 lines / 500 chars per box) | "What does the data look like?" |
+| `LP4` | + code excerpts (capped: 10 lines per excerpt) | "Show me the actual logic" |
+
+Each level includes everything from the levels above it.
+
+### Scope Limits
+
+| Limit | Value |
+|-------|-------|
+| `max_depth` | 12 |
+| `max_files` | 25 |
+| `max_nodes` | 80 |
+
+If any limit is exceeded, **stop expanding** and emit `⚠ TRUNCATED` markers at the cut points. Do not silently omit nodes.
+
+### Affected Files Rule
+
+- **Runtime trace (`run`)**: include only files/functions actually invoked.
+- **Static trace** (default): include only the selected handler path + its direct dependencies, up to `max_depth`. Do not trace unused branches.
+
+### Fail-Closed Rules
+
+| Condition | Behavior |
+|-----------|----------|
+| File cannot be opened/read | STOP expanding that branch. Emit `✗ NOT READ` node. |
+| `run` mode but no instrumentation | FAIL. Do not fall back to static. |
+| Reference is ambiguous | Emit candidates found. Ask user to clarify. |
+| Reference not found | Emit `✗ NOT FOUND: <thing>`. Stop. |
+| Scope limit exceeded | Emit `⚠ TRUNCATED` at cut point. Continue other branches. |
+
+All gaps are collected in the **Gaps** section of the output footer.
+
+### Values Policy
+
+- **Default**: show types + value **source** (literal / env / config / derived / param), not raw values.
+- **Always redact**: tokens, keys, secrets, auth headers — show as `[REDACTED]`.
+- **Raw values**: only when explicitly requested (`LP2 --show-values <thing>`) and the value is safe.
+
+### Side-Effect Markers
+
+| Symbol | Meaning |
+|--------|---------|
+| `📝` | File or ledger write |
+| `→` | Subprocess, API call, or external I/O |
+| `← LLM #N` | LLM invocation (numbered sequentially) |
+| `✓` / `✗` | Validation pass / fail |
+
+### Output Format
+
+**No prose.** Output consists of these sections only:
 
 ```
-USER INPUT or shell command
+═══ STATIC TRACE ══════════════════════════  (or RUNTIME TRACE)
+LP2 <thing>
+
+[ASCII flow diagram]
+
+═══ Journey ═══
+| Stage | Data Shape | Source |
+|-------|-----------|--------|
+| ...   | ...       | ...    |
+
+═══ Effects ═══
+| # | Type | Target | Location |
+|---|------|--------|----------|
+| 1 | 📝   | ...    | [file:line] |
+
+═══ Gaps ═══
+✗ NOT READ: <file>
+⚠ TRUNCATED: <node> at depth 12
+
+COVERAGE: 14/18 nodes traced, 1 gap, 1 truncated
+```
+
+### ASCII Flow Spec
+
+```
+ENTRY: <resolved thing>
 │
 ▼
 function_name(arg1, arg2)                       [file.py:LINE]
-│  arg1: type   "actual value or description"
-│  arg2: type   "actual value or description"
+│  arg1: type   ← source
+│  arg2: type   ← source
 │
 ├─ step_one()                                   [other_file.py:LINE]
-│   │  param: value
+│   │  param: type  ← source
 │   │
-│   │  ┌─────────────────────────────────┐
-│   │  │ content at this stage           │
+│   │  ┌─────────────────────────────────┐       ← L3+ only
+│   │  │ data at this stage (capped)     │
 │   │  └─────────────────────────────────┘
 │   │
 │   ├─ inner_call()                             → side effect
-│   └─ return value
+│   └─ return: type
 │
 ├─ step_two()                                   → 📝 ledger write
 │
-└─ return final_value
+└─ return: type  ← source
 ```
 
 **Symbol key:**
 - `│ ├─ └─ ▼` — tree/flow structure
-- `[file.py:LINE]` — real source location
-- `📝` — file/ledger write
-- `→` — subprocess, API call, or I/O
-- `← LLM CALL #N` — LLM invocation (numbered)
-- `┌─ ─┐ └─ ─┘` — content box showing actual data at that stage
-- `✓ / ✗` — validation pass/fail
+- `[file.py:LINE]` — real source location (L1+)
+- `← source` — value provenance (L2+)
+- `┌─ ─┐ └─ ─┘` — data transformation box (L3+)
+- Indented code excerpts (L4+)
 
 ## Repository Overview
 

@@ -32,7 +32,7 @@ class TestLedgerChainIntegrity:
             ledger_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Mock assert_append_only to allow temp directory writes
-            with patch("lib.pristine.assert_append_only", return_value=None):
+            with patch("kernel.pristine.assert_append_only", return_value=None):
                 client = LedgerClient(ledger_path=ledger_path, enable_index=False)
 
                 # Write initial entries to create a valid chain
@@ -66,7 +66,7 @@ class TestLedgerChainIntegrity:
             ledger_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Mock assert_append_only to allow temp directory writes
-            with patch("lib.pristine.assert_append_only", return_value=None):
+            with patch("kernel.pristine.assert_append_only", return_value=None):
                 client = LedgerClient(ledger_path=ledger_path, enable_index=False)
 
                 # Write several entries

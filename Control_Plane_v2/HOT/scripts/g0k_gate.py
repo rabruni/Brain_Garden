@@ -39,18 +39,19 @@ sys.path.insert(0, str(CONTROL_PLANE_ROOT))
 
 # === Tier Configuration ===
 
+CP_ROOT = CONTROL_PLANE_ROOT.parent  # Control_Plane_v2/
 TIER_CONFIG = {
     "HO3": {
-        "plane_root": CONTROL_PLANE_ROOT,
-        "installed_path": CONTROL_PLANE_ROOT / "installed",
+        "plane_root": CP_ROOT / "HO3",
+        "installed_path": CP_ROOT / "HO3" / "installed",
     },
     "HO2": {
-        "plane_root": CONTROL_PLANE_ROOT / "planes" / "ho2",
-        "installed_path": CONTROL_PLANE_ROOT / "planes" / "ho2" / "installed",
+        "plane_root": CP_ROOT / "HO2",
+        "installed_path": CP_ROOT / "HO2" / "installed",
     },
     "HO1": {
-        "plane_root": CONTROL_PLANE_ROOT / "planes" / "ho1",
-        "installed_path": CONTROL_PLANE_ROOT / "planes" / "ho1" / "installed",
+        "plane_root": CP_ROOT / "HO1",
+        "installed_path": CP_ROOT / "HO1" / "installed",
     },
 }
 
@@ -126,8 +127,8 @@ def verify_manifest_files(tier: str, manifest: dict) -> Dict[str, dict]:
         rel_path = asset["path"]
         expected_hash = asset["sha256"]
 
-        # Files are in HO3 source, not replicated to tier dirs
-        file_path = CONTROL_PLANE_ROOT / rel_path
+        # Files use CP-root-relative paths (e.g. HOT/kernel/cursor.py)
+        file_path = CP_ROOT / rel_path
 
         actual_hash = compute_file_hash(file_path)
 

@@ -64,7 +64,7 @@ echo "Step 1: Reconciling file hashes..."
 python3 << 'PYEOF'
 import csv
 from pathlib import Path
-from lib.merkle import hash_file
+from kernel.merkle import hash_file
 from datetime import datetime, timezone
 
 # Update file_ownership.csv with current hashes
@@ -135,7 +135,7 @@ echo "Step 4: Final hash reconciliation..."
 python3 << 'PYEOF'
 import csv
 from pathlib import Path
-from lib.merkle import hash_file
+from kernel.merkle import hash_file
 from datetime import datetime, timezone
 
 fo_path = Path("registries/file_ownership.csv")

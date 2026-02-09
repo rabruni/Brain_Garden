@@ -138,7 +138,7 @@ fi
 log_header "P7: Package Determinism"
 # =============================================================================
 if python3 -c "
-from lib.packages import pack
+from kernel.packages import pack
 import tempfile
 from pathlib import Path
 with tempfile.TemporaryDirectory() as t:

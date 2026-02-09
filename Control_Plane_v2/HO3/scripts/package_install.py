@@ -49,7 +49,7 @@ from kernel.plane import (
 from kernel.install_auth import InstallerClaims, require_authorization
 from kernel.packages import unpack, verify, sha256_file
 from kernel.auth import get_provider
-from lib import authz
+from kernel import authz
 from kernel.package_audit import PackageContext, log_package_event
 from kernel.pristine import (
     InstallModeContext,

@@ -5,44 +5,44 @@
   "schema_version": "1.0",
   "assets": [
     {
-      "path": "lib/cursor.py",
-      "sha256": "sha256:cac3aea353f7d4ad6cf87610115d501c98c01e95eeba9d2ea59d78ae679141d0"
+      "path": "HOT/kernel/cursor.py",
+      "sha256": "sha256:76a77f76e99d9f35e526b155e69e21f88b904111ef0528d4f3d5521f8de4626c"
     },
     {
-      "path": "lib/integrity.py",
-      "sha256": "sha256:6fec3da36761c2a9d51b9562d9088c59dcce304eadad648fc0f5869be385a616"
+      "path": "HOT/kernel/integrity.py",
+      "sha256": "sha256:6bc548c0054268d176642b4a1e0a805f0fc3ab61c36327053d53a0fd3cf2e8e9"
     },
     {
-      "path": "lib/ledger_client.py",
-      "sha256": "sha256:900f8f6e84061ee82844eb0a6e9000340cceba2cc5c63a11a1944c4d2df0ca91"
+      "path": "HOT/kernel/ledger_client.py",
+      "sha256": "sha256:abd03e41818ffd007fbaf23d0b586e0ea8466805c00adada07a3200aaed98770"
     },
     {
-      "path": "lib/ledger_factory.py",
-      "sha256": "sha256:4c2e657afee1995a177153326d2cb090d6649da008c8e1932207b9dbf5c6010d"
+      "path": "HOT/kernel/ledger_factory.py",
+      "sha256": "sha256:2216857cfb9190f196fe4f42b7d11916c4a8ab106e06f33ee4a3a526c517c61b"
     },
     {
-      "path": "lib/merkle.py",
-      "sha256": "sha256:5a3c471e2cd3049b1a1cf48509af1cd2c0767bd9c4bd884a6cf37096eaa6f432"
+      "path": "HOT/kernel/merkle.py",
+      "sha256": "sha256:879d72f7e37c8211e388c624db8be98d62f804935c6a3758f3d9192388e69bdd"
     },
     {
-      "path": "lib/output.py",
+      "path": "HOT/kernel/output.py",
       "sha256": "sha256:8ab6916f7bc06be2fa75328860947e56df71f846eb7bf87cee7f187bf08e6d63"
     },
     {
-      "path": "lib/paths.py",
-      "sha256": "sha256:3dc36d8cc1e3444e5be529033fd2b918c28ce26fcdac0c2fe6cd75d8f79156ed"
+      "path": "HOT/kernel/paths.py",
+      "sha256": "sha256:e26e50239b08e21bbd4e7b37be8427c2259c650ec8f0d94c5781da66426ff053"
     },
     {
-      "path": "lib/registry.py",
-      "sha256": "sha256:9a057c95a48b40c5a1aff878d302b0937b9a6dc1c529ea2ca0dc34d737982e64"
+      "path": "HOT/kernel/registry.py",
+      "sha256": "sha256:a78cff8b0b37ab690668dccbb8e61491c6406acd7450d7ec85103d62887b8bb8"
     },
     {
-      "path": "scripts/trace.py",
-      "sha256": "sha256:2545515426f91d2ea0d2f6c2dd63a7a64e9baf7b158c404be0e0bb4d2e95e18f"
+      "path": "HO3/scripts/trace.py",
+      "sha256": "sha256:dc717bdcb7b5b3111b0654a8adfac53f72abe8fbced83718eb1ce13d61028b17"
     }
   ],
   "assets_count": 9,
-  "manifest_hash": "sha256:fbac4783caa5346e6d6e3117e43ddc4ada4bebbd75690ff1f4d37e8758e212ab",
+  "manifest_hash": "sha256:89557890e7a214f22d57c60af2e379647990ac179520232643408015228312b8",
   "metadata": {
     "built_at": "2026-02-04T02:51:31.386725+00:00",
     "source_plane": "ho3",

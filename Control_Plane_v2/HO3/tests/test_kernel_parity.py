@@ -26,9 +26,12 @@ import pytest
 
 # Add parent to path
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONTROL_PLANE_ROOT = SCRIPT_DIR.parent
+CONTROL_PLANE_ROOT = SCRIPT_DIR.parent          # HO3/
+CP_ROOT = CONTROL_PLANE_ROOT.parent             # Control_Plane_v2/
+HOT_ROOT = CP_ROOT / "HOT"
 sys.path.insert(0, str(CONTROL_PLANE_ROOT))
-sys.path.insert(0, str(CONTROL_PLANE_ROOT.parent / "HOT"))
+sys.path.insert(0, str(HOT_ROOT))
+sys.path.insert(0, str(HOT_ROOT / "scripts"))
 
 
 # === Fixtures ===
@@ -56,7 +59,7 @@ def kernel_manifest(kernel_manifest_path):
 @pytest.fixture
 def kernel_files_config(plane_root):
     """Load kernel files configuration."""
-    config_path = plane_root / "config" / "kernel_files.json"
+    config_path = HOT_ROOT / "config" / "kernel_files.json"
     if not config_path.exists():
         pytest.skip("Kernel files config not found")
     return json.loads(config_path.read_text())
@@ -70,8 +73,8 @@ class TestDeterministicBuild:
     def test_kernel_build_produces_manifest(self, plane_root):
         """Kernel build should produce a valid manifest."""
         result = subprocess.run(
-            ["python3", "scripts/kernel_build.py", "--json"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "kernel_build.py"), "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -85,14 +88,14 @@ class TestDeterministicBuild:
     def test_kernel_build_is_deterministic(self, plane_root):
         """Running kernel_build twice should produce same manifest_hash."""
         result1 = subprocess.run(
-            ["python3", "scripts/kernel_build.py", "--show-hash", "--dry-run"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "kernel_build.py"), "--show-hash", "--dry-run"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
         result2 = subprocess.run(
-            ["python3", "scripts/kernel_build.py", "--show-hash", "--dry-run"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "kernel_build.py"), "--show-hash", "--dry-run"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -121,9 +124,9 @@ class TestReplicatedManifest:
 
     TIERS = ["HO3", "HO2", "HO1"]
     TIER_PATHS = {
-        "HO3": CONTROL_PLANE_ROOT / "installed" / "PKG-KERNEL-001" / "manifest.json",
-        "HO2": CONTROL_PLANE_ROOT / "planes" / "ho2" / "installed" / "PKG-KERNEL-001" / "manifest.json",
-        "HO1": CONTROL_PLANE_ROOT / "planes" / "ho1" / "installed" / "PKG-KERNEL-001" / "manifest.json",
+        "HO3": CP_ROOT / "HO3" / "installed" / "PKG-KERNEL-001" / "manifest.json",
+        "HO2": CP_ROOT / "HO2" / "installed" / "PKG-KERNEL-001" / "manifest.json",
+        "HO1": CP_ROOT / "HO1" / "installed" / "PKG-KERNEL-001" / "manifest.json",
     }
 
     def test_kernel_manifest_exists_on_all_tiers(self, plane_root):
@@ -170,9 +173,9 @@ class TestLedgerEvents:
     """Tests for kernel install ledger events."""
 
     TIER_LEDGERS = {
-        "HO3": CONTROL_PLANE_ROOT / "ledger" / "kernel.jsonl",
-        "HO2": CONTROL_PLANE_ROOT / "planes" / "ho2" / "ledger" / "kernel.jsonl",
-        "HO1": CONTROL_PLANE_ROOT / "planes" / "ho1" / "ledger" / "kernel.jsonl",
+        "HO3": CP_ROOT / "HO3" / "ledger" / "kernel.jsonl",
+        "HO2": CP_ROOT / "HO2" / "ledger" / "kernel.jsonl",
+        "HO1": CP_ROOT / "HO1" / "ledger" / "kernel.jsonl",
     }
 
     def test_kernel_ledger_exists_on_all_tiers(self, plane_root):
@@ -223,8 +226,8 @@ class TestG0KGate:
     def test_g0k_passes_with_identical_manifests(self, plane_root):
         """G0K should pass when all tier manifests are identical."""
         result = subprocess.run(
-            ["python3", "scripts/g0k_gate.py", "--enforce"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "g0k_gate.py"), "--enforce"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -234,7 +237,7 @@ class TestG0KGate:
     def test_g0k_detects_missing_manifest(self, plane_root):
         """G0K should detect missing kernel manifest on a tier."""
         # Temporarily rename HO2 kernel manifest
-        ho2_manifest = plane_root / "planes" / "ho2" / "installed" / "PKG-KERNEL-001" / "manifest.json"
+        ho2_manifest = CP_ROOT / "HO2" / "installed" / "PKG-KERNEL-001" / "manifest.json"
         ho2_manifest_bak = ho2_manifest.with_suffix(".json.bak")
 
         if not ho2_manifest.exists():
@@ -244,8 +247,8 @@ class TestG0KGate:
             ho2_manifest.rename(ho2_manifest_bak)
 
             result = subprocess.run(
-                ["python3", "scripts/g0k_gate.py", "--enforce"],
-                cwd=str(plane_root),
+                ["python3", str(HOT_ROOT / "scripts" / "g0k_gate.py"), "--enforce"],
+                cwd=str(CP_ROOT),
                 capture_output=True,
                 text=True
             )
@@ -258,7 +261,7 @@ class TestG0KGate:
     def test_g0k_detects_hash_mismatch(self, plane_root):
         """G0K should detect manifest hash mismatch between tiers."""
         # Temporarily modify HO1 kernel manifest
-        ho1_manifest = plane_root / "planes" / "ho1" / "installed" / "PKG-KERNEL-001" / "manifest.json"
+        ho1_manifest = CP_ROOT / "HO1" / "installed" / "PKG-KERNEL-001" / "manifest.json"
 
         if not ho1_manifest.exists():
             pytest.skip("HO1 kernel manifest not found")
@@ -274,8 +277,8 @@ class TestG0KGate:
             ho1_manifest.write_text(json.dumps(manifest, indent=2))
 
             result = subprocess.run(
-                ["python3", "scripts/g0k_gate.py", "--enforce"],
-                cwd=str(plane_root),
+                ["python3", str(HOT_ROOT / "scripts" / "g0k_gate.py"), "--enforce"],
+                cwd=str(CP_ROOT),
                 capture_output=True,
                 text=True
             )
@@ -287,8 +290,8 @@ class TestG0KGate:
     def test_g0k_file_verification(self, plane_root):
         """G0K should verify files match manifest hashes."""
         result = subprocess.run(
-            ["python3", "scripts/g0k_gate.py", "--verify-files"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "g0k_gate.py"), "--verify-files"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -305,8 +308,8 @@ class TestG6Gate:
     def test_g6_passes(self, plane_root):
         """G6 should pass with valid ledger chains."""
         result = subprocess.run(
-            ["python3", "scripts/g6_gate.py", "--enforce"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "g6_gate.py"), "--enforce"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -316,8 +319,8 @@ class TestG6Gate:
     def test_g6_verifies_kernel_parity(self, plane_root):
         """G6 should verify kernel parity via ledger events."""
         result = subprocess.run(
-            ["python3", "scripts/g6_gate.py", "--json"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "g6_gate.py"), "--json"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -355,7 +358,7 @@ class TestKernelModificationGuard:
         }
 
         # Test G0K with this WO
-        from scripts.g0k_gate import run_g0k_gate
+        from g0k_gate import run_g0k_gate
 
         result = run_g0k_gate(wo=test_wo)
         assert not result.passed, "G0K should reject WO modifying kernel files without kernel_upgrade type"
@@ -385,7 +388,7 @@ class TestKernelModificationGuard:
         }
 
         # Test G0K with this WO - should NOT fail on kernel file check
-        from scripts.g0k_gate import run_g0k_gate
+        from g0k_gate import run_g0k_gate
 
         result = run_g0k_gate(wo=test_wo)
         # G0K should pass the kernel modification check (may fail for other reasons)
@@ -403,8 +406,8 @@ class TestKernelPipelineIntegration:
         """All kernel-related gates should pass after kernel install."""
         # Test G0K
         result = subprocess.run(
-            ["python3", "scripts/gate_check.py", "--gate", "G0K", "--enforce"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G0K", "--enforce"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -412,8 +415,8 @@ class TestKernelPipelineIntegration:
 
         # Test G6
         result = subprocess.run(
-            ["python3", "scripts/gate_check.py", "--gate", "G6", "--enforce"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G6", "--enforce"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )

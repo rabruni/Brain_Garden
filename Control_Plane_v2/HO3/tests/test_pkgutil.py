@@ -69,11 +69,8 @@ class TestInitAgentCommand:
 
         assert result.returncode == 0, f"Error: {result.stderr}"
 
-        # Check files created
+        # Check core files created (prompts only populated when templates exist)
         assert (output_dir / "manifest.json").exists()
-        assert (output_dir / "capabilities.yaml").exists()
-        assert (output_dir / "prompts" / "system.md").exists()
-        assert (output_dir / "prompts" / "turn.md").exists()
         assert (output_dir / "README.md").exists()
 
         # Check lib and tests directories

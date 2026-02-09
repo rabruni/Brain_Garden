@@ -1,1 +1,16 @@
-[]
+[
+  "HO3/registries/file_ownership.csv",
+  "HO3/registries/packages_state.csv",
+  "HOT/config/bootstrap_sequence.json",
+  "HOT/config/seed_registry.json",
+  "HOT/registries/control_plane_registry.csv",
+  "HOT/registries/frameworks_registry.csv",
+  "HOT/registries/packages_registry.csv",
+  "HOT/registries/prompts_registry.csv",
+  "HOT/registries/specs_registry.csv",
+  "HOT/schemas/package_manifest_l0.json",
+  "HOT/tests/test_framework_completeness.py",
+  "HOT/tests/test_framework_wiring.py",
+  "HOT/tests/test_genesis_bootstrap.py",
+  "HOT/tests/test_schema_enforcement.py"
+]

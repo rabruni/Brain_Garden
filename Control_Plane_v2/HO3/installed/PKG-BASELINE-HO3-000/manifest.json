@@ -294,12 +294,12 @@
     },
     {
       "path": "HO3/scripts/package_install.py",
-      "sha256": "sha256:8449b4440b0c24237d477b9b7864610948ffc05ce9d54380178f64bbca60bd14",
+      "sha256": "sha256:5d8990099c7c801c7f78886d4e931f739888f7f2a9eaed5d0b36b0793edcf1af",
       "classification": "script"
     },
     {
       "path": "HO3/scripts/package_pack.py",
-      "sha256": "sha256:a70a3a073591ce6a08918bee0e9798447a835f35c67552e7e6cdb2e503907e3e",
+      "sha256": "sha256:baf0fa40a5ee57d55f6cbe3bcfcc23a22838c4e3c7d0e4078c290c8015f9bd3f",
       "classification": "script"
     },
     {
@@ -309,12 +309,12 @@
     },
     {
       "path": "HO3/scripts/package_trace.sh",
-      "sha256": "sha256:8f9f53b252f7d8a03f8050b384594a1c2a23f8be42e09023e5c9e56ac699a90b",
+      "sha256": "sha256:be6c35623a178efcd1457f587e2e815dd6d6c2837a40a61ddde88fc19bd09f7c",
       "classification": "script"
     },
     {
       "path": "HO3/scripts/package_uninstall.py",
-      "sha256": "sha256:a19188d1b1229ab394020d73323dd666b45447c115f8baecbcb63641f0b62af7",
+      "sha256": "sha256:010802dc5e4f16eb891c96d1f45d5b0845e202c7f9fa92e1c00fe76aaff797a5",
       "classification": "script"
     },
     {
@@ -334,7 +334,7 @@
     },
     {
       "path": "HO3/scripts/pristine_rebuild_drill.sh",
-      "sha256": "sha256:436c54d912592a19da54bffeaa45840b02461335ef46fbcb30155036356fec1c",
+      "sha256": "sha256:35c1f054580722a59c0849e48fe3ddb810fa67870022cff25871e25e754a5ce8",
       "classification": "script"
     },
     {
@@ -394,7 +394,7 @@
     },
     {
       "path": "HO3/scripts/trace.py",
-      "sha256": "sha256:090e333eaa64bc79fb6a9ce8b47268543379b18a21747630897243e8487cb7cf",
+      "sha256": "sha256:dc717bdcb7b5b3111b0654a8adfac53f72abe8fbced83718eb1ce13d61028b17",
       "classification": "script"
     },
     {
@@ -429,7 +429,7 @@
     },
     {
       "path": "HO3/scripts/verify_integrity.sh",
-      "sha256": "sha256:350d38f889b900b36b5161cf7ceda6e58932b3e9907b64a4d4852bfb013131fa",
+      "sha256": "sha256:99694773566dabaf49c87c236f8516cca92dc275db8f2d6e852b53728be09ce3",
       "classification": "script"
     },
     {
@@ -484,12 +484,12 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-CORE-001/manifest.yaml",
-      "sha256": "sha256:10b1444da6fee92f41bc9c0928bcc4facf828c278a2a8ce738afb35c3e3a42f4",
+      "sha256": "sha256:2b15b31b35b5d36580dad17defdd06a4db0811e719380a587c334e4bac3c9426",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-CORE-SCRIPTS-001/manifest.yaml",
-      "sha256": "sha256:1a5d6217c3f4b772f0c3d29a00404270b4f6c0b7bdd3fbf1dfd8bf285628374c",
+      "sha256": "sha256:95f552e0f4f88d3783ae0ed793ec8b800d3780f87b116374e887897f266364a8",
       "classification": "spec_manifest"
     },
     {
@@ -544,12 +544,12 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-EVIDENCE-001/manifest.yaml",
-      "sha256": "sha256:93d162c5ddf9c3dbf28e18773406d0e687291490d12b515328d5138779868c0f",
+      "sha256": "sha256:33ba50ec9d367a4f27a52a8bddcd8a1aeb06cf8ef3de8b338ac133caa3069cd5",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-FMWK-001/manifest.yaml",
-      "sha256": "sha256:6cdda674e45802aabda0512b0c02cd449a77ba137d3d6066e3aef41df8d4737a",
+      "sha256": "sha256:bc127d8f075c95146ab85a9f612f431861912524738bd020421087f6a9136b03",
       "classification": "spec_manifest"
     },
     {
@@ -559,42 +559,42 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-GATE-001/manifest.yaml",
-      "sha256": "sha256:59581474c279bb9d145b3dc9720e1f20753caa57dbb956baa36450fdd2165c78",
+      "sha256": "sha256:da6874028337dc057ef0d02c3a100e342c6332253031c26ab612d38357668109",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-GENESIS-001/manifest.yaml",
-      "sha256": "sha256:8db128ee4c6a8335164a8761fb109955f0f68e80b7cfd6730039b4f3b4018639",
+      "sha256": "sha256:ebd76e0ad808f01e6e71e2eb0e9ffe917a3253b9e05ef3ace6fac04a9da0365c",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-INSPECT-001/manifest.yaml",
-      "sha256": "sha256:eb6c344ecb4758ab072f06a023f102834dccc80984c4153d1d7147c78a248fea",
+      "sha256": "sha256:20a8ee2fafe64042925c98c01c2e9eb9016d073c4b8497588aef10b62600478f",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-INT-001/manifest.yaml",
-      "sha256": "sha256:36464a6ec336a760100f7da549f2b9c7349d4db8e0575c86dc08edcf8afd4cda",
+      "sha256": "sha256:721d02cb460bb48e03e195587dc2c1d2ddcf3b761fa4076353bc74eab054f070",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-LEDGER-001/manifest.yaml",
-      "sha256": "sha256:ced011a69e5db9eaa78a8f0f0a270710cff1f680e0a2bf4f8e0ccaacbb8473ca",
+      "sha256": "sha256:a18425e867abb7aaea5416dc89aaaa34cd5ddfcd22cef3521c0c38ef8afb889d",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-PKG-001/manifest.yaml",
-      "sha256": "sha256:5030cb52d686ee91ae3ea6fdae109ed227b9291272bde39938f33391f86f3f30",
+      "sha256": "sha256:d99bf15bd02c8dec24acaf25931591e1b4f258187971d94db716f029d7e60152",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-PLANE-001/manifest.yaml",
-      "sha256": "sha256:a7e1b348b4900355edb3eab8fdf1b720210097cfcda93c570f40523185faf601",
+      "sha256": "sha256:965bcd187dd4cadad86c88b5eadb6c8ad2382c0444d3fb04f5867b80c08e7639",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-POLICY-001/manifest.yaml",
-      "sha256": "sha256:8face5cc9e337a46ba260f1acf03687243b1c8237e7517d3511ccd0d5050630a",
+      "sha256": "sha256:941ffa3065ec50c1ed2e26647388bf32f4914b2e3209159e17d105b71bb0461e",
       "classification": "spec_manifest"
     },
     {
@@ -649,7 +649,7 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-REG-001/manifest.yaml",
-      "sha256": "sha256:44563f78e4a2c4f863c999583f44e17d0b8fd5ae7847b9030317d5056b788222",
+      "sha256": "sha256:f3e6ad27818c376f9f81976b0ed1395a02f00667f8fbef7761bcad02632e8dbe",
       "classification": "spec_manifest"
     },
     {
@@ -719,17 +719,17 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-SEC-001/manifest.yaml",
-      "sha256": "sha256:eaeb98d5e95888027aafb9bf1cf3662ec3139d6e7000712c11385e5a90ad57a8",
+      "sha256": "sha256:a02767f8ea1b0a0e151da7a85903df7412a12b546754f7de876c35d55bf2225d",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-TEST-001/manifest.yaml",
-      "sha256": "sha256:b3e65e1d0c22ea3c69d51a4aea58b55919bddf9ee912bb46de620b94572eb9d9",
+      "sha256": "sha256:c60e4f44a8c200dfc63d34989e82faa29c5112fde3490b467de1c583264f0391",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-VER-001/manifest.yaml",
-      "sha256": "sha256:5709fb1d17b4d871adbe41221e0872b81d97d991458e13076319d0b4f745c430",
+      "sha256": "sha256:69ae5e1f266d81d1853d26aeeb0378dcf45623696e99a4cb8c6bc8433276e5f9",
       "classification": "spec_manifest"
     },
     {
@@ -764,7 +764,7 @@
     },
     {
       "path": "HO3/tests/test_factory_canary.py",
-      "sha256": "sha256:0477d34d92a9a1b66f501a2a1953fbd0cac8ae8cb8e6ed9c8b463d10499980f0",
+      "sha256": "sha256:02542f8a32e8d14dbe7e64d5ce6b0e264b70324e929a2aba08825d255adebd3d",
       "classification": "test"
     },
     {
@@ -804,12 +804,12 @@
     },
     {
       "path": "HO3/tests/test_kernel_parity.py",
-      "sha256": "sha256:2dc485373902ece73d34f56c5caa18941984f54f1897eb3104046a9ffc9025d8",
+      "sha256": "sha256:7f309fbf748abeff7e8d47fbcae434ea43659d3dd397da03e511a97d3d6ea6de",
       "classification": "test"
     },
     {
       "path": "HO3/tests/test_ledger_chain.py",
-      "sha256": "sha256:e5b6cb84b9912a9526569f04a6324225666c45431002b6942b01878249f56fb1",
+      "sha256": "sha256:c81000abcd0d71a362dea65bbeec7a7d97e7b827253ea71e4476e8deb42aeefd",
       "classification": "test"
     },
     {
@@ -829,7 +829,7 @@
     },
     {
       "path": "HO3/tests/test_phase1_baseline.py",
-      "sha256": "sha256:f0827118cc420299c1fc4bbefa415203b16e788bde2d77caf6991c21ec1bbed5",
+      "sha256": "sha256:d6b6c1869f434ef2ffaaa3a2ec3f1e41a4b5ee8a711821f7f93d0a93760e7b2b",
       "classification": "test"
     },
     {
@@ -844,7 +844,7 @@
     },
     {
       "path": "HO3/tests/test_pkgutil.py",
-      "sha256": "sha256:05a48c8490421f9a115b3ae47691d9749fc2f50664c1151e0553c3c99c7b02a2",
+      "sha256": "sha256:98c07f44120312f0e734d4fe675f7a36be2d1c301ab9d7b204ae499cf91d980d",
       "classification": "test"
     },
     {
@@ -874,7 +874,7 @@
     },
     {
       "path": "HO3/tests/test_trace.py",
-      "sha256": "sha256:92da2285318b2c9b4ad41afcadf7a78e9b0376e8bba1115ff660c6c2811c69a5",
+      "sha256": "sha256:ab5f5ad821154646b14a86d36ba002e1853329492dd0b92254df457d9e39fe82",
       "classification": "test"
     }
   ],

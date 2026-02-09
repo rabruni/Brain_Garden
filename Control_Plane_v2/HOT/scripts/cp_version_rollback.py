@@ -35,7 +35,7 @@ from kernel.packages import unpack, verify, sha256_file
 from kernel.integrity import IntegrityChecker
 from kernel.ledger_client import LedgerClient, LedgerEntry
 from kernel.auth import get_provider
-from lib import authz
+from kernel import authz
 from kernel.pristine import InstallModeContext
 
 

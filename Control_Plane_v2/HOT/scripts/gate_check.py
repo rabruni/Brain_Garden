@@ -66,19 +66,37 @@ class GateResult:
 
 def load_governed_roots(plane_root: Path) -> dict:
     """Load governed roots configuration."""
+    # Try tier-layout config first (HOT/config/)
+    hot_config_path = plane_root / 'HOT' / 'config' / 'governed_roots.json'
+    if hot_config_path.exists():
+        with open(hot_config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        # Merge hot + ho3 governed roots into flat 'governed_roots' key
+        roots = config.get('hot_governed_roots', []) + config.get('ho3_governed_roots', [])
+        if roots:
+            config['governed_roots'] = roots
+        return config
+    # Legacy flat-layout config
     config_path = plane_root / 'config' / 'governed_roots.json'
-    if not config_path.exists():
-        return {
-            "governed_roots": ["lib/", "scripts/", "frameworks/", "schemas/", "registries/", "modules/", "tests/"],
-            "excluded_patterns": ["**/__pycache__/**", "**/*.pyc", "**/__init__.py"]
-        }
-    with open(config_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    if config_path.exists():
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    # Hardcoded fallback (tier layout)
+    return {
+        "governed_roots": [
+            "HOT/kernel/", "HOT/scripts/", "HOT/registries/", "HOT/config/", "HOT/schemas/",
+            "HO3/scripts/", "HO3/libs/", "HO3/tests/"
+        ],
+        "excluded_patterns": ["**/__pycache__/**", "**/*.pyc", "**/__init__.py"]
+    }
 
 
 def load_control_plane_registry(plane_root: Path) -> List[dict]:
     """Load control_plane_registry.csv."""
     registry_path = plane_root / 'registries' / 'control_plane_registry.csv'
+    if not registry_path.exists():
+        # Try tier layout
+        registry_path = plane_root / 'HOT' / 'registries' / 'control_plane_registry.csv'
     if not registry_path.exists():
         return []
     with open(registry_path, 'r', encoding='utf-8') as f:
@@ -113,6 +131,9 @@ from kernel.hashing import compute_sha256  # canonical implementation
 def load_file_ownership_registry(plane_root: Path) -> Dict[str, dict]:
     """Load file_ownership.csv as dict keyed by file_path."""
     registry_path = plane_root / 'registries' / 'file_ownership.csv'
+    if not registry_path.exists():
+        # Try tier layout
+        registry_path = plane_root / 'HOT' / 'registries' / 'file_ownership.csv'
     if not registry_path.exists():
         return {}
 
@@ -297,6 +318,10 @@ def check_g0b_plane_ownership(plane_root: Path) -> GateResult:
     hash_mismatches = []
 
     for file_path, entry in ownership.items():
+        # Skip excluded patterns
+        if matches_pattern(file_path, excluded_patterns):
+            continue
+
         full_path = plane_root / file_path
 
         if not full_path.exists():

@@ -192,16 +192,24 @@ class AuthorityTree:
             self.fmwk_to_specs.setdefault(resolved_fmwk, []).append(spec_id)
 
     def walk_packages(self):
-        """Phase 1.3: Parse HO3/installed/PKG-*/manifest.json + root installed/"""
+        """Phase 1.3: Parse installed/PKG-*/manifest.json from all tiers."""
+        # HOT installed packages
+        for pkg_dir in sorted(HOT.glob("installed/PKG-*")):
+            self._load_package(pkg_dir, "HOT")
+
         # HO3 installed packages
         for pkg_dir in sorted(HO3.glob("installed/PKG-*")):
-            self._load_package(pkg_dir, "HO3")
-
-        # Root installed packages
-        for pkg_dir in sorted(CP_ROOT.glob("installed/PKG-*")):
             pkg_id = pkg_dir.name
             if pkg_id not in self.packages:
-                self._load_package(pkg_dir, "root")
+                self._load_package(pkg_dir, "HO3")
+
+        # Root installed packages (legacy flat layout)
+        root_installed = CP_ROOT / "installed"
+        if root_installed.exists():
+            for pkg_dir in sorted(root_installed.glob("PKG-*")):
+                pkg_id = pkg_dir.name
+                if pkg_id not in self.packages:
+                    self._load_package(pkg_dir, "root")
 
     def _load_package(self, pkg_dir: Path, location: str):
         manifest_path = pkg_dir / "manifest.json"
@@ -223,50 +231,57 @@ class AuthorityTree:
         self.packages[pkg_id] = data
 
     def build_path_translation(self):
-        """Phase 1.4: Build translation map from old flat paths to tier paths."""
+        """Phase 1.4: Build translation map from old flat paths to tier paths.
+
+        After tier migration is complete, flat directories (lib/, scripts/) no
+        longer exist.  When they are absent we skip the scan — no translation
+        is needed because all paths are already in their tier locations.
+        """
         # lib/ shims → HOT/kernel/
-        for lib_file in sorted((CP_ROOT / "lib").glob("*.py")):
-            if is_excluded(lib_file):
-                continue
-            classification = classify_lib_file(lib_file)
-            old_rel = f"lib/{lib_file.name}"
-            if classification == "SHIM":
-                new_rel = f"HOT/kernel/{lib_file.name}"
-                self.path_translation[old_rel] = new_rel
-            elif classification == "REAL":
-                # Real files like agent_helpers.py, prompt_loader.py → HO3/libs/
-                new_rel = f"HO3/libs/{lib_file.name}"
-                self.path_translation[old_rel] = new_rel
+        lib_dir = CP_ROOT / "lib"
+        if lib_dir.exists():
+            for lib_file in sorted(lib_dir.glob("*.py")):
+                if is_excluded(lib_file):
+                    continue
+                classification = classify_lib_file(lib_file)
+                old_rel = f"lib/{lib_file.name}"
+                if classification == "SHIM":
+                    new_rel = f"HOT/kernel/{lib_file.name}"
+                    self.path_translation[old_rel] = new_rel
+                elif classification == "REAL":
+                    new_rel = f"HO3/libs/{lib_file.name}"
+                    self.path_translation[old_rel] = new_rel
 
         # scripts/ → check HOT/scripts/ or HO3/scripts/
-        for script_file in sorted((CP_ROOT / "scripts").iterdir()):
-            if is_excluded(script_file) or script_file.is_dir():
-                continue
-            old_rel = f"scripts/{script_file.name}"
-            hot_path = HOT / "scripts" / script_file.name
-            ho3_path = HO3 / "scripts" / script_file.name
-            if hot_path.exists():
-                self.path_translation[old_rel] = f"HOT/scripts/{script_file.name}"
-            elif ho3_path.exists():
-                self.path_translation[old_rel] = f"HO3/scripts/{script_file.name}"
+        scripts_dir = CP_ROOT / "scripts"
+        if scripts_dir.exists():
+            for script_file in sorted(scripts_dir.iterdir()):
+                if is_excluded(script_file) or script_file.is_dir():
+                    continue
+                old_rel = f"scripts/{script_file.name}"
+                hot_path = HOT / "scripts" / script_file.name
+                ho3_path = HO3 / "scripts" / script_file.name
+                if hot_path.exists():
+                    self.path_translation[old_rel] = f"HOT/scripts/{script_file.name}"
+                elif ho3_path.exists():
+                    self.path_translation[old_rel] = f"HO3/scripts/{script_file.name}"
 
-        # scripts/policies/ and scripts/templates/
-        for subdir in ["policies", "templates"]:
-            old_dir = CP_ROOT / "scripts" / subdir
-            if old_dir.exists():
-                for f in old_dir.rglob("*"):
-                    if f.is_file() and not is_excluded(f):
-                        old_rel = str(f.relative_to(CP_ROOT))
-                        sub_rel = str(f.relative_to(old_dir))
-                        hot_sub = HOT / "scripts" / subdir / sub_rel
-                        ho3_sub = HO3 / "scripts" / subdir / sub_rel
-                        if hot_sub.exists():
-                            self.path_translation[old_rel] = str(hot_sub.relative_to(CP_ROOT))
-                        elif ho3_sub.exists():
-                            self.path_translation[old_rel] = str(ho3_sub.relative_to(CP_ROOT))
-                        else:
-                            # Default: HO3 for policies/templates
-                            self.path_translation[old_rel] = f"HO3/scripts/{subdir}/{sub_rel}"
+            # scripts/policies/ and scripts/templates/
+            for subdir in ["policies", "templates"]:
+                old_dir = scripts_dir / subdir
+                if old_dir.exists():
+                    for f in old_dir.rglob("*"):
+                        if f.is_file() and not is_excluded(f):
+                            old_rel = str(f.relative_to(CP_ROOT))
+                            sub_rel = str(f.relative_to(old_dir))
+                            hot_sub = HOT / "scripts" / subdir / sub_rel
+                            ho3_sub = HO3 / "scripts" / subdir / sub_rel
+                            if hot_sub.exists():
+                                self.path_translation[old_rel] = str(hot_sub.relative_to(CP_ROOT))
+                            elif ho3_sub.exists():
+                                self.path_translation[old_rel] = str(ho3_sub.relative_to(CP_ROOT))
+                            else:
+                                self.path_translation[old_rel] = f"HO3/scripts/{subdir}/{sub_rel}"
 
         # frameworks/ → HOT/FMWK-*/
         old_fmwk_to_new = {
@@ -283,46 +298,56 @@ class AuthorityTree:
             self.path_translation[old_rel] = new_path
 
         # specs/SPEC-X/ → HO3/spec_packs/SPEC-X/
-        for spec_dir in sorted((CP_ROOT / "specs").glob("SPEC-*")):
-            spec_id = spec_dir.name
-            old_prefix = f"specs/{spec_id}/"
-            new_prefix = f"HO3/spec_packs/{spec_id}/"
-            for f in spec_dir.rglob("*"):
-                if f.is_file() and not is_excluded(f):
-                    old_rel = str(f.relative_to(CP_ROOT))
-                    self.path_translation[old_rel] = new_prefix + str(f.relative_to(spec_dir))
+        specs_dir = CP_ROOT / "specs"
+        if specs_dir.exists():
+            for spec_dir in sorted(specs_dir.glob("SPEC-*")):
+                spec_id = spec_dir.name
+                old_prefix = f"specs/{spec_id}/"
+                new_prefix = f"HO3/spec_packs/{spec_id}/"
+                for f in spec_dir.rglob("*"):
+                    if f.is_file() and not is_excluded(f):
+                        old_rel = str(f.relative_to(CP_ROOT))
+                        self.path_translation[old_rel] = new_prefix + str(f.relative_to(spec_dir))
 
         # config/ → HOT/config/
-        for f in sorted((CP_ROOT / "config").iterdir()):
-            if f.is_file() and not is_excluded(f):
-                old_rel = f"config/{f.name}"
-                hot_path = HOT / "config" / f.name
-                if hot_path.exists():
-                    self.path_translation[old_rel] = f"HOT/config/{f.name}"
+        config_dir = CP_ROOT / "config"
+        if config_dir.exists():
+            for f in sorted(config_dir.iterdir()):
+                if f.is_file() and not is_excluded(f):
+                    old_rel = f"config/{f.name}"
+                    hot_path = HOT / "config" / f.name
+                    if hot_path.exists():
+                        self.path_translation[old_rel] = f"HOT/config/{f.name}"
 
         # schemas/ → HOT/schemas/
-        for f in sorted((CP_ROOT / "schemas").iterdir()):
-            if f.is_file() and not is_excluded(f):
-                old_rel = f"schemas/{f.name}"
-                hot_path = HOT / "schemas" / f.name
-                if hot_path.exists():
-                    self.path_translation[old_rel] = f"HOT/schemas/{f.name}"
+        schemas_dir = CP_ROOT / "schemas"
+        if schemas_dir.exists():
+            for f in sorted(schemas_dir.iterdir()):
+                if f.is_file() and not is_excluded(f):
+                    old_rel = f"schemas/{f.name}"
+                    hot_path = HOT / "schemas" / f.name
+                    if hot_path.exists():
+                        self.path_translation[old_rel] = f"HOT/schemas/{f.name}"
 
         # registries/ → HOT/registries/
-        for f in sorted((CP_ROOT / "registries").iterdir()):
-            if f.is_file() and not is_excluded(f):
-                old_rel = f"registries/{f.name}"
-                hot_path = HOT / "registries" / f.name
-                if hot_path.exists():
-                    self.path_translation[old_rel] = f"HOT/registries/{f.name}"
+        registries_dir = CP_ROOT / "registries"
+        if registries_dir.exists():
+            for f in sorted(registries_dir.iterdir()):
+                if f.is_file() and not is_excluded(f):
+                    old_rel = f"registries/{f.name}"
+                    hot_path = HOT / "registries" / f.name
+                    if hot_path.exists():
+                        self.path_translation[old_rel] = f"HOT/registries/{f.name}"
 
         # tests/ → HO3/tests/
-        for f in sorted((CP_ROOT / "tests").iterdir()):
-            if f.is_file() and not is_excluded(f):
-                old_rel = f"tests/{f.name}"
-                ho3_path = HO3 / "tests" / f.name
-                if ho3_path.exists():
-                    self.path_translation[old_rel] = f"HO3/tests/{f.name}"
+        tests_dir = CP_ROOT / "tests"
+        if tests_dir.exists():
+            for f in sorted(tests_dir.iterdir()):
+                if f.is_file() and not is_excluded(f):
+                    old_rel = f"tests/{f.name}"
+                    ho3_path = HO3 / "tests" / f.name
+                    if ho3_path.exists():
+                        self.path_translation[old_rel] = f"HO3/tests/{f.name}"
 
     def build_governed_set(self):
         """Phase 1.5: Build GOVERNED set from authority chain."""

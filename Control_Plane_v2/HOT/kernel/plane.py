@@ -215,7 +215,7 @@ def get_chain_config_path() -> Path:
         return Path(env_path)
 
     # Default location
-    return CONTROL_PLANE / "config" / "control_plane_chain.json"
+    return CONTROL_PLANE / "HOT" / "config" / "control_plane_chain.json"
 
 
 @lru_cache(maxsize=1)

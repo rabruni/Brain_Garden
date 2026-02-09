@@ -21,7 +21,7 @@ from kernel.merkle import hash_file, merkle_root
 from kernel.ledger_client import LedgerClient, LedgerEntry
 from kernel.integrity import IntegrityChecker
 from kernel.auth import get_provider, Identity
-from lib import authz
+from kernel import authz
 from kernel.pristine import assert_write_allowed, WriteViolation
 
 

@@ -44,6 +44,12 @@ PACKAGES_STORE = CONTROL_PLANE / "packages_store"
 CANARY_SRC = PACKAGES_DIR / "PKG-CANARY"
 INSTALLED_DIR = CONTROL_PLANE / "installed"
 
+# Skip entire module if PKG-CANARY doesn't exist (removed during tier migration)
+pytestmark = pytest.mark.skipif(
+    not CANARY_SRC.exists(),
+    reason="PKG-CANARY not present in tier layout (flat packages/ removed)"
+)
+
 
 from kernel.hashing import sha256_file  # canonical implementation
 

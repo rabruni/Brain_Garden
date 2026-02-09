@@ -1,1 +1,11 @@
-[]
+[
+  "HO3/scripts/templates/agent/capabilities.yaml.j2",
+  "HO3/scripts/templates/agent/manifest.json.j2",
+  "HO3/scripts/templates/agent/prompts/system.md",
+  "HO3/scripts/templates/agent/prompts/turn.md",
+  "HO3/scripts/templates/standard/manifest.json.j2",
+  "HOT/FMWK-003_Package_Standard/manifest.yaml",
+  "HOT/FMWK-003_Package_Standard/package_standard.md",
+  "HOT/FMWK-004_Prompt_Governance/manifest.yaml",
+  "HOT/FMWK-004_Prompt_Governance/prompt_governance.md"
+]

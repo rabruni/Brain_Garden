@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "HOT"))
 
 from kernel.paths import CONTROL_PLANE
 from kernel.auth import get_provider
-from lib import authz
+from kernel import authz
 from kernel.packages import sha256_file
 from kernel.package_audit import PackageContext, log_package_event
 from kernel.pristine import assert_write_allowed

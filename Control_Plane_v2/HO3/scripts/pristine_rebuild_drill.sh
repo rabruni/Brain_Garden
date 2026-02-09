@@ -216,9 +216,9 @@ fi
 if [[ $G0_INSTALLED -gt 0 ]]; then
     log_info "Verifying Genesis standalone..."
     python3 -c "
-from lib.paths import CONTROL_PLANE
-from lib.merkle import hash_file
-from lib.packages import sha256_file
+from kernel.paths import CONTROL_PLANE
+from kernel.merkle import hash_file
+from kernel.packages import sha256_file
 print(f'Genesis OK: {CONTROL_PLANE}')
 " 2>/dev/null || log_warn "Genesis verification skipped (libs not yet available)"
 fi
@@ -335,7 +335,7 @@ fi
 VERIFICATION_TOTAL=$((VERIFICATION_TOTAL + 1))
 log_info "Verifying ledger chain..."
 if python3 -c "
-from lib.ledger_client import LedgerClient
+from kernel.ledger_client import LedgerClient
 valid, issues = LedgerClient().verify_chain()
 if issues:
     for i in issues: print(f'  {i}')

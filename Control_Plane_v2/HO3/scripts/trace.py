@@ -33,7 +33,7 @@ from typing import Dict, List, Optional, Tuple, Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "HOT"))
 
-from kernel.paths import CONTROL_PLANE
+from kernel.paths import CONTROL_PLANE, REGISTRIES_DIR
 from kernel.registry import (
     find_all_registries,
     read_registry,
@@ -136,8 +136,10 @@ class TraceEngine:
 
     def _load_registries(self):
         """Load all registry data into memory."""
+        reg_dir = REGISTRIES_DIR
+
         # Load frameworks
-        fw_reg = self.root / "registries" / "frameworks_registry.csv"
+        fw_reg = reg_dir / "frameworks_registry.csv"
         if fw_reg.exists():
             _, rows = read_registry(fw_reg)
             for row in rows:
@@ -146,7 +148,7 @@ class TraceEngine:
                     self._frameworks[fid] = row
 
         # Load specs
-        spec_reg = self.root / "registries" / "specs_registry.csv"
+        spec_reg = reg_dir / "specs_registry.csv"
         if spec_reg.exists():
             _, rows = read_registry(spec_reg)
             for row in rows:
@@ -155,7 +157,7 @@ class TraceEngine:
                     self._specs[sid] = row
 
         # Load control plane registry (artifacts)
-        cp_reg = self.root / "registries" / "control_plane_registry.csv"
+        cp_reg = reg_dir / "control_plane_registry.csv"
         if cp_reg.exists():
             _, rows = read_registry(cp_reg)
             for row in rows:
@@ -164,7 +166,7 @@ class TraceEngine:
                     self._artifacts[aid] = row
 
         # Load file ownership
-        fo_reg = self.root / "registries" / "file_ownership.csv"
+        fo_reg = reg_dir / "file_ownership.csv"
         if fo_reg.exists():
             _, rows = read_registry(fo_reg)
             for row in rows:
@@ -416,8 +418,10 @@ class TraceEngine:
         specs = set()
         frameworks = set()
 
-        # For kernel packages, read from manifest
-        manifest_path = self.root / "installed" / package_id / "manifest.json"
+        # For kernel packages, read from manifest (check HOT, then HO3)
+        manifest_path = self.root / "HOT" / "installed" / package_id / "manifest.json"
+        if not manifest_path.exists():
+            manifest_path = self.root / "HO3" / "installed" / package_id / "manifest.json"
         if manifest_path.exists():
             try:
                 with open(manifest_path) as f:
@@ -504,10 +508,7 @@ class TraceEngine:
         parity = True
         if "KERNEL" in pkg_upper:
             for tier in ["ho3", "ho2", "ho1"]:
-                if tier == "ho3":
-                    tier_manifest = self.root / "installed" / package_id / "manifest.json"
-                else:
-                    tier_manifest = self.root / "planes" / tier / "installed" / package_id / "manifest.json"
+                tier_manifest = self.root / tier.upper() / "installed" / package_id / "manifest.json"
 
                 if tier_manifest.exists():
                     tier_status[tier.upper()] = "installed"
@@ -622,43 +623,54 @@ class TraceEngine:
     def list_installed(self) -> List[InstalledPackageInfo]:
         """List all installed packages with details."""
         installed = []
-        installed_dir = self.root / "installed"
+        seen = set()
 
-        if not installed_dir.exists():
-            return installed
-
-        for pkg_dir in sorted(installed_dir.iterdir()):
-            if not pkg_dir.is_dir():
+        # Check all tier install directories
+        for tier_dir in [self.root / "HOT" / "installed",
+                         self.root / "HO3" / "installed",
+                         self.root / "HO2" / "installed",
+                         self.root / "HO1" / "installed"]:
+            if not tier_dir.exists():
                 continue
-
-            manifest_path = pkg_dir / "manifest.json"
-            if not manifest_path.exists():
-                continue
-
-            try:
-                with open(manifest_path) as f:
-                    manifest = json.load(f)
-
-                # Get installation time from receipt if available
-                receipt_path = pkg_dir / "receipt.json"
-                installed_at = ""
-                if receipt_path.exists():
-                    with open(receipt_path) as f:
-                        receipt = json.load(f)
-                        installed_at = receipt.get("installed_at", "")
-
-                installed.append(InstalledPackageInfo(
-                    package_id=manifest.get("package_id", pkg_dir.name),
-                    version=manifest.get("version", ""),
-                    file_count=len(manifest.get("assets", [])),
-                    manifest_hash=manifest.get("manifest_hash", ""),
-                    installed_at=installed_at or manifest.get("metadata", {}).get("built_at", ""),
-                    tier="HO3",
-                ))
-            except Exception:
-                continue
+            for pkg_dir in sorted(tier_dir.iterdir()):
+                if pkg_dir.name in seen:
+                    continue
+                seen.add(pkg_dir.name)
+                self._load_installed_package(installed, pkg_dir)
 
         return installed
+
+    def _load_installed_package(self, installed, pkg_dir):
+        """Load a single installed package."""
+        if not pkg_dir.is_dir():
+            return
+
+        manifest_path = pkg_dir / "manifest.json"
+        if not manifest_path.exists():
+            return
+
+        try:
+            with open(manifest_path) as f:
+                manifest = json.load(f)
+
+            # Get installation time from receipt if available
+            receipt_path = pkg_dir / "receipt.json"
+            installed_at = ""
+            if receipt_path.exists():
+                with open(receipt_path) as f:
+                    receipt = json.load(f)
+                    installed_at = receipt.get("installed_at", "")
+
+            installed.append(InstalledPackageInfo(
+                package_id=manifest.get("package_id", pkg_dir.name),
+                version=manifest.get("version", ""),
+                file_count=len(manifest.get("assets", [])),
+                manifest_hash=manifest.get("manifest_hash", ""),
+                installed_at=installed_at or manifest.get("metadata", {}).get("built_at", ""),
+                tier="HO3",
+            ))
+        except Exception:
+            pass
 
     def verify(self) -> VerifyResult:
         """Run verification checks and return pass/fail result."""
@@ -1047,7 +1059,7 @@ Examples:
                 # Reconstruct nested dataclasses
                 info.specs = [SpecInfo(**s) for s in result['data']['specs']]
                 for spec in info.specs:
-                    spec.files = [FileInfo(**f) for f in spec.files] if isinstance(spec.files[0], dict) else spec.files
+                    spec.files = [FileInfo(**f) for f in spec.files] if spec.files and isinstance(spec.files[0], dict) else spec.files
                 print(formatter.format_framework(info))
             elif result['type'] == 'spec':
                 print(formatter.format_spec(result['data']))

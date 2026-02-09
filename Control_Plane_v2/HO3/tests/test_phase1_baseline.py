@@ -29,9 +29,11 @@ import pytest
 
 # Add parent to path
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONTROL_PLANE_ROOT = SCRIPT_DIR.parent
+CONTROL_PLANE_ROOT = SCRIPT_DIR.parent          # HO3/
+CP_ROOT = CONTROL_PLANE_ROOT.parent             # Control_Plane_v2/
+HOT_ROOT = CP_ROOT / "HOT"
 sys.path.insert(0, str(CONTROL_PLANE_ROOT))
-sys.path.insert(0, str(CONTROL_PLANE_ROOT.parent / "HOT"))
+sys.path.insert(0, str(HOT_ROOT))
 
 
 # === Fixtures ===
@@ -59,7 +61,7 @@ def baseline_manifest(baseline_manifest_path):
 @pytest.fixture
 def file_ownership_registry(plane_root):
     """Load file_ownership.csv as dict."""
-    registry_path = plane_root / "registries" / "file_ownership.csv"
+    registry_path = HOT_ROOT / "registries" / "file_ownership.csv"
     if not registry_path.exists():
         return {}
     ownership = {}
@@ -127,14 +129,14 @@ class TestBaselineManifestGeneration:
         """Running generator twice produces same manifest_hash."""
         # Run generator twice
         result1 = subprocess.run(
-            ["python3", "scripts/generate_baseline_manifest.py", "--plane", "ho3", "--show-hash", "--dry-run"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "generate_baseline_manifest.py"), "--plane", "ho3", "--show-hash", "--dry-run"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
         result2 = subprocess.run(
-            ["python3", "scripts/generate_baseline_manifest.py", "--plane", "ho3", "--show-hash", "--dry-run"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "generate_baseline_manifest.py"), "--plane", "ho3", "--show-hash", "--dry-run"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -250,12 +252,12 @@ class TestDerivedRegistryRebuild:
 
     def test_file_ownership_exists(self, plane_root):
         """file_ownership.csv must exist after rebuild."""
-        path = plane_root / "registries" / "file_ownership.csv"
+        path = HOT_ROOT / "registries" / "file_ownership.csv"
         assert path.exists(), "Run: python3 scripts/rebuild_derived_registries.py --plane ho3"
 
     def test_packages_state_exists(self, plane_root):
         """packages_state.csv must exist after rebuild."""
-        path = plane_root / "registries" / "packages_state.csv"
+        path = HOT_ROOT / "registries" / "packages_state.csv"
         assert path.exists()
 
     def test_file_ownership_has_files(self, file_ownership_registry):
@@ -271,15 +273,15 @@ class TestDerivedRegistryRebuild:
     def test_rebuild_is_idempotent(self, plane_root):
         """Running rebuild twice produces same output."""
         # Read current
-        path = plane_root / "registries" / "file_ownership.csv"
+        path = HOT_ROOT / "registries" / "file_ownership.csv"
         if not path.exists():
             pytest.skip("file_ownership.csv not found")
         before = path.read_text()
 
         # Run rebuild
         result = subprocess.run(
-            ["python3", "scripts/rebuild_derived_registries.py", "--plane", "ho3"],
-            cwd=str(plane_root),
+            ["python3", str(CONTROL_PLANE_ROOT / "scripts" / "rebuild_derived_registries.py"), "--plane", "ho3"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -292,8 +294,8 @@ class TestDerivedRegistryRebuild:
     def test_verify_mode_matches(self, plane_root):
         """--verify mode should report match."""
         result = subprocess.run(
-            ["python3", "scripts/rebuild_derived_registries.py", "--plane", "ho3", "--verify"],
-            cwd=str(plane_root),
+            ["python3", str(CONTROL_PLANE_ROOT / "scripts" / "rebuild_derived_registries.py"), "--plane", "ho3", "--verify"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -309,8 +311,8 @@ class TestG0Gates:
     def test_g0b_passes(self, plane_root):
         """G0B should pass after baseline install and rebuild."""
         result = subprocess.run(
-            ["python3", "scripts/gate_check.py", "--gate", "G0B", "--enforce"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G0B", "--enforce"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -321,8 +323,8 @@ class TestG0Gates:
     def test_g0a_passes_with_manifest(self, plane_root, baseline_manifest_path):
         """G0A should pass with baseline manifest."""
         result = subprocess.run(
-            ["python3", "scripts/gate_check.py", "--gate", "G0A", "--manifest", str(baseline_manifest_path)],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G0A", "--manifest", str(baseline_manifest_path)],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -332,8 +334,8 @@ class TestG0Gates:
     def test_g0a_requires_manifest(self, plane_root):
         """G0A should fail without manifest."""
         result = subprocess.run(
-            ["python3", "scripts/gate_check.py", "--gate", "G0A"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G0A"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -343,8 +345,8 @@ class TestG0Gates:
     def test_all_gates_pass(self, plane_root):
         """All gates should pass after Phase 1 setup."""
         result = subprocess.run(
-            ["python3", "scripts/gate_check.py", "--all", "--enforce"],
-            cwd=str(plane_root),
+            ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--all", "--enforce"],
+            cwd=str(CP_ROOT),
             capture_output=True,
             text=True
         )
@@ -358,15 +360,15 @@ class TestOrphanDetection:
 
     def test_g0b_detects_orphan(self, plane_root):
         """G0B should detect orphan file in governed roots."""
-        orphan_path = plane_root / "lib" / "test_orphan_file.py"
+        orphan_path = plane_root / "libs" / "test_orphan_file.py"
         try:
             # Create orphan
             orphan_path.write_text("# Orphan file for testing")
 
             # Run G0B
             result = subprocess.run(
-                ["python3", "scripts/gate_check.py", "--gate", "G0B", "--enforce"],
-                cwd=str(plane_root),
+                ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G0B", "--enforce"],
+                cwd=str(CP_ROOT),
                 capture_output=True,
                 text=True
             )
@@ -384,7 +386,7 @@ class TestHashMismatchDetection:
 
     def test_g0b_detects_hash_mismatch(self, plane_root):
         """G0B should detect modified file."""
-        target_path = plane_root / "lib" / "paths.py"
+        target_path = plane_root / "libs" / "agent_helpers.py"
         original_content = target_path.read_text()
         try:
             # Modify file
@@ -392,8 +394,8 @@ class TestHashMismatchDetection:
 
             # Run G0B
             result = subprocess.run(
-                ["python3", "scripts/gate_check.py", "--gate", "G0B", "--enforce"],
-                cwd=str(plane_root),
+                ["python3", str(HOT_ROOT / "scripts" / "gate_check.py"), "--gate", "G0B", "--enforce"],
+                cwd=str(CP_ROOT),
                 capture_output=True,
                 text=True
             )
@@ -412,7 +414,7 @@ class TestSealedPlaneEnforcement:
         """Seal file should be created after full baseline install (without --skip-seal)."""
         # This test verifies the seal mechanism exists
         # Actual sealing is done by install_baseline.py without --skip-seal
-        seal_path = plane_root / "config" / "seal.json"
+        seal_path = HOT_ROOT / "config" / "seal.json"
         # Just verify the path is correct
         assert seal_path.parent.exists()
 

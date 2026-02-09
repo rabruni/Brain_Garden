@@ -4,7 +4,7 @@
   "title": "HOT Tier Baseline",
   "description": "Owns all files in the HOT tier (kernel, scripts, config, schemas, frameworks)",
   "plane_id": "hot",
-  "created_at": "2026-02-08T04:26:09+00:00",
+  "created_at": "2026-02-09T00:00:43+00:00",
   "assets": [
     {
       "path": "HOT/kernel/atomic.py",
@@ -28,7 +28,7 @@
     },
     {
       "path": "HOT/kernel/gate_operations.py",
-      "sha256": "sha256:887c6fd7943efecb83f011bdab097b2abf26d808f9d034291fe48e617b37391e",
+      "sha256": "sha256:cbec7df0aaa3c9cd8f218df95c8b4d6b4d28cb0589224d8b3ea1e86b66cd24c3",
       "classification": "library"
     },
     {
@@ -83,17 +83,17 @@
     },
     {
       "path": "HOT/kernel/paths.py",
-      "sha256": "sha256:85fe2608a9b8f0746f54d6a05f7d536bc32d9b2915dbceea67ec49f8af574185",
+      "sha256": "sha256:e26e50239b08e21bbd4e7b37be8427c2259c650ec8f0d94c5781da66426ff053",
       "classification": "library"
     },
     {
       "path": "HOT/kernel/plane.py",
-      "sha256": "sha256:eb269bd0c78db2bd2533fd53e83621a24f737e509faeb2246825023f3997f226",
+      "sha256": "sha256:d8361d881208dead92ff642308f5cda4ad41c289630c1e075ed77682e94c5716",
       "classification": "library"
     },
     {
       "path": "HOT/kernel/preflight.py",
-      "sha256": "sha256:8818d847be0ca802859536c1ab2a799f61dd06e3cf8232b3f32962ae5fc422a8",
+      "sha256": "sha256:afb60bc55f26bc8a7dffd8301975eece8bcebae3909b334bd9d8b172c0c2322e",
       "classification": "library"
     },
     {
@@ -118,7 +118,7 @@
     },
     {
       "path": "HOT/kernel/schema_validator.py",
-      "sha256": "sha256:dadfea42d49df6a10a10486fe1ccf9b3f37187775b78dc6189c35197f1d72141",
+      "sha256": "sha256:5799f3fd237d6111254ec3bdd6decd7b7eaa853c54d8a80d37d408ffce2356fa",
       "classification": "library"
     },
     {
@@ -163,7 +163,7 @@
     },
     {
       "path": "HOT/scripts/cp_version_checkpoint.py",
-      "sha256": "sha256:0b20d715d58a3301632a50c15bdf42f63a945f9e2be9fd0bd8404dddcdbb6f7b",
+      "sha256": "sha256:dd982ef66230b588a4015ce70529bdd514c0119366f08ddd069c5ee912465be5",
       "classification": "script"
     },
     {
@@ -173,12 +173,12 @@
     },
     {
       "path": "HOT/scripts/cp_version_rollback.py",
-      "sha256": "sha256:1ae0062ad56d407b700b3fab37a0d8cbc008f7d73e24dfb78987d798a47b60fb",
+      "sha256": "sha256:d7c7b98548cce33493fde6ccbc3762c4fdbcddb1efa1766d9ae023b1cf2ed622",
       "classification": "script"
     },
     {
       "path": "HOT/scripts/g0k_gate.py",
-      "sha256": "sha256:66bf2185ddf3622504827dc79db2e2472f7d0838ee3c4665f6e1aeb13166269c",
+      "sha256": "sha256:5639f29af7bec8d6cbf44df39e492675a81de28919e7ec24ab0d4f30e4cba197",
       "classification": "script"
     },
     {
@@ -208,7 +208,7 @@
     },
     {
       "path": "HOT/scripts/gate_check.py",
-      "sha256": "sha256:4c3b20068c2ae53f7139e724daace33ecf3401a712b95d893d83a0aea6465638",
+      "sha256": "sha256:31a51f7b341bd608495db02e799b9c754e0e1fac71deb92f14418537dbdc9b3e",
       "classification": "script"
     },
     {
@@ -277,18 +277,23 @@
       "classification": "script"
     },
     {
+      "path": "HOT/config/bootstrap_sequence.json",
+      "sha256": "sha256:354ed1b2f592dcc505f140c1bd7b5de2605028a3086156a54608d1d024a0575a",
+      "classification": "config"
+    },
+    {
       "path": "HOT/config/control_plane_chain.json",
       "sha256": "sha256:8c10c15935a50014c32c633e32a349b357b081c17f5a44535714989b93243993",
       "classification": "config"
     },
     {
       "path": "HOT/config/governed_roots.json",
-      "sha256": "sha256:8150b125f03d321c34a12854026341e7a40c1cc30d347dc27ead4c825d37a55f",
+      "sha256": "sha256:fba0f0d5cbcae73c5186ed17a7bec81fb092ee224725a710f1c0211db5dad5c7",
       "classification": "config"
     },
     {
       "path": "HOT/config/kernel_files.json",
-      "sha256": "sha256:a77ee22812090de59efdce4c8b05f601d470c5efaa74b203ebec9bb96234b8f1",
+      "sha256": "sha256:f002c6fd0d315c9f9a4f9fa239f9ff317cd7bdd6af53ba9f71205e7d46e8ef3b",
       "classification": "config"
     },
     {
@@ -304,6 +309,11 @@
     {
       "path": "HOT/config/seal.json",
       "sha256": "sha256:0eb8a9a53bbf189b6fe5995840961a854e9555c0bfb567d0c78db21a183737fb",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/seed_registry.json",
+      "sha256": "sha256:2f8eb7b1a320104d61e90cb4e4e450f48b010ce356041c6d9fcedb22c424a726",
       "classification": "config"
     },
     {
@@ -338,12 +348,17 @@
     },
     {
       "path": "HOT/schemas/framework.schema.json",
-      "sha256": "sha256:875f404560f202204f39d41ed24b1ae46efb0221d1ce33f03337e3f0d6b41b3e",
+      "sha256": "sha256:3a4506cc672015fbdb772ea721eb216669018586ab410e0b754cdf026f87865a",
       "classification": "schema"
     },
     {
       "path": "HOT/schemas/package_manifest.json",
       "sha256": "sha256:aca81037e01de61582023029ad9f958ddf4e61134569bcfd0d83eda32572e0e2",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/package_manifest_l0.json",
+      "sha256": "sha256:796609116c537df39df3f9edd2329ea0364eff4f44e2fcb62add285bdb5fca90",
       "classification": "schema"
     },
     {
@@ -368,7 +383,7 @@
     },
     {
       "path": "HOT/schemas/spec.schema.json",
-      "sha256": "sha256:870926666c847a214422ca1a4dcd85006a7a983c69a17c0e4167c09fb8d8f88c",
+      "sha256": "sha256:3c5c49af0eb092f6c611c6239ebf0b856cd48caf8006e982d15c93bc9470b145",
       "classification": "schema"
     },
     {
@@ -413,12 +428,12 @@
     },
     {
       "path": "HOT/FMWK-000_Governance/manifest.yaml",
-      "sha256": "sha256:3470021a9d24805e0582eb4904c9e772d71f226188c36cbfdf84ed406fe1f27b",
+      "sha256": "sha256:c49fc25066fc9de50e5048354a94bb21ffd7b06b9c542bdf41f7ab38af484dac",
       "classification": "manifest"
     },
     {
       "path": "HOT/FMWK-001_Provenance_Attestation/manifest.yaml",
-      "sha256": "sha256:aee0285d0d00f58609e9e8ec3e0659bfc5fa70cd868c373c9ffe580173b1b10c",
+      "sha256": "sha256:3bcf4cf4de692a59b5919b3ada0771fa4b61a66b1358a8c767845540b05d9306",
       "classification": "manifest"
     },
     {
@@ -433,32 +448,12 @@
     },
     {
       "path": "HOT/FMWK-002_Ledger_Protocol/manifest.yaml",
-      "sha256": "sha256:ea35b577cbfbbd66f53a6211e496e019e114707882b5ee237c74d066a27b4279",
+      "sha256": "sha256:491b342d974707bef72bbfd5467ac9db292e3c20e678643d9825cec825594c1f",
       "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-003_Package_Standard/manifest.yaml",
-      "sha256": "sha256:3213804f35680a64ced769885bfedfcc81eb6d45ffa8e67ce01b2c37e6a1ffbf",
-      "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-003_Package_Standard/package_standard.md",
-      "sha256": "sha256:e3b806831857449edeeb3350f2fa1fd4eee54cf42bf4e2aa9289b7feba45b5d5",
-      "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-004_Prompt_Governance/manifest.yaml",
-      "sha256": "sha256:d7201ef47d6a5d202027275de98a24bb34f1e5c531232ccbd42b56641e38ba99",
-      "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-004_Prompt_Governance/prompt_governance.md",
-      "sha256": "sha256:204f2fb072467415ec07b346d85f8156dd403ae7e2da700602cba32aba12f9d7",
-      "classification": "law_doc"
     },
     {
       "path": "HOT/FMWK-007_Package_Management/manifest.yaml",
-      "sha256": "sha256:c2196837113e8ddfbb000689d64e1f00f079805df6a873933da00407af1f0ccc",
+      "sha256": "sha256:6ae17ade85e047af66f307b839fd84d073cec098b491275e31c2be672d1db2a1",
       "classification": "manifest"
     },
     {
@@ -473,7 +468,7 @@
     },
     {
       "path": "HOT/FMWK-100_Agent_Development/manifest.yaml",
-      "sha256": "sha256:4ec8de27851f7813e6809bab0faf6073f2c4aeddc6fb2101b0b8c4d703d08f0e",
+      "sha256": "sha256:e5e2845563e9e565895ae2457766eaa2abdd1ade5260bc429377e1871ea83520",
       "classification": "manifest"
     }
   ],
