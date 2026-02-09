@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from kernel.paths import CONTROL_PLANE
+from kernel.paths import CONTROL_PLANE, REGISTRIES_DIR
 
 
 @dataclass
@@ -315,17 +315,17 @@ class ChainValidator:
     def _framework_exists(self, framework_id: str) -> bool:
         """Check if framework exists in registry."""
         from kernel.registry import framework_exists
-        return framework_exists(framework_id, registries_dir=self.plane_root / "registries")
+        return framework_exists(framework_id, registries_dir=REGISTRIES_DIR)
 
     def _spec_exists(self, spec_id: str) -> bool:
         """Check if spec exists in registry."""
         from kernel.registry import spec_exists
-        return spec_exists(spec_id, registries_dir=self.plane_root / "registries")
+        return spec_exists(spec_id, registries_dir=REGISTRIES_DIR)
 
     def _get_spec_framework(self, spec_id: str) -> Optional[str]:
         """Get framework_id for a spec from registry."""
         from kernel.registry import get_spec_framework
-        return get_spec_framework(spec_id, registries_dir=self.plane_root / "registries")
+        return get_spec_framework(spec_id, registries_dir=REGISTRIES_DIR)
 
     def _check_assets_in_spec(self, manifest: dict, spec_id: str,
                               errors: List[str], warnings: List[str]) -> None:
@@ -566,6 +566,131 @@ class ManifestValidator:
             gate="MANIFEST",
             passed=passed,
             message=message,
+            errors=errors,
+            warnings=warnings,
+        )
+
+
+class FrameworkCompletenessValidator:
+    """G1-COMPLETE: Verify framework wiring diagram is satisfied.
+
+    For the framework referenced by the installing package's spec:
+    1. Framework MUST have expected_specs declared (if not, WARN)
+    2. Every expected_spec MUST exist in spec_packs/
+    3. Every expected_spec MUST reference this framework back
+    """
+
+    def __init__(self, plane_root: Optional[Path] = None):
+        self.plane_root = plane_root or CONTROL_PLANE
+
+    def _parse_yaml_value(self, content: str, key: str) -> Optional[str]:
+        """Extract a scalar value from YAML content."""
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped.startswith(f"{key}:"):
+                val = stripped[len(key) + 1:].strip().strip("'").strip('"')
+                return val if val else None
+        return None
+
+    def _parse_yaml_list(self, content: str, key: str) -> List[str]:
+        """Extract a list value from YAML content."""
+        items = []
+        in_list = False
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped == f"{key}:":
+                in_list = True
+                continue
+            if in_list:
+                if stripped.startswith("- "):
+                    items.append(stripped[2:].strip().strip("'").strip('"'))
+                elif stripped and not stripped.startswith("#"):
+                    break
+        return items
+
+    def _find_framework_manifest(self, framework_id: str) -> Optional[Path]:
+        """Find framework manifest by glob matching FMWK-*/ dirs."""
+        hot_dir = self.plane_root / "HOT"
+        if not hot_dir.exists():
+            return None
+        for fmwk_dir in hot_dir.glob(f"{framework_id}_*"):
+            manifest = fmwk_dir / "manifest.yaml"
+            if manifest.exists():
+                return manifest
+        # Also try exact match
+        for fmwk_dir in hot_dir.glob(f"{framework_id}"):
+            manifest = fmwk_dir / "manifest.yaml"
+            if manifest.exists():
+                return manifest
+        return None
+
+    def validate(self, manifest: dict) -> PreflightResult:
+        """Validate framework completeness.
+
+        Args:
+            manifest: Package manifest dict (must have framework_id)
+
+        Returns:
+            PreflightResult with validation outcome
+        """
+        errors = []
+        warnings = []
+
+        framework_id = manifest.get("framework_id")
+        if not framework_id:
+            return PreflightResult(
+                gate="G1-COMPLETE",
+                passed=True,
+                message="No framework_id — skipping completeness check",
+                warnings=["No framework_id in manifest"],
+            )
+
+        # Find framework manifest
+        fmwk_path = self._find_framework_manifest(framework_id)
+        if fmwk_path is None:
+            return PreflightResult(
+                gate="G1-COMPLETE",
+                passed=True,
+                message=f"Framework {framework_id} manifest not found — skipping",
+                warnings=[f"Framework manifest not found for {framework_id}"],
+            )
+
+        content = fmwk_path.read_text()
+        expected_specs = self._parse_yaml_list(content, "expected_specs")
+
+        if not expected_specs:
+            return PreflightResult(
+                gate="G1-COMPLETE",
+                passed=True,
+                message=f"{framework_id}: no expected_specs declared (grace period)",
+                warnings=[f"{framework_id}: no expected_specs — add wiring diagram"],
+            )
+
+        # Check each expected spec
+        spec_packs_dir = self.plane_root / "HO3" / "spec_packs"
+        for spec_id in expected_specs:
+            spec_manifest = spec_packs_dir / spec_id / "manifest.yaml"
+            if not spec_manifest.exists():
+                errors.append(f"MISSING: {spec_id} declared in {framework_id} but not found")
+                continue
+
+            spec_content = spec_manifest.read_text()
+            spec_fmwk = self._parse_yaml_value(spec_content, "framework_id")
+            if spec_fmwk != framework_id:
+                errors.append(
+                    f"MISMATCH: {spec_id} references {spec_fmwk}, "
+                    f"expected {framework_id}"
+                )
+
+        wired = len(expected_specs) - len(errors)
+        total = len(expected_specs)
+        passed = len(errors) == 0
+
+        return PreflightResult(
+            gate="G1-COMPLETE",
+            passed=passed,
+            message=f"{framework_id}: {wired}/{total} specs wired"
+            if passed else f"{framework_id}: {len(errors)} completeness errors",
             errors=errors,
             warnings=warnings,
         )

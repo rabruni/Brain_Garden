@@ -17,6 +17,10 @@ assets:
 - HOT/schemas/framework.schema.json
 - HOT/schemas/spec.schema.json
 - HOT/config/governed_roots.json
+- HOT/tests/test_schema_enforcement.py
+- HOT/tests/test_framework_completeness.py
+- HOT/tests/test_framework_wiring.py
+- HOT/tests/test_spec_conformance.py
 interfaces:
 - name: run_gate_sequence
   description: Execute G0-G6 gate sequence

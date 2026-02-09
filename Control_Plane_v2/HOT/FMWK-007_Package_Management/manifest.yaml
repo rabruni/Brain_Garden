@@ -1,6 +1,6 @@
 framework_id: FMWK-007
 title: Package Management Standard
-version: "1.1.0"
+version: "1.2.0"
 status: active
 ring: kernel
 plane_id: hot
@@ -8,3 +8,20 @@ previous_id: FMWK-107
 created_at: "2026-01-30T00:00:00Z"
 assets:
   - package_management_standard.md
+expected_specs:
+  - SPEC-PKG-001
+invariants:
+  - level: MUST
+    statement: All file changes MUST go through package install
+  - level: MUST
+    statement: Package archives MUST include SHA256 hashes for all assets
+  - level: MUST NOT
+    statement: Direct edits to governed files MUST NOT bypass the package system
+path_authorizations:
+  - "HO3/scripts/pkgutil.py"
+  - "HO3/scripts/package_*.py"
+  - "HO3/scripts/rebuild_*.py"
+required_gates:
+  - G0
+  - G1
+  - G5

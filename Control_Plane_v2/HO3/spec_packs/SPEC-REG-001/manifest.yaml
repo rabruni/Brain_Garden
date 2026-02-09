@@ -9,6 +9,11 @@ assets:
 - HOT/kernel/resolve.py
 - HOT/kernel/id_allocator.py
 - HOT/registries/control_plane_registry.csv
+- HO3/registries/file_ownership.csv
+- HO3/registries/packages_state.csv
+- HOT/registries/frameworks_registry.csv
+- HOT/registries/packages_registry.csv
+- HOT/registries/specs_registry.csv
 interfaces:
 - name: read_registry
   description: Read registry CSV into structured data

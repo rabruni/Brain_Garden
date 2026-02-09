@@ -79,11 +79,11 @@ def get_control_plane_root() -> Path:
             return parent
 
     candidate = REPO_ROOT / "Control_Plane_v2"
-    if (candidate / "scripts").is_dir() and (candidate / "registries").is_dir():
+    if (candidate / "HOT").is_dir() and (candidate / "HOT" / "kernel").is_dir():
         return candidate
 
     candidate = REPO_ROOT / "Control_Plane"
-    if (candidate / "scripts").is_dir() and (candidate / "registries").is_dir():
+    if (candidate / "HOT").is_dir() and (candidate / "HOT" / "kernel").is_dir():
         return candidate
 
     return REPO_ROOT
@@ -104,26 +104,12 @@ def get_control_plane_root() -> Path:
 CONTROL_PLANE = get_control_plane_root()
 """DEPRECATED: Global control plane root. Use PlaneContext.root instead."""
 
-REGISTRIES_DIR = CONTROL_PLANE / "registries"
+try:
+    from kernel.layout import LAYOUT as _LAYOUT
+    REGISTRIES_DIR = _LAYOUT.hot.registries
+except Exception:
+    REGISTRIES_DIR = CONTROL_PLANE / "HOT" / "registries"
 """DEPRECATED: Use plane.root / 'registries' instead."""
-
-SCRIPTS_DIR = CONTROL_PLANE / "scripts"
-"""DEPRECATED: Use plane.root / 'scripts' instead."""
-
-SPECS_DIR = CONTROL_PLANE / "specs"
-"""DEPRECATED: Use plane.root / 'specs' instead."""
-
-FRAMEWORKS_DIR = CONTROL_PLANE / "frameworks"
-"""DEPRECATED: Use plane.root / 'frameworks' instead."""
-
-MODULES_DIR = CONTROL_PLANE / "modules"
-"""DEPRECATED: Use plane.root / 'modules' instead."""
-
-LEDGER_DIR = CONTROL_PLANE / "ledger"
-"""DEPRECATED: Use plane.ledger_dir instead."""
-
-GENERATED_DIR = CONTROL_PLANE / "generated"
-"""DEPRECATED: Use plane.root / 'generated' instead."""
 
 
 # =============================================================================

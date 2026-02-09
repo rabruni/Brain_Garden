@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "tiers": {
+    "HOT": "HOT",
+    "HO3": "HO3",
+    "HO2": "HO2",
+    "HO1": "HO1"
+  },
+  "hot_dirs": {
+    "kernel": "HOT/kernel",
+    "config": "HOT/config",
+    "registries": "HOT/registries",
+    "schemas": "HOT/schemas",
+    "scripts": "HOT/scripts",
+    "installed": "HOT/installed",
+    "ledger": "HOT/ledger",
+    "frameworks": "HOT"
+  },
+  "tier_dirs": {
+    "registries": "registries",
+    "installed": "installed",
+    "ledger": "ledger",
+    "packages_store": "packages_store",
+    "scripts": "scripts",
+    "tests": "tests",
+    "spec_packs": "spec_packs"
+  },
+  "registry_files": {
+    "control_plane": "control_plane_registry.csv",
+    "file_ownership": "file_ownership.csv",
+    "packages_state": "packages_state.csv",
+    "frameworks": "frameworks_registry.csv",
+    "specs": "specs_registry.csv"
+  },
+  "ledger_files": {
+    "governance": "governance.jsonl",
+    "packages": "packages.jsonl",
+    "kernel": "kernel.jsonl",
+    "index": "index.jsonl"
+  }
+}

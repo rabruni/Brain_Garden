@@ -94,6 +94,11 @@
       },
       "description": "Acceptance criteria for this spec"
     },
+    "plane_id": {
+      "type": "string",
+      "enum": ["hot", "ho3", "ho2", "ho1"],
+      "description": "Primary plane this spec targets"
+    },
     "non_goals": {
       "type": "array",
       "items": { "type": "string" },

@@ -8,11 +8,7 @@
     "framework_id",
     "title",
     "status",
-    "version",
-    "plane",
-    "invariants",
-    "path_authorizations",
-    "required_gates"
+    "version"
   ],
   "properties": {
     "framework_id": {
@@ -35,10 +31,41 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "description": "Semantic version"
     },
+    "ring": {
+      "type": "string",
+      "enum": ["kernel", "admin", "resident"],
+      "description": "Ring this framework operates in (kernel=foundation, admin=observer, resident=worker)"
+    },
     "plane": {
       "type": "string",
-      "enum": ["ho3", "ho2", "ho1"],
+      "enum": ["ho3", "ho2", "ho1", "hot"],
       "description": "Primary plane this framework governs"
+    },
+    "plane_id": {
+      "type": "string",
+      "enum": ["hot", "ho3", "ho2", "ho1"],
+      "description": "Primary plane this framework governs (alias for plane)"
+    },
+    "expected_specs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^SPEC-[A-Z0-9-]+$"
+      },
+      "description": "Specs that MUST exist and reference this framework (wiring diagram)"
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of framework creation"
+    },
+    "assets": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Framework documentation files"
+    },
+    "previous_id": {
+      "type": "string",
+      "description": "ID of previous version of this framework"
     },
     "invariants": {
       "type": "array",

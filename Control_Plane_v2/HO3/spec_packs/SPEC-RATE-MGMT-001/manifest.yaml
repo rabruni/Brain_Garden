@@ -6,6 +6,9 @@ status: active
 plane_id: ho3
 created_at: 2026-02-06T00:00:00Z
 
+interfaces:
+- name: rate_limit_check
+  description: Check and enforce rate limits for API calls
 description: |
   Configure Anthropic SDK client with rate management (max_retries=5,
   explicit timeout), add provider singleton cache, and wire router

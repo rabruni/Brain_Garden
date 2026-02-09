@@ -1,9 +1,37 @@
 framework_id: FMWK-100
 title: Agent Development Standard
-version: "1.0.0"
+version: "1.1.0"
 status: active
 ring: resident
 plane_id: hot
 created_at: "2026-01-30T00:00:00Z"
 assets:
   - agent_development_standard.md
+expected_specs:
+  - SPEC-ADMIN-001
+  - SPEC-DOC-001
+  - SPEC-EVIDENCE-001
+  - SPEC-FMWK-001
+  - SPEC-FMWK-CAPS-001
+  - SPEC-RATE-MGMT-001
+  - SPEC-ROUTER-001
+  - SPEC-ROUTER-FIX-001
+  - SPEC-ROUTER-PURE-001
+  - SPEC-RUNTIME-001
+  - SPEC-TEST-001
+invariants:
+  - level: MUST
+    statement: Every agent MUST declare its capabilities
+  - level: MUST
+    statement: Agent prompts MUST be registered and versioned
+  - level: SHOULD
+    statement: Agents SHOULD use one-shot prompts with strict JSON output
+path_authorizations:
+  - "HO3/libs/*.py"
+  - "HO3/modules/**/*.py"
+  - "HO3/prompt_packs/**"
+  - "HO3/scripts/agent_check.py"
+required_gates:
+  - G0
+  - G1
+  - G4

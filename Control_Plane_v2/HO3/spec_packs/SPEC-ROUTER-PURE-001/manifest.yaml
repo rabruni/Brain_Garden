@@ -1,7 +1,7 @@
 spec_id: SPEC-ROUTER-PURE-001
 title: "Refactor Router to Pure Routing"
 framework_id: FMWK-100
-status: active
+status: deprecated
 version: 1.0.0
 plane_id: ho3
 

@@ -7,6 +7,11 @@ plane_id: ho3
 assets:
 - HO3/scripts/agent_check.py
 - scripts/remediate_orphans.py
+interfaces:
+- name: agent_check
+  description: Verify agent health and compliance status
+- name: remediate_orphans
+  description: Detect and remediate orphaned files
 invariants:
 - Scripts MUST have docstrings
 acceptance:

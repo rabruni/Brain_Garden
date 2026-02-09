@@ -5,6 +5,9 @@ status: active
 version: 1.0.0
 plane_id: ho3
 
+interfaces:
+- name: route_request
+  description: Route incoming request to appropriate handler
 assets:
   - modules/router/prompt_router.py
 

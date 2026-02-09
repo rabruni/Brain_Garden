@@ -6,6 +6,10 @@ version: 1.0.0
 plane_id: ho3
 assets:
 - HOT/scripts/genesis_bootstrap.py
+- HOT/config/bootstrap_sequence.json
+- HOT/config/seed_registry.json
+- HOT/schemas/package_manifest_l0.json
+- HOT/tests/test_genesis_bootstrap.py
 interfaces:
 - name: bootstrap_control_plane
   description: Bootstrap control plane from scratch
