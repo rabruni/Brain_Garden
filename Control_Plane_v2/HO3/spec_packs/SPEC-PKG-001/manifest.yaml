@@ -16,13 +16,20 @@ assets:
 - HO3/scripts/package_factory.py
 - HO3/scripts/validate_packages.py
 - HO3/scripts/validate_package_manifest.py
-- HO3/tests/test_packages.py
-- HO3/tests/test_factory_canary.py
-- HO3/tests/test_provenance.py
-- HO3/tests/test_manifest_v11.py
+- HO3/scripts/pkgutil.py
+- HO3/scripts/rebuild_derived.py
+- HO3/scripts/rebuild_derived_registries.py
+- HO3/scripts/package_trace.sh
+- HOT/tests/test_packages.py
+- HOT/tests/test_factory_canary.py
+- HOT/tests/test_provenance.py
+- HOT/tests/test_manifest_v11.py
+- HOT/tests/test_pkgutil.py
+- HOT/tests/test_idempotency.py
+- HOT/scripts/generate_baseline_manifest.py
+- HOT/scripts/install_baseline.py
 - HOT/schemas/package_manifest.json
 - HOT/registries/packages_registry.csv
-- registries/compiled/packages.json
 interfaces:
 - name: pack_archive
   description: Create tar.gz package with manifest

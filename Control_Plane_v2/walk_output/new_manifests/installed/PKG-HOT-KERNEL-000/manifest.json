@@ -2,10 +2,114 @@
   "package_id": "PKG-HOT-KERNEL-000",
   "version": "1.0.0",
   "title": "HOT Tier Baseline",
-  "description": "Owns all files in the HOT tier (kernel, scripts, config, schemas, frameworks)",
   "plane_id": "hot",
-  "created_at": "2026-02-08T06:34:15+00:00",
+  "created_at": "2026-02-09T02:48:05+00:00",
   "assets": [
+    {
+      "path": "HOT/FMWK-000_Governance/governance_framework.md",
+      "sha256": "sha256:89ae8f7f270144a109414fea0bc04f884e0b89f081e155ec79b2cf967e62e35c",
+      "classification": "law_doc"
+    },
+    {
+      "path": "HOT/FMWK-000_Governance/manifest.yaml",
+      "sha256": "sha256:71227ee44ef836c8a906c37dd9e1b824cff5dd8bfccb09612c73d8a419a8ee8e",
+      "classification": "manifest"
+    },
+    {
+      "path": "HOT/FMWK-001_Provenance_Attestation/manifest.yaml",
+      "sha256": "sha256:3bcf4cf4de692a59b5919b3ada0771fa4b61a66b1358a8c767845540b05d9306",
+      "classification": "manifest"
+    },
+    {
+      "path": "HOT/FMWK-001_Provenance_Attestation/provenance_attestation_standard.md",
+      "sha256": "sha256:c662c87e74d97065c9deb7ac87588ae7f54a71a552a63dc813ce6210b8093502",
+      "classification": "law_doc"
+    },
+    {
+      "path": "HOT/FMWK-002_Ledger_Protocol/ledger_protocol.md",
+      "sha256": "sha256:8d8fbb43b0eba9e4e3037a03f9c5ec94592169278bb4068c036e1d6c81583c47",
+      "classification": "law_doc"
+    },
+    {
+      "path": "HOT/FMWK-002_Ledger_Protocol/manifest.yaml",
+      "sha256": "sha256:491b342d974707bef72bbfd5467ac9db292e3c20e678643d9825cec825594c1f",
+      "classification": "manifest"
+    },
+    {
+      "path": "HOT/FMWK-007_Package_Management/manifest.yaml",
+      "sha256": "sha256:6ae17ade85e047af66f307b839fd84d073cec098b491275e31c2be672d1db2a1",
+      "classification": "manifest"
+    },
+    {
+      "path": "HOT/FMWK-007_Package_Management/package_management_standard.md",
+      "sha256": "sha256:f2d0c6c87a6182012082338f842c9fec174e51088ffbcd49782d4d8da4c423b8",
+      "classification": "law_doc"
+    },
+    {
+      "path": "HOT/MANIFEST.json",
+      "sha256": "sha256:9eefce39e5d7a3d4ff7482adb8c71ff2765b971c9c260464f3abb074ecc0def6",
+      "classification": "other"
+    },
+    {
+      "path": "HOT/VERSION",
+      "sha256": "sha256:e87f7d1e22db300d1356860ae26c2462fc12a26e7eb9848e7e6e207372455a9e",
+      "classification": "other"
+    },
+    {
+      "path": "HOT/config/bootstrap_sequence.json",
+      "sha256": "sha256:354ed1b2f592dcc505f140c1bd7b5de2605028a3086156a54608d1d024a0575a",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/control_plane_chain.json",
+      "sha256": "sha256:8c10c15935a50014c32c633e32a349b357b081c17f5a44535714989b93243993",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/governed_roots.json",
+      "sha256": "sha256:2d833a35a1a71c39301c35d2f6b6eb8fbf6e1e0733579e9c6b325dde1056b9fa",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/kernel_files.json",
+      "sha256": "sha256:f002c6fd0d315c9f9a4f9fa239f9ff317cd7bdd6af53ba9f71205e7d46e8ef3b",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/layout.json",
+      "sha256": "sha256:58c6d582576ec9185f6f60949d4a8069b78dddbd455ff237b77284810448cecb",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/registry_policy.json",
+      "sha256": "sha256:d34f53c5df80fd973e21f438249d6aa12ef2e48774f5981b106e88c8550519b2",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/router_policy.json",
+      "sha256": "sha256:bec506e4f2aa453c40dff869b913a4f434ddbebdd049c301ffc17a0c2c0a6186",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/seal.json",
+      "sha256": "sha256:0eb8a9a53bbf189b6fe5995840961a854e9555c0bfb567d0c78db21a183737fb",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/seed_registry.json",
+      "sha256": "sha256:2f8eb7b1a320104d61e90cb4e4e450f48b010ce356041c6d9fcedb22c424a726",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/signing_keys.json",
+      "sha256": "sha256:50a5fd69254794d39ab3cdd8278bb647659ddb08d3e818c56d73b8fb495dc57e",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/trusted_keys.json",
+      "sha256": "sha256:b2748f8998dfa3f7e2cee4efb13aa72798d60428ea7adcc212b32eb6b7194a37",
+      "classification": "config"
+    },
     {
       "path": "HOT/kernel/atomic.py",
       "sha256": "sha256:7b947dba595665f2a9d3e72e3fac2e708f2280a244cfd0a6af032b71e4c421ff",
@@ -49,6 +153,11 @@
     {
       "path": "HOT/kernel/integrity.py",
       "sha256": "sha256:6bc548c0054268d176642b4a1e0a805f0fc3ab61c36327053d53a0fd3cf2e8e9",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/layout.py",
+      "sha256": "sha256:8e8a71dab26351761060a49e9e20af44d38adb781564de6acba04b424ca8ae8c",
       "classification": "library"
     },
     {
@@ -135,6 +244,121 @@
       "path": "HOT/kernel/workspace.py",
       "sha256": "sha256:2d8b8594dab1349a94831990a4ea08e746e58473a8177b9bfe3f287f3918b1a5",
       "classification": "library"
+    },
+    {
+      "path": "HOT/ledger/governance-20260209-012920.jsonl",
+      "sha256": "sha256:711f25b8feaad909da4810ec1e8e6a961f4369c4f7360d5b705c3237a2b99a53",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/governance-20260209-024103.jsonl",
+      "sha256": "sha256:1dfece18211869bd4a7aab9926bffa8af13cecb5f942d9330bf42b6b8a98f56c",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/governance-20260209-024313.jsonl",
+      "sha256": "sha256:509d8b68dee33c34cf355448990f24957f4e40380044dd1af2ed4ae095fe2b25",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/governance.jsonl",
+      "sha256": "sha256:70569e3bb94525c108bc25f422d04f633ab08415988e7c13df31ef8324e35198",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/idx/governance-20260209-012920.json",
+      "sha256": "sha256:8bf68e763688ae65ebca6c4e480292a7ff0d8341319b1ba1905ffe45c52b1a49",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/idx/governance-20260209-024103.json",
+      "sha256": "sha256:8bf68e763688ae65ebca6c4e480292a7ff0d8341319b1ba1905ffe45c52b1a49",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/idx/governance-20260209-024313.json",
+      "sha256": "sha256:8bf68e763688ae65ebca6c4e480292a7ff0d8341319b1ba1905ffe45c52b1a49",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/ledger/index.jsonl",
+      "sha256": "sha256:9ec273c6b5b9d75162ee4a32f26044183282341127ba43ebb5575b02b10814da",
+      "classification": "ledger"
+    },
+    {
+      "path": "HOT/registries/control_plane_registry.csv",
+      "sha256": "sha256:19eec279032e72bfaf977468d682b14f5ad8a46de13fe3cb3e86cd8c24f7162d",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/file_ownership.csv",
+      "sha256": "sha256:19eec279032e72bfaf977468d682b14f5ad8a46de13fe3cb3e86cd8c24f7162d",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/frameworks_registry.csv",
+      "sha256": "sha256:094d54dc7756af071d2378a6f0e5ea9b875b97c9876ff5b2eaa914b516fb11bd",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/packages_registry.csv",
+      "sha256": "sha256:1ef392bc45d77f0e691f39e17ecc5c4c401f01abed8578ecda835b295cd3111d",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/packages_state.csv",
+      "sha256": "sha256:64712ce10c72ba9c8345268d91bedcb54f089879516debce629223968f1d8d98",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/prompts_registry.csv",
+      "sha256": "sha256:c378638c3dfc1f1b51a1f4650194bb86a3ed32c6eef426addcc29d910b08a376",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/specs_registry.csv",
+      "sha256": "sha256:8236b6450e1d7d8ce2ae18a6b883acd2d4aa6edebe7ca94de6bb0595ab2dfdaa",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/schemas/attention_envelope.json",
+      "sha256": "sha256:2bee888e7cf90ad964fef6c4bbc35338b446f97f3b1fe0ad645712d441bc72f1",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/framework.schema.json",
+      "sha256": "sha256:3a4506cc672015fbdb772ea721eb216669018586ab410e0b754cdf026f87865a",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/package_manifest.json",
+      "sha256": "sha256:aca81037e01de61582023029ad9f958ddf4e61134569bcfd0d83eda32572e0e2",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/package_manifest_l0.json",
+      "sha256": "sha256:796609116c537df39df3f9edd2329ea0364eff4f44e2fcb62add285bdb5fca90",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/spec.schema.json",
+      "sha256": "sha256:3c5c49af0eb092f6c611c6239ebf0b856cd48caf8006e982d15c93bc9470b145",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/stdlib_llm_request.json",
+      "sha256": "sha256:73f715a937895e2671ce687b667eeb0655e75e62e4411787fde0865f84769141",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/stdlib_llm_response.json",
+      "sha256": "sha256:2b6b14c76db601da13395f3f809e588122ac6d4fa97285354298af0ee8e10e02",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/work_order.schema.json",
+      "sha256": "sha256:6e180fb621e142cb6dd1773c8c16016df426b808d47324cbee78b7d2a24d4fbf",
+      "classification": "schema"
     },
     {
       "path": "HOT/scripts/apply_work_order.py",
@@ -277,205 +501,164 @@
       "classification": "script"
     },
     {
-      "path": "HOT/config/control_plane_chain.json",
-      "sha256": "sha256:8c10c15935a50014c32c633e32a349b357b081c17f5a44535714989b93243993",
-      "classification": "config"
+      "path": "HOT/tests/conftest.py",
+      "sha256": "sha256:9d43d3e3bd2511d5adf20f096aded693b118ef6b58d3bfa9712f7e57f596a8ca",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/governed_roots.json",
-      "sha256": "sha256:fba0f0d5cbcae73c5186ed17a7bec81fb092ee224725a710f1c0211db5dad5c7",
-      "classification": "config"
+      "path": "HOT/tests/test_auth.py",
+      "sha256": "sha256:786f9a5c9d3820b1192707e60c628b7cc55dc6aae530227f6d209bd1b7599430",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/kernel_files.json",
-      "sha256": "sha256:f002c6fd0d315c9f9a4f9fa239f9ff317cd7bdd6af53ba9f71205e7d46e8ef3b",
-      "classification": "config"
+      "path": "HOT/tests/test_authz.py",
+      "sha256": "sha256:13ada1ae7a88892e9ea9e0bfffe40db4e5a7a9fdb30f35df4b72e0636a491b28",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/registry_policy.json",
-      "sha256": "sha256:d34f53c5df80fd973e21f438249d6aa12ef2e48774f5981b106e88c8550519b2",
-      "classification": "config"
+      "path": "HOT/tests/test_chain.py",
+      "sha256": "sha256:d3922f2c469d01c984903b010add69126c6aceae4c6b87803a0ecbe1d93e3948",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/router_policy.json",
-      "sha256": "sha256:bec506e4f2aa453c40dff869b913a4f434ddbebdd049c301ffc17a0c2c0a6186",
-      "classification": "config"
+      "path": "HOT/tests/test_chain_genesis.py",
+      "sha256": "sha256:81bdce2e315828271d82724b01285550e2614dabc822bd3925759b0dd43cf64b",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/seal.json",
-      "sha256": "sha256:0eb8a9a53bbf189b6fe5995840961a854e9555c0bfb567d0c78db21a183737fb",
-      "classification": "config"
+      "path": "HOT/tests/test_cross_tier_provenance.py",
+      "sha256": "sha256:32f5553287e27b053cd3e937aa23117748b261d151463b8ac64f06760b26a08a",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/signing_keys.json",
-      "sha256": "sha256:50a5fd69254794d39ab3cdd8278bb647659ddb08d3e818c56d73b8fb495dc57e",
-      "classification": "config"
+      "path": "HOT/tests/test_framework_completeness.py",
+      "sha256": "sha256:1fa5286ba21a715bb4c1e2ef82bf237824ef4d2774608dac435b3977328d6d56",
+      "classification": "test"
     },
     {
-      "path": "HOT/config/trusted_keys.json",
-      "sha256": "sha256:b2748f8998dfa3f7e2cee4efb13aa72798d60428ea7adcc212b32eb6b7194a37",
-      "classification": "config"
+      "path": "HOT/tests/test_framework_wiring.py",
+      "sha256": "sha256:f12fded5bc48546ef8dbdda2c8c05e4af371c6cd94860de0b28adaf6724a649b",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/attention_envelope.json",
-      "sha256": "sha256:2bee888e7cf90ad964fef6c4bbc35338b446f97f3b1fe0ad645712d441bc72f1",
-      "classification": "schema"
+      "path": "HOT/tests/test_g2_gate.py",
+      "sha256": "sha256:3935f58148c872b1a75d63dd9b4536091fee3e7771a942e74bd26b4bc73dd410",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/chat_request.json",
-      "sha256": "sha256:49c4ca03b576ac09149c781de0cb5c9697e9f63d8db5dbb0f16d5a7052e4d004",
-      "classification": "schema"
+      "path": "HOT/tests/test_g3_gate.py",
+      "sha256": "sha256:005c88f23004f8f2adc173621b4454c15f266f8b5e6a998a039916052d6e5275",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/chat_response.json",
-      "sha256": "sha256:516862103bfbe8053e0b48e9672b0ef5588667fdeca9335d08f2b006903ba9d0",
-      "classification": "schema"
+      "path": "HOT/tests/test_g4_gate.py",
+      "sha256": "sha256:dd437ffe65dec7c5849160042141c9181ea1b5e25cbdab441af95eda44693d93",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/cp_status.json",
-      "sha256": "sha256:8939b7f97b6393d59cc06bc5c65ef67f482d2a5fbaa15116041af962f49875ac",
-      "classification": "schema"
+      "path": "HOT/tests/test_g5_gate.py",
+      "sha256": "sha256:a3347e855521cbdd000632c2f8985fc2b08ea34d80f8f8c5aaa5e4f3cf434560",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/framework.schema.json",
-      "sha256": "sha256:3a4506cc672015fbdb772ea721eb216669018586ab410e0b754cdf026f87865a",
-      "classification": "schema"
+      "path": "HOT/tests/test_g6_full.py",
+      "sha256": "sha256:e9d481a13872a20147cc149204be6e29deba4878548f98c2ac64d798d17ddacb",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/package_manifest.json",
-      "sha256": "sha256:aca81037e01de61582023029ad9f958ddf4e61134569bcfd0d83eda32572e0e2",
-      "classification": "schema"
+      "path": "HOT/tests/test_genesis_bootstrap.py",
+      "sha256": "sha256:8fe9c3df23f4497539fd61873ac781090cda34a46001d8c739913cfc122c4f30",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/policy.json",
-      "sha256": "sha256:67a6bee8dbdd86551ab83a365b295071ec6b0f3141c07a8eb2fad9395a15b286",
-      "classification": "schema"
+      "path": "HOT/tests/test_hashing.py",
+      "sha256": "sha256:f5cc2dcc3e994c617da20361d0a1f0acd6a54ac760a53084d5b49c34f2345c9d",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/route_policy.json",
-      "sha256": "sha256:e5c34bb59a1470ac42bd300efef2604a640e81af8c4c89d163f7f9bc07293f70",
-      "classification": "schema"
+      "path": "HOT/tests/test_idempotency.py",
+      "sha256": "sha256:f5d23ae4dfcf5e1cc4bae460d96426c3ae855be9c160154f4abb67ffe1fece80",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/router_request.json",
-      "sha256": "sha256:e8770d07ec048978d352a7c2051c9a8021d9ab530793154dc06ec9e91e2bc4b9",
-      "classification": "schema"
+      "path": "HOT/tests/test_kernel_parity.py",
+      "sha256": "sha256:6800c474e437a9b3600f34598f01de3a9a6a158166745dc454276d970e07c755",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/router_response.json",
-      "sha256": "sha256:b5a3d7363c36f94bf748b9126be2d50dc3034976bf4758878e2fed7d441ae0cf",
-      "classification": "schema"
+      "path": "HOT/tests/test_layout.py",
+      "sha256": "sha256:f4e1518c373333a5f606b05e9c6a56b923a3a33563ff9d02d3735950a68554f0",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/spec.schema.json",
-      "sha256": "sha256:3c5c49af0eb092f6c611c6239ebf0b856cd48caf8006e982d15c93bc9470b145",
-      "classification": "schema"
+      "path": "HOT/tests/test_ledger_chain.py",
+      "sha256": "sha256:847f5b662075784af42f714129f210547ad7cf15a5e7e33d4c5290aa0edaec07",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/stdlib_auth_request.json",
-      "sha256": "sha256:31f6d2e56e1606ed726add3fbda326d22b912dd3882819eaffe28b515eabf094",
-      "classification": "schema"
+      "path": "HOT/tests/test_manifest_v11.py",
+      "sha256": "sha256:e369c974eb4d519669fd93d9c7da34d23111acbb0c724f2f25b5a115b051fbd2",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/stdlib_auth_response.json",
-      "sha256": "sha256:c5fd06c9f69b1dc5b97ff370b8822678c197bfb103571461ad05971f6d4f8c71",
-      "classification": "schema"
+      "path": "HOT/tests/test_multiplane.py",
+      "sha256": "sha256:6de4a06375bda9da2a858edc83bbf27bb28eb5c62e3d87f7e4ffbe69200ef276",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/stdlib_evidence_request.json",
-      "sha256": "sha256:a96987e0c273fea47a0710cf4be3fad830ca003c94e7ab75b6e10f2d88501d32",
-      "classification": "schema"
+      "path": "HOT/tests/test_packages.py",
+      "sha256": "sha256:83d104352b9212463164d496624875af13c6cd69f3fbb0ad3601a725e537fed6",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/stdlib_evidence_response.json",
-      "sha256": "sha256:81c8f459657d7431a82d052cdd195d877e4e477dc719d87cb3e90391fa5c922a",
-      "classification": "schema"
+      "path": "HOT/tests/test_pkgutil.py",
+      "sha256": "sha256:a85d852013b228b966d10826cc9429f5d9abc1dcfb1314a5f5008edd8da771cb",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/stdlib_llm_request.json",
-      "sha256": "sha256:73f715a937895e2671ce687b667eeb0655e75e62e4411787fde0865f84769141",
-      "classification": "schema"
+      "path": "HOT/tests/test_plane.py",
+      "sha256": "sha256:c327e3e067143af081e3a8fe9365a4e5c31c9bd89873afef793282abe9b20cba",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/stdlib_llm_response.json",
-      "sha256": "sha256:2b6b14c76db601da13395f3f809e588122ac6d4fa97285354298af0ee8e10e02",
-      "classification": "schema"
+      "path": "HOT/tests/test_preflight.py",
+      "sha256": "sha256:ab5fa19b0a889df2c6083825c230645954c4173317150e4fa686cd3d6ae1f270",
+      "classification": "test"
     },
     {
-      "path": "HOT/schemas/work_order.schema.json",
-      "sha256": "sha256:6e180fb621e142cb6dd1773c8c16016df426b808d47324cbee78b7d2a24d4fbf",
-      "classification": "schema"
+      "path": "HOT/tests/test_pristine.py",
+      "sha256": "sha256:d18de260c54949e18671feef63f59b9cb050e844cbb6541575be6984259ba122",
+      "classification": "test"
     },
     {
-      "path": "HOT/FMWK-000_Governance/governance_framework.md",
-      "sha256": "sha256:89ae8f7f270144a109414fea0bc04f884e0b89f081e155ec79b2cf967e62e35c",
-      "classification": "law_doc"
+      "path": "HOT/tests/test_provenance.py",
+      "sha256": "sha256:8828f82e5a559465dca37050ac978f4c60e308a5630958606e2b691927565e1f",
+      "classification": "test"
     },
     {
-      "path": "HOT/FMWK-000_Governance/manifest.yaml",
-      "sha256": "sha256:c49fc25066fc9de50e5048354a94bb21ffd7b06b9c542bdf41f7ab38af484dac",
-      "classification": "manifest"
+      "path": "HOT/tests/test_schema_enforcement.py",
+      "sha256": "sha256:d4a445cd69df0b46469872918f13fa77291c84051168a094704753ea095d4f9d",
+      "classification": "test"
     },
     {
-      "path": "HOT/FMWK-001_Provenance_Attestation/manifest.yaml",
-      "sha256": "sha256:3bcf4cf4de692a59b5919b3ada0771fa4b61a66b1358a8c767845540b05d9306",
-      "classification": "manifest"
+      "path": "HOT/tests/test_spec_conformance.py",
+      "sha256": "sha256:62b0b6b39a1a0b290e3c369cd1f03588ff4c0aa9e8709b7bcf4ffb924e811f0c",
+      "classification": "test"
     },
     {
-      "path": "HOT/FMWK-001_Provenance_Attestation/provenance_attestation_standard.md",
-      "sha256": "sha256:c662c87e74d97065c9deb7ac87588ae7f54a71a552a63dc813ce6210b8093502",
-      "classification": "law_doc"
+      "path": "HOT/tests/test_tier_ledger.py",
+      "sha256": "sha256:730c2100ca6bca73401e367e941a1b6a1fa7df52872ea940a358bcea58ae94a3",
+      "classification": "test"
     },
     {
-      "path": "HOT/FMWK-002_Ledger_Protocol/ledger_protocol.md",
-      "sha256": "sha256:8d8fbb43b0eba9e4e3037a03f9c5ec94592169278bb4068c036e1d6c81583c47",
-      "classification": "law_doc"
+      "path": "HOT/tests/test_trace.py",
+      "sha256": "sha256:9aabe3afb8b8c3d393893e61b4f273dba226e1b744c0eba155c3b6313189ca5e",
+      "classification": "test"
     },
     {
-      "path": "HOT/FMWK-002_Ledger_Protocol/manifest.yaml",
-      "sha256": "sha256:491b342d974707bef72bbfd5467ac9db292e3c20e678643d9825cec825594c1f",
-      "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-003_Package_Standard/manifest.yaml",
-      "sha256": "sha256:3213804f35680a64ced769885bfedfcc81eb6d45ffa8e67ce01b2c37e6a1ffbf",
-      "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-003_Package_Standard/package_standard.md",
-      "sha256": "sha256:e3b806831857449edeeb3350f2fa1fd4eee54cf42bf4e2aa9289b7feba45b5d5",
-      "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-004_Prompt_Governance/manifest.yaml",
-      "sha256": "sha256:d7201ef47d6a5d202027275de98a24bb34f1e5c531232ccbd42b56641e38ba99",
-      "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-004_Prompt_Governance/prompt_governance.md",
-      "sha256": "sha256:204f2fb072467415ec07b346d85f8156dd403ae7e2da700602cba32aba12f9d7",
-      "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-007_Package_Management/manifest.yaml",
-      "sha256": "sha256:6ae17ade85e047af66f307b839fd84d073cec098b491275e31c2be672d1db2a1",
-      "classification": "manifest"
-    },
-    {
-      "path": "HOT/FMWK-007_Package_Management/package_management_standard.md",
-      "sha256": "sha256:f2d0c6c87a6182012082338f842c9fec174e51088ffbcd49782d4d8da4c423b8",
-      "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-100_Agent_Development/agent_development_standard.md",
-      "sha256": "sha256:43debf80f8b629c7a35a3bbd20d6b9d8b84640e8ae9d755ed3d6676a7ca6d443",
-      "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-100_Agent_Development/manifest.yaml",
-      "sha256": "sha256:e5e2845563e9e565895ae2457766eaa2abdd1ade5260bc429377e1871ea83520",
-      "classification": "manifest"
+      "path": "HOT/tier.json",
+      "sha256": "sha256:d9f7d90e7fcd90fc761e0bc40f9556ba663a54f51ab59e9dc8da091197bb2b0b",
+      "classification": "other"
     }
-  ],
-  "dependencies": []
+  ]
 }

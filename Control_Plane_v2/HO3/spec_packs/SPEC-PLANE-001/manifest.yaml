@@ -11,8 +11,9 @@ assets:
 - HOT/scripts/cp_inspect.py
 - HO3/scripts/validate_tier_deps.py
 - HO3/scripts/verify_installed_state.py
-- HO3/tests/test_plane.py
-- HO3/tests/test_multiplane.py
+- HOT/tests/test_plane.py
+- HOT/tests/test_multiplane.py
+- HOT/tests/test_kernel_parity.py
 interfaces:
 - name: get_plane_context
   description: Get current plane context

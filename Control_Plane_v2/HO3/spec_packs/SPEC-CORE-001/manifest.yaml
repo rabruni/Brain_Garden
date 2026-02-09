@@ -8,6 +8,15 @@ assets:
 - HOT/kernel/paths.py
 - HOT/kernel/output.py
 - HOT/kernel/cursor.py
+- HOT/kernel/layout.py
+- HOT/config/layout.json
+- HOT/config/control_plane_chain.json
+- HOT/config/kernel_files.json
+- HOT/config/seal.json
+- HOT/scripts/kernel_build.py
+- HOT/scripts/kernel_install.py
+- HO3/scripts/mp.py
+- HOT/tests/test_layout.py
 interfaces:
 - name: get_control_plane_root
   description: Return the control plane root directory

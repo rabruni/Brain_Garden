@@ -8,11 +8,21 @@ assets:
 - HOT/kernel/gate_operations.py
 - HOT/kernel/workspace.py
 - HOT/kernel/atomic.py
+- HOT/kernel/preflight.py
+- HOT/kernel/schema_validator.py
 - HOT/scripts/gate_check.py
+- HOT/scripts/g0k_gate.py
+- HOT/scripts/g2_gate.py
+- HOT/scripts/g3_gate.py
+- HOT/scripts/g4_gate.py
+- HOT/scripts/g5_gate.py
+- HOT/scripts/g6_gate.py
 - HOT/scripts/compute_wo_hash.py
 - HOT/scripts/validate_work_order.py
 - HOT/scripts/apply_work_order.py
 - HO3/scripts/quarantine_orphans.py
+- HO3/scripts/agent_check.py
+- HOT/tests/conftest.py
 - HOT/schemas/work_order.schema.json
 - HOT/schemas/framework.schema.json
 - HOT/schemas/spec.schema.json
@@ -21,6 +31,11 @@ assets:
 - HOT/tests/test_framework_completeness.py
 - HOT/tests/test_framework_wiring.py
 - HOT/tests/test_spec_conformance.py
+- HOT/tests/test_g2_gate.py
+- HOT/tests/test_g3_gate.py
+- HOT/tests/test_g4_gate.py
+- HOT/tests/test_g5_gate.py
+- HOT/tests/test_g6_full.py
 interfaces:
 - name: run_gate_sequence
   description: Execute G0-G6 gate sequence

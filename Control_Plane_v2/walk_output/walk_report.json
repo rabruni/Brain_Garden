@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-09T01:30:04+00:00",
+  "timestamp": "2026-02-09T02:53:40+00:00",
   "frameworks": {
     "FMWK-000": {
       "title": "Control Plane Governance Framework",
@@ -32,14 +32,6 @@
       "assets": [
         "HOT/FMWK-007_Package_Management/package_management_standard.md"
       ]
-    },
-    "FMWK-100": {
-      "title": "Agent Development Standard",
-      "status": "active",
-      "previous_id": null,
-      "assets": [
-        "HOT/FMWK-100_Agent_Development/agent_development_standard.md"
-      ]
     }
   },
   "framework_rename_map": {
@@ -48,61 +40,19 @@
     "FMWK-107": "FMWK-007"
   },
   "specs": {
-    "SPEC-ADMIN-001": {
-      "title": "Admin Agent",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "draft",
-      "asset_count": 3
-    },
     "SPEC-CORE-001": {
       "title": "Core Infrastructure",
       "framework_id": "FMWK-000",
       "resolved_framework_id": "FMWK-000",
       "status": "active",
-      "asset_count": 3
-    },
-    "SPEC-CORE-SCRIPTS-001": {
-      "title": "Core Governance Scripts",
-      "framework_id": "FMWK-000",
-      "resolved_framework_id": "FMWK-000",
-      "status": "active",
-      "asset_count": 2
-    },
-    "SPEC-DOC-001": {
-      "title": "Documentation",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "active",
-      "asset_count": 6
-    },
-    "SPEC-EVIDENCE-001": {
-      "title": "Evidence Emission Standard Library",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "draft",
-      "asset_count": 7
-    },
-    "SPEC-FMWK-001": {
-      "title": "Framework Definitions",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "active",
-      "asset_count": 6
-    },
-    "SPEC-FMWK-CAPS-001": {
-      "title": "Framework Capability Gathering for Router",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "active",
-      "asset_count": 11
+      "asset_count": 12
     },
     "SPEC-GATE-001": {
       "title": "Gate Operations",
       "framework_id": "FMWK-000",
       "resolved_framework_id": "FMWK-000",
       "status": "active",
-      "asset_count": 16
+      "asset_count": 31
     },
     "SPEC-GENESIS-001": {
       "title": "Bootstrap",
@@ -111,54 +61,40 @@
       "status": "active",
       "asset_count": 5
     },
-    "SPEC-INSPECT-001": {
-      "title": "Control Plane Inspection",
-      "framework_id": "FMWK-000",
-      "resolved_framework_id": "FMWK-000",
-      "status": "active",
-      "asset_count": 1
-    },
     "SPEC-INT-001": {
       "title": "Integrity & Merkle",
       "framework_id": "FMWK-000",
       "resolved_framework_id": "FMWK-000",
       "status": "active",
-      "asset_count": 3
+      "asset_count": 6
     },
     "SPEC-LEDGER-001": {
       "title": "Ledger System",
       "framework_id": "FMWK-002",
       "resolved_framework_id": "FMWK-002",
       "status": "active",
-      "asset_count": 6
+      "asset_count": 8
     },
     "SPEC-PKG-001": {
       "title": "Package Management",
       "framework_id": "FMWK-007",
       "resolved_framework_id": "FMWK-007",
       "status": "active",
-      "asset_count": 18
+      "asset_count": 25
     },
     "SPEC-PLANE-001": {
       "title": "Multi-Plane",
       "framework_id": "FMWK-000",
       "resolved_framework_id": "FMWK-000",
       "status": "active",
-      "asset_count": 8
+      "asset_count": 9
     },
     "SPEC-POLICY-001": {
       "title": "Policy Management",
       "framework_id": "FMWK-000",
       "resolved_framework_id": "FMWK-000",
       "status": "active",
-      "asset_count": 7
-    },
-    "SPEC-RATE-MGMT-001": {
-      "title": "Rate Management and Anthropic Provider Wiring",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "active",
-      "asset_count": 2
+      "asset_count": 12
     },
     "SPEC-REG-001": {
       "title": "Registry Management",
@@ -167,47 +103,12 @@
       "status": "active",
       "asset_count": 9
     },
-    "SPEC-ROUTER-001": {
-      "title": "Router Extensions",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "active",
-      "asset_count": 1
-    },
-    "SPEC-ROUTER-FIX-001": {
-      "title": "Router Decision Fix - General Intent Routing",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "deprecated",
-      "asset_count": 1
-    },
-    "SPEC-ROUTER-PURE-001": {
-      "title": "Refactor Router to Pure Routing",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "deprecated",
-      "asset_count": 3
-    },
-    "SPEC-RUNTIME-001": {
-      "title": "Agent Runtime Module",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "draft",
-      "asset_count": 9
-    },
     "SPEC-SEC-001": {
       "title": "Security & Auth",
       "framework_id": "FMWK-001",
       "resolved_framework_id": "FMWK-001",
       "status": "active",
-      "asset_count": 9
-    },
-    "SPEC-TEST-001": {
-      "title": "Test Infrastructure",
-      "framework_id": "FMWK-100",
-      "resolved_framework_id": "FMWK-100",
-      "status": "active",
-      "asset_count": 9
+      "asset_count": 16
     },
     "SPEC-VER-001": {
       "title": "Version Control",
@@ -218,25 +119,10 @@
     }
   },
   "fmwk_to_specs": {
-    "FMWK-100": [
-      "SPEC-ADMIN-001",
-      "SPEC-DOC-001",
-      "SPEC-EVIDENCE-001",
-      "SPEC-FMWK-001",
-      "SPEC-FMWK-CAPS-001",
-      "SPEC-RATE-MGMT-001",
-      "SPEC-ROUTER-001",
-      "SPEC-ROUTER-FIX-001",
-      "SPEC-ROUTER-PURE-001",
-      "SPEC-RUNTIME-001",
-      "SPEC-TEST-001"
-    ],
     "FMWK-000": [
       "SPEC-CORE-001",
-      "SPEC-CORE-SCRIPTS-001",
       "SPEC-GATE-001",
       "SPEC-GENESIS-001",
-      "SPEC-INSPECT-001",
       "SPEC-INT-001",
       "SPEC-PLANE-001",
       "SPEC-POLICY-001",
@@ -259,17 +145,17 @@
       "spec_id": null,
       "version": "1.0.0",
       "location": "HOT",
-      "asset_count": 94,
+      "asset_count": 118,
       "dependencies": [],
-      "verdict": "PARTIAL"
+      "verdict": "LIVE"
     },
     "PKG-BASELINE-HO3-000": {
       "spec_id": null,
       "version": "1.0.0",
       "location": "HO3",
-      "asset_count": 122,
+      "asset_count": 35,
       "dependencies": [],
-      "verdict": "PARTIAL"
+      "verdict": "LIVE"
     },
     "PKG-KERNEL-001": {
       "spec_id": null,
@@ -291,100 +177,18 @@
   },
   "file_verdicts_summary": {
     "DERIVED": 4,
-    "GOVERNED": 173,
-    "MISSING": 43,
-    "ORPHAN": 42,
-    "STRUCTURAL": 8
+    "GOVERNED": 153,
+    "ORPHAN": 5,
+    "STRUCTURAL": 7
   },
   "orphans": [
     "HO3/registries/file_ownership.csv",
     "HO3/registries/packages_state.csv",
-    "HOT/config/bootstrap_sequence.json",
-    "HOT/config/layout.json",
-    "HOT/config/seed_registry.json",
-    "HOT/kernel/layout.py",
     "HOT/registries/control_plane_registry.csv",
     "HOT/registries/frameworks_registry.csv",
-    "HOT/registries/packages_registry.csv",
-    "HOT/registries/prompts_registry.csv",
-    "HOT/registries/specs_registry.csv",
-    "HOT/schemas/package_manifest_l0.json",
-    "HOT/tests/test_auth.py",
-    "HOT/tests/test_authz.py",
-    "HOT/tests/test_chain.py",
-    "HOT/tests/test_chain_genesis.py",
-    "HOT/tests/test_cross_tier_provenance.py",
-    "HOT/tests/test_framework_completeness.py",
-    "HOT/tests/test_framework_wiring.py",
-    "HOT/tests/test_g2_gate.py",
-    "HOT/tests/test_g3_gate.py",
-    "HOT/tests/test_g4_gate.py",
-    "HOT/tests/test_g5_gate.py",
-    "HOT/tests/test_g6_full.py",
-    "HOT/tests/test_genesis_bootstrap.py",
-    "HOT/tests/test_hashing.py",
-    "HOT/tests/test_idempotency.py",
-    "HOT/tests/test_kernel_parity.py",
-    "HOT/tests/test_layout.py",
-    "HOT/tests/test_ledger_chain.py",
-    "HOT/tests/test_manifest_v11.py",
-    "HOT/tests/test_multiplane.py",
-    "HOT/tests/test_packages.py",
-    "HOT/tests/test_pkgutil.py",
-    "HOT/tests/test_plane.py",
-    "HOT/tests/test_preflight.py",
-    "HOT/tests/test_pristine.py",
-    "HOT/tests/test_provenance.py",
-    "HOT/tests/test_schema_enforcement.py",
-    "HOT/tests/test_spec_conformance.py",
-    "HOT/tests/test_tier_ledger.py",
-    "HOT/tests/test_trace.py"
+    "HOT/registries/specs_registry.csv"
   ],
-  "missing": [
-    "HO3/libs/agent_helpers.py",
-    "HO3/libs/prompt_loader.py",
-    "HO3/scripts/templates/agent/capabilities.yaml.j2",
-    "HO3/scripts/templates/agent/manifest.json.j2",
-    "HO3/scripts/templates/agent/prompts/system.md",
-    "HO3/scripts/templates/agent/prompts/turn.md",
-    "HO3/scripts/templates/standard/manifest.json.j2",
-    "HO3/scripts/test_install.sh",
-    "HO3/scripts/test_pack.sh",
-    "HO3/scripts/test_uninstall.sh",
-    "HO3/tests/test_agent_helpers.py",
-    "HO3/tests/test_auth.py",
-    "HO3/tests/test_authz.py",
-    "HO3/tests/test_chain.py",
-    "HO3/tests/test_chain_genesis.py",
-    "HO3/tests/test_cross_tier_provenance.py",
-    "HO3/tests/test_factory_canary.py",
-    "HO3/tests/test_g2_gate.py",
-    "HO3/tests/test_g3_gate.py",
-    "HO3/tests/test_g4_gate.py",
-    "HO3/tests/test_g5_gate.py",
-    "HO3/tests/test_g6_full.py",
-    "HO3/tests/test_hashing.py",
-    "HO3/tests/test_idempotency.py",
-    "HO3/tests/test_kernel_parity.py",
-    "HO3/tests/test_ledger_chain.py",
-    "HO3/tests/test_manifest_v11.py",
-    "HO3/tests/test_multiplane.py",
-    "HO3/tests/test_packages.py",
-    "HO3/tests/test_phase1_baseline.py",
-    "HO3/tests/test_phase1b_package_install.py",
-    "HO3/tests/test_phase3_summary.py",
-    "HO3/tests/test_pkgutil.py",
-    "HO3/tests/test_plane.py",
-    "HO3/tests/test_preflight.py",
-    "HO3/tests/test_pristine.py",
-    "HO3/tests/test_provenance.py",
-    "HO3/tests/test_tier_ledger.py",
-    "HO3/tests/test_trace.py",
-    "HOT/FMWK-003_Package_Standard/manifest.yaml",
-    "HOT/FMWK-003_Package_Standard/package_standard.md",
-    "HOT/FMWK-004_Prompt_Governance/manifest.yaml",
-    "HOT/FMWK-004_Prompt_Governance/prompt_governance.md"
-  ],
+  "missing": [],
   "shims": [],
   "duplicates": []
 }

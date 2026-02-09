@@ -9,10 +9,8 @@ assets:
   - governance_framework.md
 expected_specs:
   - SPEC-CORE-001
-  - SPEC-CORE-SCRIPTS-001
   - SPEC-GATE-001
   - SPEC-GENESIS-001
-  - SPEC-INSPECT-001
   - SPEC-INT-001
   - SPEC-PLANE-001
   - SPEC-POLICY-001

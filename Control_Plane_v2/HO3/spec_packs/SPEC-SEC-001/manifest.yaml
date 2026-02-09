@@ -11,9 +11,16 @@ assets:
 - HOT/kernel/install_auth.py
 - HOT/scripts/cp_init_auth.py
 - HOT/scripts/seal_guard.py
-- HO3/tests/test_auth.py
-- HO3/tests/test_authz.py
-- HO3/tests/test_pristine.py
+- HOT/scripts/wo_approve.py
+- HOT/scripts/wo_keygen.py
+- HOT/scripts/wo_verify.py
+- HOT/config/signing_keys.json
+- HOT/config/trusted_keys.json
+- HOT/tests/test_auth.py
+- HOT/tests/test_authz.py
+- HOT/tests/test_pristine.py
+- HOT/tests/test_cross_tier_provenance.py
+- HO3/scripts/pristine_rebuild_drill.sh
 interfaces:
 - name: authenticate
   description: Authenticate request with configured provider

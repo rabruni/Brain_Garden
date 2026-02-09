@@ -7,7 +7,10 @@ plane_id: ho3
 assets:
 - HOT/kernel/merkle.py
 - HOT/kernel/integrity.py
+- HOT/kernel/hashing.py
 - HOT/scripts/integrity_check.py
+- HO3/scripts/verify_integrity.sh
+- HOT/tests/test_hashing.py
 interfaces:
 - name: compute_file_hash
   description: Compute SHA256 hash of file contents

@@ -1,14 +1,12 @@
-"""TDD tests for PKG-SPEC-CONFORMANCE-001 — Zero Orphans.
-
-RED: These tests MUST FAIL before implementation.
-GREEN: Claim orphaned files into specs, add missing interfaces,
-       deprecate redundant router specs.
+"""TDD tests for Spec Conformance — Kernel Core Strip.
 
 Tests verify:
 - Registry files claimed by SPEC-REG-001
 - New config/schema files claimed by appropriate specs
+- 14 dead spec dirs are removed
+- Exactly 11 specs, 4 frameworks, 8 schemas remain
+- No surviving spec has HO3/tests/ in its assets
 - All active specs have at least 1 interface
-- Redundant router specs are deprecated
 - All specs have plane_id
 - All spec manifests pass validate_spec()
 """
@@ -130,31 +128,73 @@ class TestNewTestFilesClaimed:
                 f"Test file {test_file} not claimed by any spec"
 
 
-# === Router Spec Deprecation ===
+# === Dead Spec Removal ===
 
-class TestRouterSpecDeprecation:
-    """Redundant router specs must be deprecated."""
+DEAD_SPECS = [
+    "SPEC-ADMIN-001", "SPEC-CORE-SCRIPTS-001", "SPEC-DOC-001",
+    "SPEC-EVIDENCE-001", "SPEC-FMWK-001", "SPEC-FMWK-CAPS-001",
+    "SPEC-INSPECT-001", "SPEC-PROMPT-001", "SPEC-RATE-MGMT-001",
+    "SPEC-ROUTER-001", "SPEC-ROUTER-FIX-001", "SPEC-ROUTER-PURE-001",
+    "SPEC-RUNTIME-001", "SPEC-TEST-001",
+]
 
-    def test_router_fix_deprecated(self):
-        """SPEC-ROUTER-FIX-001 must be deprecated (router modules removed)."""
-        spec_path = SPEC_PACKS / "SPEC-ROUTER-FIX-001" / "manifest.yaml"
-        data = _parse_yaml_simple(spec_path)
-        assert data.get("status") == "deprecated", \
-            "SPEC-ROUTER-FIX-001 should be deprecated (router modules removed)"
+SURVIVING_SPECS = [
+    "SPEC-CORE-001", "SPEC-GATE-001", "SPEC-GENESIS-001",
+    "SPEC-INT-001", "SPEC-LEDGER-001", "SPEC-PKG-001",
+    "SPEC-PLANE-001", "SPEC-POLICY-001", "SPEC-REG-001",
+    "SPEC-SEC-001", "SPEC-VER-001",
+]
 
-    def test_router_pure_deprecated(self):
-        """SPEC-ROUTER-PURE-001 must be deprecated (router modules removed)."""
-        spec_path = SPEC_PACKS / "SPEC-ROUTER-PURE-001" / "manifest.yaml"
-        data = _parse_yaml_simple(spec_path)
-        assert data.get("status") == "deprecated", \
-            "SPEC-ROUTER-PURE-001 should be deprecated (router modules removed)"
 
-    def test_router_001_still_active(self):
-        """SPEC-ROUTER-001 must remain active as the single router spec."""
-        spec_path = SPEC_PACKS / "SPEC-ROUTER-001" / "manifest.yaml"
-        data = _parse_yaml_simple(spec_path)
-        assert data.get("status") == "active", \
-            "SPEC-ROUTER-001 should remain active"
+class TestRemovedSpecsGone:
+    """14 dead spec dirs must not exist."""
+
+    @pytest.mark.parametrize("spec_id", DEAD_SPECS)
+    def test_dead_spec_dir_removed(self, spec_id):
+        spec_dir = SPEC_PACKS / spec_id
+        assert not spec_dir.exists(), f"{spec_id} is dead — dir must be deleted"
+
+
+class TestGovernanceHealth:
+    """After strip, exact counts must match target state."""
+
+    def test_exactly_11_specs(self):
+        spec_dirs = sorted(d.name for d in SPEC_PACKS.iterdir() if d.is_dir() and d.name.startswith("SPEC-"))
+        assert spec_dirs == sorted(SURVIVING_SPECS), \
+            f"Expected 11 specs {sorted(SURVIVING_SPECS)}, got {spec_dirs}"
+
+    def test_exactly_4_frameworks(self):
+        fmwk_dirs = sorted(d.name.split("_")[0] for d in HOT_ROOT.iterdir()
+                           if d.is_dir() and d.name.startswith("FMWK-"))
+        assert fmwk_dirs == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-007"], \
+            f"Expected 4 frameworks, got {fmwk_dirs}"
+
+    def test_exactly_8_schemas(self):
+        schemas = sorted(f.name for f in (HOT_ROOT / "schemas").glob("*.json"))
+        expected = sorted([
+            "attention_envelope.json", "framework.schema.json",
+            "package_manifest.json", "package_manifest_l0.json",
+            "spec.schema.json", "stdlib_llm_request.json",
+            "stdlib_llm_response.json", "work_order.schema.json",
+        ])
+        assert schemas == expected, f"Expected 8 schemas {expected}, got {schemas}"
+
+
+class TestSpecAssetPaths:
+    """No surviving spec should reference HO3/tests/ in its assets."""
+
+    @pytest.fixture(params=[SPEC_PACKS / s / "manifest.yaml" for s in SURVIVING_SPECS])
+    def spec_data(self, request):
+        if not request.param.exists():
+            pytest.skip(f"{request.param} not found yet")
+        return _parse_yaml_simple(request.param), request.param
+
+    def test_no_ho3_test_paths(self, spec_data):
+        data, path = spec_data
+        assets = data.get("assets", [])
+        ho3_tests = [a for a in assets if a.startswith("HO3/tests/")]
+        assert not ho3_tests, \
+            f"{path.parent.name}: still references HO3/tests/ paths: {ho3_tests}"
 
 
 # === Spec Completeness Tests ===

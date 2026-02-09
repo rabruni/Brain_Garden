@@ -208,15 +208,15 @@ class TestChainValidator:
         reg_dir.mkdir()
 
         frameworks_reg = reg_dir / "frameworks_registry.csv"
-        frameworks_reg.write_text("framework_id,title,status\nFMWK-100,Test Framework,active\n")
+        frameworks_reg.write_text("framework_id,title,status\nFMWK-000,Governance,active\n")
 
         specs_reg = reg_dir / "specs_registry.csv"
-        specs_reg.write_text("spec_id,framework_id,status\nSPEC-TEST-001,FMWK-100,active\n")
+        specs_reg.write_text("spec_id,framework_id,status\nSPEC-CORE-001,FMWK-000,active\n")
 
         manifest = {
             "package_id": "PKG-TEST-001",
-            "framework_id": "FMWK-100",
-            "spec_id": "SPEC-TEST-001",
+            "framework_id": "FMWK-000",
+            "spec_id": "SPEC-CORE-001",
             "deps": [],
         }
 

@@ -6,20 +6,16 @@
     "HOT/FMWK-000_Governance/",
     "HOT/FMWK-001_Provenance_Attestation/",
     "HOT/FMWK-002_Ledger_Protocol/",
-    "HOT/FMWK-003_Package_Standard/",
-    "HOT/FMWK-004_Prompt_Governance/",
     "HOT/FMWK-007_Package_Management/",
-    "HOT/FMWK-100_Agent_Development/",
     "HOT/config/",
     "HOT/kernel/",
     "HOT/schemas/",
-    "HOT/scripts/"
+    "HOT/scripts/",
+    "HOT/tests/"
   ],
   "ho3_governed_roots": [
-    "HO3/libs/",
     "HO3/scripts/",
-    "HO3/spec_packs/",
-    "HO3/tests/"
+    "HO3/spec_packs/"
   ],
   "legacy_flat_roots": [],
   "excluded_patterns": [
@@ -33,8 +29,13 @@
     "HOT/config/governed_roots.json",
     "HOT/config/seal.json",
     "HOT/registries/file_ownership.csv",
+    "HOT/registries/control_plane_registry.csv",
+    "HOT/registries/frameworks_registry.csv",
+    "HOT/registries/specs_registry.csv",
     "HOT/registries/packages_state.csv",
     "HOT/registries/compiled/**",
+    "HOT/ledger/**",
+    "HO3/ledger/**",
     "HO3/tests/conftest.py"
   ]
 }

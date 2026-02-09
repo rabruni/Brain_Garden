@@ -4,7 +4,7 @@
   "title": "HOT Tier Baseline",
   "description": "Owns all files in the HOT tier (kernel, scripts, config, schemas, frameworks)",
   "plane_id": "hot",
-  "created_at": "2026-02-09T01:30:04+00:00",
+  "created_at": "2026-02-09T02:53:40+00:00",
   "assets": [
     {
       "path": "HOT/kernel/atomic.py",
@@ -293,7 +293,7 @@
     },
     {
       "path": "HOT/config/governed_roots.json",
-      "sha256": "sha256:fba0f0d5cbcae73c5186ed17a7bec81fb092ee224725a710f1c0211db5dad5c7",
+      "sha256": "sha256:252ef9b56c966725b9ae63a9e47c6b178355bafb9d7e0a5fb452f7f1c5ebef2e",
       "classification": "config"
     },
     {
@@ -342,21 +342,6 @@
       "classification": "schema"
     },
     {
-      "path": "HOT/schemas/chat_request.json",
-      "sha256": "sha256:49c4ca03b576ac09149c781de0cb5c9697e9f63d8db5dbb0f16d5a7052e4d004",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/chat_response.json",
-      "sha256": "sha256:516862103bfbe8053e0b48e9672b0ef5588667fdeca9335d08f2b006903ba9d0",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/cp_status.json",
-      "sha256": "sha256:8939b7f97b6393d59cc06bc5c65ef67f482d2a5fbaa15116041af962f49875ac",
-      "classification": "schema"
-    },
-    {
       "path": "HOT/schemas/framework.schema.json",
       "sha256": "sha256:3a4506cc672015fbdb772ea721eb216669018586ab410e0b754cdf026f87865a",
       "classification": "schema"
@@ -372,48 +357,8 @@
       "classification": "schema"
     },
     {
-      "path": "HOT/schemas/policy.json",
-      "sha256": "sha256:67a6bee8dbdd86551ab83a365b295071ec6b0f3141c07a8eb2fad9395a15b286",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/route_policy.json",
-      "sha256": "sha256:e5c34bb59a1470ac42bd300efef2604a640e81af8c4c89d163f7f9bc07293f70",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/router_request.json",
-      "sha256": "sha256:e8770d07ec048978d352a7c2051c9a8021d9ab530793154dc06ec9e91e2bc4b9",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/router_response.json",
-      "sha256": "sha256:b5a3d7363c36f94bf748b9126be2d50dc3034976bf4758878e2fed7d441ae0cf",
-      "classification": "schema"
-    },
-    {
       "path": "HOT/schemas/spec.schema.json",
       "sha256": "sha256:3c5c49af0eb092f6c611c6239ebf0b856cd48caf8006e982d15c93bc9470b145",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/stdlib_auth_request.json",
-      "sha256": "sha256:31f6d2e56e1606ed726add3fbda326d22b912dd3882819eaffe28b515eabf094",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/stdlib_auth_response.json",
-      "sha256": "sha256:c5fd06c9f69b1dc5b97ff370b8822678c197bfb103571461ad05971f6d4f8c71",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/stdlib_evidence_request.json",
-      "sha256": "sha256:a96987e0c273fea47a0710cf4be3fad830ca003c94e7ab75b6e10f2d88501d32",
-      "classification": "schema"
-    },
-    {
-      "path": "HOT/schemas/stdlib_evidence_response.json",
-      "sha256": "sha256:81c8f459657d7431a82d052cdd195d877e4e477dc719d87cb3e90391fa5c922a",
       "classification": "schema"
     },
     {
@@ -438,7 +383,7 @@
     },
     {
       "path": "HOT/FMWK-000_Governance/manifest.yaml",
-      "sha256": "sha256:c49fc25066fc9de50e5048354a94bb21ffd7b06b9c542bdf41f7ab38af484dac",
+      "sha256": "sha256:71227ee44ef836c8a906c37dd9e1b824cff5dd8bfccb09612c73d8a419a8ee8e",
       "classification": "manifest"
     },
     {
@@ -470,16 +415,6 @@
       "path": "HOT/FMWK-007_Package_Management/package_management_standard.md",
       "sha256": "sha256:f2d0c6c87a6182012082338f842c9fec174e51088ffbcd49782d4d8da4c423b8",
       "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-100_Agent_Development/agent_development_standard.md",
-      "sha256": "sha256:43debf80f8b629c7a35a3bbd20d6b9d8b84640e8ae9d755ed3d6676a7ca6d443",
-      "classification": "law_doc"
-    },
-    {
-      "path": "HOT/FMWK-100_Agent_Development/manifest.yaml",
-      "sha256": "sha256:e5e2845563e9e565895ae2457766eaa2abdd1ade5260bc429377e1871ea83520",
-      "classification": "manifest"
     }
   ],
   "dependencies": []

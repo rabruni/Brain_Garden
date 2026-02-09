@@ -64,7 +64,7 @@ class TestInitAgentCommand:
 
         result = run_pkgutil(
             "init-agent", "PKG-TEST-AGENT-001",
-            "--framework", "FMWK-100",
+            "--framework", "FMWK-000",
             "--output", str(output_dir)
         )
 
@@ -87,7 +87,7 @@ class TestInitAgentCommand:
 
         result = run_pkgutil(
             "init-agent", "PKG-ADMIN-001",
-            "--framework", "FMWK-100",
+            "--framework", "FMWK-000",
             "--output", str(output_dir)
         )
 
@@ -98,7 +98,7 @@ class TestInitAgentCommand:
 
         assert manifest["package_id"] == "PKG-ADMIN-001"
         assert manifest["package_type"] == "agent"
-        assert manifest["framework_id"] == "FMWK-100"
+        assert manifest["framework_id"] == "FMWK-000"
         assert "schema_version" in manifest
 
 
@@ -309,21 +309,21 @@ class TestCheckFrameworkCommand:
     def test_check_framework_existing(self):
         """Test check-framework with existing framework."""
         result = run_pkgutil(
-            "check-framework", "FMWK-100"
+            "check-framework", "FMWK-000"
         )
 
-        # Should pass since FMWK-100 exists
-        assert "FMWK-100" in result.stdout
+        # Should pass since FMWK-000 exists
+        assert "FMWK-000" in result.stdout
 
     def test_check_framework_json(self):
         """Test check-framework JSON output."""
         result = run_pkgutil(
-            "check-framework", "FMWK-100",
+            "check-framework", "FMWK-000",
             "--json"
         )
 
         output = json.loads(result.stdout)
-        assert output["framework_id"] == "FMWK-100"
+        assert output["framework_id"] == "FMWK-000"
         assert "passed" in output
 
     def test_check_framework_nonexistent(self, tmp_path):
@@ -347,7 +347,7 @@ class TestEndToEndWorkflow:
         # 1. Init agent
         result = run_pkgutil(
             "init-agent", "PKG-E2E-AGENT-001",
-            "--framework", "FMWK-100",
+            "--framework", "FMWK-000",
             "--output", str(tmp_path / "PKG-E2E-AGENT-001")
         )
         assert result.returncode == 0, f"Init failed: {result.stderr}"

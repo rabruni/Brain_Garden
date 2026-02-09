@@ -10,8 +10,13 @@ assets:
 - HO3/scripts/validate_attention_policy.py
 - HO3/scripts/validate_install_policy.py
 - HOT/schemas/attention_envelope.json
-- HOT/schemas/cp_status.json
-- HOT/schemas/policy.json
+- HOT/schemas/stdlib_llm_request.json
+- HOT/schemas/stdlib_llm_response.json
+- HOT/config/router_policy.json
+- HOT/config/registry_policy.json
+- HO3/scripts/trace.py
+- HOT/tests/test_preflight.py
+- HOT/tests/test_trace.py
 interfaces:
 - name: validate_policy
   description: Validate policy against schema

@@ -8,17 +8,5 @@ SPEC-GATE-001,Gate Operations,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
 SPEC-SEC-001,Security & Auth,FMWK-001,active,1.0.0,ho3,2026-02-01T00:00:00Z
 SPEC-PLANE-001,Multi-Plane,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
 SPEC-VER-001,Version Control,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
-SPEC-FMWK-001,Framework Definitions,FMWK-100,active,1.0.0,ho3,2026-02-01T00:00:00Z
 SPEC-POLICY-001,Policy Management,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
-SPEC-TEST-001,Test Infrastructure,FMWK-100,active,1.0.0,ho3,2026-02-01T00:00:00Z
-SPEC-DOC-001,Documentation,FMWK-100,active,1.0.0,ho3,2026-02-01T00:00:00Z
 SPEC-GENESIS-001,Bootstrap,FMWK-000,active,1.0.0,ho3,2026-02-01T00:00:00Z
-SPEC-EVIDENCE-001,Evidence Emission Standard Library,FMWK-100,active,1.0.0,ho3,2026-02-03T00:00:00Z
-SPEC-RUNTIME-001,Agent Runtime Module,FMWK-100,active,1.0.0,ho3,2026-02-03T00:00:00Z
-SPEC-ADMIN-001,Admin Agent,FMWK-100,active,1.0.0,ho3,2026-02-03T00:00:00Z
-SPEC-INSPECT-001,Control Plane Inspection,FMWK-000,active,1.0.0,ho3,2026-02-04T02:27:54Z
-SPEC-PROMPT-001,Prompt Governance Specification,FMWK-004,active,1.0.0,ho3,2026-02-04T00:00:00Z
-SPEC-RATE-MGMT-001,Rate Management and Anthropic Provider Wiring,FMWK-100,active,1.0.0,ho3,2026-02-06T23:05:08Z
-SPEC-ROUTER-FIX-001,Router Decision Fix - General Intent Routing,FMWK-100,active,1.0.0,ho3,2026-02-07T00:16:48Z
-SPEC-ROUTER-PURE-001,Refactor Router to Pure Routing,FMWK-100,active,1.0.0,ho3,2026-02-07T02:13:14Z
-SPEC-FMWK-CAPS-001,Framework Capability Gathering for Router,FMWK-100,active,1.0.0,ho3,2026-02-07T05:56:07Z

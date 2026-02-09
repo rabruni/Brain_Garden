@@ -9,8 +9,10 @@ assets:
 - HOT/kernel/ledger_factory.py
 - HOT/scripts/ledger_repair.py
 - HOT/scripts/ledger_tier.py
-- HO3/tests/test_ledger_chain.py
-- HO3/tests/test_tier_ledger.py
+- HOT/tests/test_ledger_chain.py
+- HOT/tests/test_tier_ledger.py
+- HOT/tests/test_chain.py
+- HOT/tests/test_chain_genesis.py
 interfaces:
 - name: append_entry
   description: Append entry to ledger with hash chaining

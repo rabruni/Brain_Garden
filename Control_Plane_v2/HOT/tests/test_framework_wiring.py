@@ -1,14 +1,11 @@
-"""TDD tests for PKG-FRAMEWORK-WIRING-001 — Framework Wiring Diagrams.
-
-RED: These tests MUST FAIL before implementation.
-GREEN: Rewrite all 5 framework manifests with expected_specs + missing fields.
-       Delete orphaned FMWK-003 and FMWK-004.
+"""TDD tests for Framework Wiring — Kernel Core Strip.
 
 Tests verify:
+- Exactly 4 frameworks exist (FMWK-000, -001, -002, -007)
+- FMWK-100 (dead) is removed
 - Each framework manifest validates against updated schema
 - Each framework has expected_specs field
 - expected_specs match actual specs referencing that framework
-- Orphaned frameworks are removed
 - All framework manifests have ring, plane_id, invariants
 """
 import json
@@ -25,18 +22,14 @@ sys.path.insert(0, str(HOT_ROOT))
 # Discover all framework manifests
 FMWK_DIRS = sorted(HOT_ROOT.glob("FMWK-*/manifest.yaml"))
 
-# Expected framework->spec wiring (from audit)
+# Expected framework->spec wiring after kernel-core strip
 EXPECTED_WIRING = {
-    "FMWK-000": ["SPEC-CORE-001", "SPEC-CORE-SCRIPTS-001", "SPEC-GATE-001",
-                  "SPEC-GENESIS-001", "SPEC-INSPECT-001", "SPEC-INT-001",
-                  "SPEC-PLANE-001", "SPEC-POLICY-001", "SPEC-REG-001", "SPEC-VER-001"],
+    "FMWK-000": ["SPEC-CORE-001", "SPEC-GATE-001", "SPEC-GENESIS-001",
+                  "SPEC-INT-001", "SPEC-PLANE-001", "SPEC-POLICY-001",
+                  "SPEC-REG-001", "SPEC-VER-001"],
     "FMWK-001": ["SPEC-SEC-001"],
     "FMWK-002": ["SPEC-LEDGER-001"],
     "FMWK-007": ["SPEC-PKG-001"],
-    "FMWK-100": ["SPEC-ADMIN-001", "SPEC-DOC-001", "SPEC-EVIDENCE-001",
-                  "SPEC-FMWK-001", "SPEC-FMWK-CAPS-001", "SPEC-RATE-MGMT-001",
-                  "SPEC-ROUTER-001", "SPEC-ROUTER-FIX-001", "SPEC-ROUTER-PURE-001",
-                  "SPEC-RUNTIME-001", "SPEC-TEST-001"],
 }
 
 
@@ -74,8 +67,8 @@ def _parse_yaml_simple(path: Path) -> dict:
     return data
 
 
-class TestOrphanedFrameworksRemoved:
-    """Orphaned frameworks must be deleted."""
+class TestRemovedFrameworks:
+    """Dead frameworks must be deleted."""
 
     def test_fmwk_003_removed(self):
         """FMWK-003 (0 specs) must be deleted."""
@@ -87,12 +80,24 @@ class TestOrphanedFrameworksRemoved:
         fmwk_004 = HOT_ROOT / "FMWK-004_Prompt_Governance"
         assert not fmwk_004.exists(), "FMWK-004 is orphaned (0 specs) — must be deleted"
 
+    def test_fmwk_100_removed(self):
+        """FMWK-100 (all 11 specs dead) must be deleted."""
+        fmwk_100 = HOT_ROOT / "FMWK-100_Agent_Development"
+        assert not fmwk_100.exists(), "FMWK-100 is dead (all specs removed) — must be deleted"
+
+    def test_exactly_four_frameworks(self):
+        """Exactly 4 framework dirs should exist."""
+        fmwk_dirs = sorted(HOT_ROOT.glob("FMWK-*/"))
+        fmwk_ids = [d.name.split("_")[0] for d in fmwk_dirs]
+        assert fmwk_ids == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-007"], \
+            f"Expected exactly 4 frameworks, got: {fmwk_ids}"
+
 
 class TestFrameworkManifestStructure:
     """Every active framework must have complete manifest fields."""
 
     @pytest.fixture(params=[p for p in FMWK_DIRS
-                            if "FMWK-003" not in str(p) and "FMWK-004" not in str(p)])
+                            if not any(x in str(p) for x in ("FMWK-003", "FMWK-004", "FMWK-100"))])
     def framework_manifest(self, request):
         return _parse_yaml_simple(request.param), request.param
 
