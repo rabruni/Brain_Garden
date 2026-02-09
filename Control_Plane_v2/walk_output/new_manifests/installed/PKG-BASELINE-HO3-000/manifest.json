@@ -489,7 +489,7 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-CORE-SCRIPTS-001/manifest.yaml",
-      "sha256": "sha256:95f552e0f4f88d3783ae0ed793ec8b800d3780f87b116374e887897f266364a8",
+      "sha256": "sha256:d3267bffd52dd71db0b0ba3e8a321c4d90f9b05fe24a6652570b1a4bfb130491",
       "classification": "spec_manifest"
     },
     {
@@ -554,17 +554,17 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-FMWK-CAPS-001/manifest.yaml",
-      "sha256": "sha256:7e56ddc3a26c2f9d33345019eb055362014f79c89da76979f14f1947b64487fe",
+      "sha256": "sha256:b753e88268fec8bdcea8cbaa50d1650c8e90cf6ea63d3a9ed748e4e93de333f4",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-GATE-001/manifest.yaml",
-      "sha256": "sha256:da6874028337dc057ef0d02c3a100e342c6332253031c26ab612d38357668109",
+      "sha256": "sha256:d1078aa06e63757d70c59d4a3cd1cf843d10d53ffe458fe94c0959f2160d312f",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-GENESIS-001/manifest.yaml",
-      "sha256": "sha256:ebd76e0ad808f01e6e71e2eb0e9ffe917a3253b9e05ef3ace6fac04a9da0365c",
+      "sha256": "sha256:6af49fba02c29ee52517ecb9480f7d063cb2db92213f7583ce7a3f768639f6a7",
       "classification": "spec_manifest"
     },
     {
@@ -644,27 +644,27 @@
     },
     {
       "path": "HO3/spec_packs/SPEC-RATE-MGMT-001/manifest.yaml",
-      "sha256": "sha256:b4ad08d44624629ca94a35fff180637391450b9cea7f1760ebdb187d388b7b00",
+      "sha256": "sha256:1b53749a303d438c8cde4a9900d943b452f297c9787bf92ac6ce4254a944a94b",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-REG-001/manifest.yaml",
-      "sha256": "sha256:f3e6ad27818c376f9f81976b0ed1395a02f00667f8fbef7761bcad02632e8dbe",
+      "sha256": "sha256:d8d61708732970a1724680f1d8f0ede0dd70aee38527cc588dc9cf8226444b65",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-ROUTER-001/manifest.yaml",
-      "sha256": "sha256:7f7bd245fad48777f58b08fa1850629b30b133b6490902c63f78f34c97e2d3b8",
+      "sha256": "sha256:36b5e8d11c311ce7c284f7bebe636c0815b7d01d3708663db641a1c7afd74bd1",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-ROUTER-FIX-001/manifest.yaml",
-      "sha256": "sha256:ca4af2e016abb9309051c68903bd94f0bf9f2ad62737948872f9af1c630f3a20",
+      "sha256": "sha256:6ff44aecedde557c725a14a89d0c4a783c0c3f9a73ca3122f9968db7dbd868f3",
       "classification": "spec_manifest"
     },
     {
       "path": "HO3/spec_packs/SPEC-ROUTER-PURE-001/manifest.yaml",
-      "sha256": "sha256:5bbae300280a1cc4659e8d84ba8ca4025303119eeeba9edc6fa99675b72aefd4",
+      "sha256": "sha256:53070551cf36a0c6e803d3509294a818f87ceb287938326f4331e7c4bc1a4ab5",
       "classification": "spec_manifest"
     },
     {

@@ -1,7 +1,0 @@
-# Registry delta for PKG-GENERAL-TEST-001
-# Generated: 2026-02-07T02:48:32.411489+00:00
-# Archive: PKG-GENERAL-TEST-001.tar.gz
-# Digest: 7422f09c9fd28876740eade1e947e1db96d7c47619765fe76951f61add34019e
-
-file_path,owner_package_id,sha256,classification
-tests/test_router_admin_contract.py,PKG-GENERAL-TEST-001,sha256:07be4910444fac5d5ce937ffbf68d14b803a9b47109a06c8884a68ad65d78171,other

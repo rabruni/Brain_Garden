@@ -292,9 +292,21 @@ All gaps are collected in the **Gaps** section of the output footer.
 
 ### Values Policy
 
-- **Default**: show types + value **source** (literal / env / config / derived / param), not raw values.
-- **Always redact**: tokens, keys, secrets, auth headers — show as `[REDACTED]`.
-- **Raw values**: only when explicitly requested (`LP2 --show-values <thing>`) and the value is safe.
+**Default (values shown):** Show type + resolved value (truncated for readability):
+- **Paths**: last 2-3 segments, prefixed with `…/` — e.g., `"…/Control_Plane_v2"`
+- **Strings**: first 40 chars, truncated with `…`
+- **Numbers/bools**: full value
+- **Lists/dicts**: inline if small (`["G0B"]`), summary if large (`{3 keys}`)
+- **Secrets**: always `[REDACTED]` (tokens, keys, secrets, auth headers)
+
+**`-v` (values off):** Show type + source label only, no resolved values.
+
+| Mode | Example output |
+|------|---------------|
+| default | `│  plane_root: Path  "…/Control_Plane_v2"  ← singleton` |
+| `-v` | `│  plane_root: Path  ← CONTROL_PLANE singleton` |
+
+Usage: `LP2 -v gate_check.py`
 
 ### Side-Effect Markers
 
@@ -334,32 +346,40 @@ COVERAGE: 14/18 nodes traced, 1 gap, 1 truncated
 
 ### ASCII Flow Spec
 
+**Default (values shown):**
 ```
 ENTRY: <resolved thing>
 │
 ▼
 function_name(arg1, arg2)                       [file.py:LINE]
-│  arg1: type   ← source
-│  arg2: type   ← source
+│  arg1: type   "truncated value"  ← source
+│  arg2: type   "…/last/segments"  ← source
 │
 ├─ step_one()                                   [other_file.py:LINE]
-│   │  param: type  ← source
+│   │  param: type  42  ← config
 │   │
 │   │  ┌─────────────────────────────────┐       ← L3+ only
 │   │  │ data at this stage (capped)     │
 │   │  └─────────────────────────────────┘
 │   │
 │   ├─ inner_call()                             → side effect
-│   └─ return: type
+│   └─ return: type  "value"
 │
 ├─ step_two()                                   → 📝 ledger write
 │
-└─ return: type  ← source
+└─ return: type  "value"  ← source
+```
+
+**With `-v` (values off):**
+```
+│  arg1: type   ← source
+│  arg2: type   ← source
 ```
 
 **Symbol key:**
 - `│ ├─ └─ ▼` — tree/flow structure
 - `[file.py:LINE]` — real source location (L1+)
+- `"value"` — resolved value, truncated (L2+, default)
 - `← source` — value provenance (L2+)
 - `┌─ ─┐ └─ ─┘` — data transformation box (L3+)
 - Indented code excerpts (L4+)

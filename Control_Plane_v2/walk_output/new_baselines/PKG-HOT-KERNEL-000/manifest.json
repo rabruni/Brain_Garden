@@ -4,7 +4,7 @@
   "title": "HOT Tier Baseline",
   "description": "Owns all files in the HOT tier (kernel, scripts, config, schemas, frameworks)",
   "plane_id": "hot",
-  "created_at": "2026-02-09T00:00:43+00:00",
+  "created_at": "2026-02-09T01:30:04+00:00",
   "assets": [
     {
       "path": "HOT/kernel/atomic.py",
@@ -52,6 +52,11 @@
       "classification": "library"
     },
     {
+      "path": "HOT/kernel/layout.py",
+      "sha256": "sha256:8e8a71dab26351761060a49e9e20af44d38adb781564de6acba04b424ca8ae8c",
+      "classification": "library"
+    },
+    {
       "path": "HOT/kernel/ledger_client.py",
       "sha256": "sha256:abd03e41818ffd007fbaf23d0b586e0ea8466805c00adada07a3200aaed98770",
       "classification": "library"
@@ -83,7 +88,7 @@
     },
     {
       "path": "HOT/kernel/paths.py",
-      "sha256": "sha256:e26e50239b08e21bbd4e7b37be8427c2259c650ec8f0d94c5781da66426ff053",
+      "sha256": "sha256:4ae8a13146b402da2a3475b050ac2b7bd2e3eb6782d1a841ce3ea717cd1ca27c",
       "classification": "library"
     },
     {
@@ -294,6 +299,11 @@
     {
       "path": "HOT/config/kernel_files.json",
       "sha256": "sha256:f002c6fd0d315c9f9a4f9fa239f9ff317cd7bdd6af53ba9f71205e7d46e8ef3b",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/config/layout.json",
+      "sha256": "sha256:58c6d582576ec9185f6f60949d4a8069b78dddbd455ff237b77284810448cecb",
       "classification": "config"
     },
     {

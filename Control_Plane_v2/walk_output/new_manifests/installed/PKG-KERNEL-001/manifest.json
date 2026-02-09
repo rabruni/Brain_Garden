@@ -30,7 +30,7 @@
     },
     {
       "path": "HOT/kernel/paths.py",
-      "sha256": "sha256:e26e50239b08e21bbd4e7b37be8427c2259c650ec8f0d94c5781da66426ff053"
+      "sha256": "sha256:4ae8a13146b402da2a3475b050ac2b7bd2e3eb6782d1a841ce3ea717cd1ca27c"
     },
     {
       "path": "HOT/kernel/registry.py",
@@ -38,11 +38,11 @@
     },
     {
       "path": "HO3/scripts/trace.py",
-      "sha256": "sha256:090e333eaa64bc79fb6a9ce8b47268543379b18a21747630897243e8487cb7cf"
+      "sha256": "sha256:dc717bdcb7b5b3111b0654a8adfac53f72abe8fbced83718eb1ce13d61028b17"
     }
   ],
   "assets_count": 9,
-  "manifest_hash": "sha256:fbac4783caa5346e6d6e3117e43ddc4ada4bebbd75690ff1f4d37e8758e212ab",
+  "manifest_hash": "sha256:89557890e7a214f22d57c60af2e379647990ac179520232643408015228312b8",
   "metadata": {
     "built_at": "2026-02-04T02:51:31.386725+00:00",
     "source_plane": "ho3",

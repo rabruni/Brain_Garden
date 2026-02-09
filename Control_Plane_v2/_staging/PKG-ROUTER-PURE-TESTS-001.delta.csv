@@ -1,7 +1,0 @@
-# Registry delta for PKG-ROUTER-PURE-TESTS-001
-# Generated: 2026-02-07T02:28:40.647043+00:00
-# Archive: PKG-ROUTER-PURE-TESTS-001.tar.gz
-# Digest: c2d7abfd3b2c3544bd3f345c0ef7502513da9a3d8cbe2989ed86a81924fe73f1
-
-file_path,owner_package_id,sha256,classification
-tests/test_router_admin_contract.py,PKG-ROUTER-PURE-TESTS-001,sha256:07b778d1686b5634533234b18ed6b592470603e379817d6e0ee0f63803e670e2,test

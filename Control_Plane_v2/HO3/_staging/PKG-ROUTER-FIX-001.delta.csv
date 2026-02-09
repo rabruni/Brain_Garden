@@ -1,7 +1,0 @@
-# Registry delta for PKG-ROUTER-FIX-001
-# Generated: 2026-02-07T00:17:55.935586+00:00
-# Archive: PKG-ROUTER-FIX-001.tar.gz
-# Digest: 5a4b35bb33b183ae1c056acbf2e1b3e91b06b0165a96aa94b35371dfe2bfff02
-
-file_path,owner_package_id,sha256,classification
-modules/router/decision.py,PKG-ROUTER-FIX-001,sha256:49fd0396ac6c35a4b054c3120e0de88ab4bb5d195ee2f5417139b6289e7a3478,module

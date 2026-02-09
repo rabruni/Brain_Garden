@@ -1,7 +1,0 @@
-framework_id,title,status,version,plane_id,created_at,parent_plane
-FMWK-000,Control Plane Governance Framework,active,2.0.0,ho3,2026-02-01T00:00:00Z,
-FMWK-100,Agent Development Standard,active,1.0.0,ho3,2026-01-30T00:00:00Z,
-FMWK-107,Package Management Standard,active,1.1.0,ho3,2026-01-30T00:00:00Z,
-FMWK-200,Ledger Protocol Standard,active,1.0.0,ho3,2026-01-30T00:00:00Z,
-FMWK-ATT-001,Provenance Attestation Standard,active,1.0.0,ho3,2026-01-31T00:00:00Z,
-FMWK-PKG-001,Package Standard,active,1.0.0,ho3,2026-01-31T00:00:00Z,
