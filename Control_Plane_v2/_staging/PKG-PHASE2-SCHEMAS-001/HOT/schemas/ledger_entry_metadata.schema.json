@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-plane.local/schemas/ledger_entry_metadata.schema.json",
+  "title": "Ledger Entry Metadata Schema v1.0",
+  "description": "Schema for the metadata dict inside LedgerEntry — provenance, context, outcome, scope",
+  "type": "object",
+  "properties": {
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "description": "Specific agent instance that created this entry"
+        },
+        "agent_class": {
+          "type": "string",
+          "enum": ["KERNEL.syntactic", "KERNEL.semantic", "ADMIN", "RESIDENT"],
+          "description": "Agent class"
+        },
+        "framework_id": {
+          "type": "string",
+          "pattern": "^FMWK-[A-Z0-9-]+$",
+          "description": "Framework the agent was instantiated from"
+        },
+        "package_id": {
+          "type": "string",
+          "pattern": "^PKG-[A-Z0-9-]+$",
+          "description": "Package that deployed the framework"
+        },
+        "work_order_id": {
+          "type": "string",
+          "pattern": "^WO-\\d{8}-\\d{3}$",
+          "description": "Work order being executed"
+        },
+        "session_id": {
+          "type": "string",
+          "pattern": "^SES-[A-Z0-9]{8}$",
+          "description": "Session this entry belongs to"
+        }
+      },
+      "description": "Full provenance chain — where did this entry come from?"
+    },
+    "relational": {
+      "type": "object",
+      "properties": {
+        "parent_event_id": {
+          "type": "string",
+          "pattern": "^LED-[a-f0-9]{8}$",
+          "description": "Direct parent entry"
+        },
+        "root_event_id": {
+          "type": "string",
+          "pattern": "^LED-[a-f0-9]{8}$",
+          "description": "Root of this entry's causal chain"
+        },
+        "related_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["package", "framework", "spec", "file", "registry", "ledger_entry"]
+              },
+              "id": { "type": "string" }
+            },
+            "required": ["type", "id"]
+          },
+          "description": "Artifacts this entry touches or references"
+        }
+      },
+      "description": "Relational links to other entries and artifacts"
+    },
+    "context_fingerprint": {
+      "type": "object",
+      "properties": {
+        "context_hash": {
+          "type": "string",
+          "description": "SHA256 of the assembled context (attention output)"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The rendered prompt text sent to the LLM"
+        },
+        "prompt_pack_id": {
+          "type": "string",
+          "pattern": "^PRM-[A-Z]+-[0-9]+$",
+          "description": "Governed prompt pack used"
+        },
+        "response": {
+          "type": "string",
+          "description": "The LLM response text"
+        },
+        "tokens_used": {
+          "type": "object",
+          "properties": {
+            "input": { "type": "integer", "minimum": 0 },
+            "output": { "type": "integer", "minimum": 0 }
+          },
+          "description": "Token consumption"
+        },
+        "model_id": {
+          "type": "string",
+          "description": "LLM model used for this entry"
+        }
+      },
+      "description": "Context fingerprint — what was the LLM asked and what did it say?"
+    },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "failure", "partial", "timeout", "rejected"],
+          "description": "Outcome status"
+        },
+        "quality_signal": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Quality score (0-1) assigned by validation"
+        },
+        "error": {
+          "type": "string",
+          "description": "Error message if failed"
+        },
+        "gate_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "gate": { "type": "string" },
+              "passed": { "type": "boolean" },
+              "reason": { "type": "string" }
+            },
+            "required": ["gate", "passed"]
+          },
+          "description": "Gate validation results"
+        }
+      },
+      "description": "Outcome of the action this entry records"
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": ["hot", "ho2", "ho1"],
+          "description": "Memory tier this entry lives at"
+        },
+        "domain_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Domain tags for categorization and search"
+        },
+        "ttl": {
+          "type": "string",
+          "description": "Time-to-live hint (e.g., 'session', '24h', 'permanent')"
+        }
+      },
+      "description": "Scope and lifecycle hints"
+    }
+  },
+  "additionalProperties": true,
+  "description": "All fields optional — entries accumulate metadata over time. Provenance fields serve as natural indexes for learning loop traversal."
+}

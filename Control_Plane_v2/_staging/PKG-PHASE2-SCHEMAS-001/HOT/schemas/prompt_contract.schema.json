@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-plane.local/schemas/prompt_contract.schema.json",
+  "title": "Prompt Contract Schema v1.0",
+  "description": "Contract for a governed prompt — defines input, output, boundary, and budget",
+  "type": "object",
+  "required": ["contract_id", "version", "prompt_pack_id", "boundary"],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "pattern": "^PRC-[A-Z]+-[0-9]+$",
+      "description": "Unique contract identifier"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this contract"
+    },
+    "prompt_pack_id": {
+      "type": "string",
+      "pattern": "^PRM-[A-Z]+-[0-9]+$",
+      "description": "Governed prompt pack this contract binds to"
+    },
+    "agent_class": {
+      "type": "string",
+      "enum": ["KERNEL.syntactic", "KERNEL.semantic", "ADMIN", "RESIDENT"],
+      "description": "Agent class this prompt is designed for"
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["hot", "ho2", "ho1"],
+      "description": "Memory tier this prompt executes at"
+    },
+    "boundary": {
+      "type": "object",
+      "required": ["max_tokens", "temperature"],
+      "properties": {
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Token limit for this prompt's response"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature"
+        },
+        "provider_id": {
+          "type": "string",
+          "description": "Required LLM provider (if provider-specific)"
+        },
+        "structured_output": {
+          "type": "object",
+          "description": "JSON Schema the LLM response must conform to"
+        }
+      },
+      "description": "Execution boundary for this prompt"
+    },
+    "required_context": {
+      "type": "object",
+      "properties": {
+        "ledger_queries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "event_type": { "type": "string" },
+              "tier": { "type": "string", "enum": ["hot", "ho2", "ho1"] },
+              "max_entries": { "type": "integer", "minimum": 1 },
+              "recency": { "type": "string", "description": "Duration like '1h', '24h', 'session'" }
+            }
+          },
+          "description": "Ledger entries that must be assembled before this prompt fires"
+        },
+        "framework_refs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^FMWK-[A-Z0-9-]+$" },
+          "description": "Frameworks whose definitions must be in context"
+        },
+        "file_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files that must be read into context"
+        }
+      },
+      "description": "Context that must be assembled before this prompt executes (attention input)"
+    },
+    "input_schema": {
+      "type": "object",
+      "description": "JSON Schema for template variables injected into the prompt"
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema for expected response structure"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional contract metadata"
+    }
+  },
+  "additionalProperties": true
+}
