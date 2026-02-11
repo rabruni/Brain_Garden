@@ -1,0 +1,69 @@
+spec_id: SPEC-GATE-001
+title: Gate Operations
+framework_id: FMWK-000
+status: active
+version: 1.0.0
+plane_id: hot
+assets:
+- HOT/kernel/gate_operations.py
+- HOT/kernel/workspace.py
+- HOT/kernel/atomic.py
+- HOT/kernel/preflight.py
+- HOT/kernel/schema_validator.py
+- HOT/scripts/gate_check.py
+- HOT/scripts/g0k_gate.py
+- HOT/scripts/g2_gate.py
+- HOT/scripts/g3_gate.py
+- HOT/scripts/g4_gate.py
+- HOT/scripts/g5_gate.py
+- HOT/scripts/g6_gate.py
+- HOT/scripts/compute_wo_hash.py
+- HOT/scripts/validate_work_order.py
+- HOT/scripts/apply_work_order.py
+- HOT/scripts/quarantine_orphans.py
+- HOT/scripts/agent_check.py
+- HOT/tests/conftest.py
+- HOT/schemas/work_order.schema.json
+- HOT/schemas/framework.schema.json
+- HOT/schemas/spec.schema.json
+- HOT/config/governed_roots.json
+- HOT/tests/test_schema_enforcement.py
+- HOT/tests/test_framework_completeness.py
+- HOT/tests/test_framework_wiring.py
+- HOT/tests/test_spec_conformance.py
+- HOT/tests/test_g2_gate.py
+- HOT/tests/test_g3_gate.py
+- HOT/tests/test_g4_gate.py
+- HOT/tests/test_g5_gate.py
+- HOT/tests/test_g6_full.py
+interfaces:
+- name: run_gate_sequence
+  description: Execute G0-G6 gate sequence
+- name: create_workspace
+  description: Create isolated execution workspace
+- name: atomic_apply
+  description: Apply changes atomically with rollback
+- name: compute_wo_hash
+  description: Compute deterministic Work Order hash
+- name: validate_work_order
+  description: Validate Work Order against schema
+invariants:
+- Gates MUST execute in order G0-G6
+- Gate failure MUST abort execution
+- Workspace MUST be isolated from authoritative plane
+- APPLY MUST be atomic (all-or-nothing)
+acceptance:
+  tests:
+  - pytest tests/test_gates.py
+  checks:
+  - python3 scripts/gate_check.py --help
+dependencies:
+- spec_id: SPEC-INT-001
+  interfaces:
+  - verify_integrity
+- spec_id: SPEC-LEDGER-001
+  interfaces:
+  - append_entry
+non_goals:
+- This spec does NOT handle gate customization
+- This spec does NOT handle async gate execution

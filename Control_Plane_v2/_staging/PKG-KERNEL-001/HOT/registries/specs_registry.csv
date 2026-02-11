@@ -1,0 +1,4 @@
+spec_id,title,framework_id,status,version,plane_id,created_at
+SPEC-GENESIS-001,Bootstrap,FMWK-000,active,1.0.0,hot,2026-02-09T00:00:00Z
+SPEC-GATE-001,Gate Operations,FMWK-000,active,1.0.0,hot,2026-02-09T00:00:00Z
+SPEC-REG-001,Registry Management,FMWK-000,active,1.0.0,hot,2026-02-09T00:00:00Z

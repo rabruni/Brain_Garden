@@ -4,21 +4,21 @@
   "version": "1.0.0",
   "schema_version": "1.2",
   "spec_id": "SPEC-GENESIS-001",
-  "plane_id": "ho3",
+  "plane_id": "hot",
   "assets": [
     {
       "path": "HOT/scripts/genesis_bootstrap.py",
-      "sha256": "sha256:75fc80fb72b6b5dfa282b44b59571849b8b6b92e9546b53d2a360b7b686a4222",
+      "sha256": "sha256:982fa2f8a828f9ed44a7f5e14cddff3fdc97fedfd71847caaea9d8344e085266",
       "classification": "script"
     },
     {
       "path": "HOT/config/bootstrap_sequence.json",
-      "sha256": "sha256:354ed1b2f592dcc505f140c1bd7b5de2605028a3086156a54608d1d024a0575a",
+      "sha256": "sha256:371a15fe3d67bfd308c336c85e9205dfc5ecef8bc4666fa503d81bba4f228451",
       "classification": "config"
     },
     {
       "path": "HOT/config/seed_registry.json",
-      "sha256": "sha256:2533fc191542bf790579ef12d75f78927078651084cf3cdbd243a797f6aa9870",
+      "sha256": "sha256:df4cd82fca6e30a8e821a89e01f9352fb866290dbe9bfbe07aaea46abc90951b",
       "classification": "config"
     },
     {

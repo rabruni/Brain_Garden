@@ -23,6 +23,7 @@ Environment:
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import hmac
 import json
@@ -150,7 +151,17 @@ def write_install_receipt(
     Returns:
         Path to receipt file
     """
-    receipt_dir = root / "installed" / pkg_id
+    # Infer tier from asset paths (e.g., "HOT/kernel/paths.py" → "HOT")
+    tier = None
+    for f in files:
+        parts = f.split("/")
+        if parts[0] in ("HOT", "HO2", "HO1"):
+            tier = parts[0]
+            break
+    if tier:
+        receipt_dir = root / tier / "installed" / pkg_id
+    else:
+        receipt_dir = root / "installed" / pkg_id
     receipt_dir.mkdir(parents=True, exist_ok=True)
 
     # Compute file hashes
@@ -179,6 +190,68 @@ def write_install_receipt(
         json.dump(receipt, f, indent=2)
 
     return receipt_path
+
+
+def write_file_ownership(
+    pkg_id: str,
+    files: List[str],
+    root: Path,
+    manifest: Optional[Dict[str, Any]] = None,
+) -> Path:
+    """Write file_ownership.csv for installed files.
+
+    Creates HOT/registries/file_ownership.csv with ownership tracking
+    for every file installed by this package.
+
+    Args:
+        pkg_id: Package ID (owner)
+        files: List of installed file paths (relative to root)
+        root: Control Plane root
+        manifest: Optional manifest for classification lookup
+
+    Returns:
+        Path to file_ownership.csv
+    """
+    ownership_csv = root / "HOT" / "registries" / "file_ownership.csv"
+    ownership_csv.parent.mkdir(parents=True, exist_ok=True)
+
+    # Build classification lookup from manifest assets
+    classification_map: Dict[str, str] = {}
+    if manifest:
+        for asset in manifest.get("assets", []):
+            classification_map[asset["path"]] = asset.get("classification", "unknown")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    with open(ownership_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["file_path", "package_id", "sha256", "classification", "installed_date", "replaced_date", "superseded_by"])
+        for rel_path in files:
+            file_path = root / rel_path
+            if file_path.exists() and file_path.is_file():
+                digest = sha256_file(file_path)
+                classification = classification_map.get(rel_path, "unknown")
+                writer.writerow([rel_path, pkg_id, digest, classification, now, "", ""])
+
+    # Register genesis package files (from installed manifest if available)
+    genesis_manifest = root / "HOT" / "installed" / "PKG-GENESIS-000" / "manifest.json"
+    if genesis_manifest.exists():
+        gm = json.loads(genesis_manifest.read_text(encoding="utf-8"))
+        for asset in gm.get("assets", []):
+            g_path = asset.get("path", "")
+            g_full = root / g_path
+            if g_full.exists() and g_full.is_file():
+                g_digest = sha256_file(g_full)
+                g_class = asset.get("classification", "genesis")
+                with open(ownership_csv, "a", newline="", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([g_path, "PKG-GENESIS-000", g_digest, g_class, now, "", ""])
+
+    # NOTE: file_ownership.csv is NOT self-registered because it's an append-only
+    # derived registry whose hash changes with every install. It's excluded from
+    # G0B via excluded_patterns.
+
+    return ownership_csv
 
 
 def list_archive_files(archive: Path, root: Path) -> List[str]:
@@ -224,8 +297,10 @@ def verify_package(
     # Verify digest
     expected_digest = seed_entry.get("digest", "")
     if expected_digest:
+        # Strip "sha256:" prefix if present for comparison
+        expected_hex = expected_digest.removeprefix("sha256:")
         actual = sha256_file(archive)
-        if actual != expected_digest:
+        if actual != expected_hex:
             issues.append(
                 f"Digest mismatch: expected={expected_digest[:16]}... "
                 f"actual={actual[:16]}..."
@@ -260,6 +335,7 @@ def extract_archive(
         Tuple of (success, list of extracted paths)
     """
     files = []
+    members_to_extract = []
 
     with tarfile.open(archive, "r:gz") as tar:
         for member in tar.getmembers():
@@ -276,14 +352,20 @@ def extract_archive(
 
             target = root / name
 
-            # Check if target exists
+            # Skip directories and metadata files
+            if member.isdir() or name == "manifest.json":
+                continue
+
+            # Check if target file exists
             if target.exists() and not force:
                 return False, [f"Target exists: {target} (use --force)"]
 
             files.append(name)
+            members_to_extract.append(member)
 
-        # Extract all
-        tar.extractall(root)
+        # Extract ONLY filtered members (not manifest.json)
+        for member in members_to_extract:
+            tar.extract(member, root, filter='data')
 
     return True, files
 
@@ -350,6 +432,21 @@ def install_package(
                 return 1
             print("  (continuing due to --force)")
 
+    # Load manifest from archive for classification data
+    manifest = None
+    try:
+        with tarfile.open(archive, "r:gz") as tf:
+            for member in tf.getmembers():
+                if member.name == "manifest.json" or (
+                    member.name.endswith("/manifest.json") and member.name.count("/") <= 1
+                ):
+                    mf = tf.extractfile(member)
+                    if mf:
+                        manifest = json.load(mf)
+                        break
+    except (tarfile.TarError, json.JSONDecodeError):
+        pass  # Non-fatal: classification will be "unknown"
+
     # Extract archive
     print("  Extracting...")
     success, files = extract_archive(archive, root, force)
@@ -371,6 +468,16 @@ def install_package(
         installer="genesis_bootstrap"
     )
     print(f"  Receipt: {receipt_path}")
+
+    # Write file ownership registry
+    print("  Writing file_ownership.csv...")
+    ownership_path = write_file_ownership(
+        pkg_id=pkg_id,
+        files=files,
+        root=root,
+        manifest=manifest,
+    )
+    print(f"  Ownership: {ownership_path}")
 
     print(f"  OK: {pkg_id} installed")
     return 0

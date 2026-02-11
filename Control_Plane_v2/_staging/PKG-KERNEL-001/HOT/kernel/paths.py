@@ -20,6 +20,7 @@ DEPRECATION NOTICE:
     The singletons remain for backward compatibility but will emit deprecation
     warnings in future versions. New code should use PlaneContext exclusively.
 """
+import os
 from pathlib import Path
 from functools import lru_cache
 from typing import Dict, Optional, Set
@@ -68,11 +69,15 @@ def get_control_plane_root() -> Path:
     multi-plane operation.
 
     Priority:
+    0) CONTROL_PLANE_ROOT env var (highest priority)
     1) If this file lives under a Control_Plane_v2 tree, return that.
     2) Else if a Control_Plane tree exists under the repo root, return it.
     3) Fallback to the repo root.
     """
     _deprecation_warning("get_control_plane_root()")
+    env_root = os.getenv("CONTROL_PLANE_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
     current = Path(__file__).resolve()
     for parent in [current] + list(current.parents):
         if parent.name == "Control_Plane_v2":

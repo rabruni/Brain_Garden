@@ -11,20 +11,12 @@
       "after_this": "package_install.py now works"
     },
     {
-      "layer": 0,
-      "name": "baselines",
-      "vocabulary_introduced": [],
-      "installer": "package_install.py",
-      "packages": ["PKG-BASELINE-HO3-000", "PKG-HOT-KERNEL-000"],
-      "after_this": "file ownership is established"
-    },
-    {
       "layer": 1,
       "name": "vocabulary",
       "vocabulary_introduced": ["framework", "spec", "plane", "ring", "tier"],
       "installer": "package_install.py",
-      "packages": ["PKG-VOCABULARY-001"],
-      "after_this": "system can validate its own governance structure"
+      "packages": ["PKG-VOCABULARY-001", "PKG-REG-001"],
+      "after_this": "system can validate governance chains and manage registries"
     },
     {
       "layer": 2,

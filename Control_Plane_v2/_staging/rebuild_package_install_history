@@ -1,0 +1,685 @@
+
+⏺ Assessment of Builder's Results
+
+  The builder did solid work. Both bugs fixed cleanly, cascade executed correctly, 167/167 tests pass. But the self-verification report is the real deliverable, and it tells us
+  exactly what we need to know.
+
+  Q1 answer: Can the kernel verify itself? Partially. Here's the scorecard:
+  ┌───────────────────────────┬────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │        Capability         │  Can   │                                                                   Why                                                                    │
+  │                           │  It?   │                                                                                                                                          │
+  ├───────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Chain verification (G1)   │ Yes    │ preflight.py ChainValidator works — 6 chains validated                                                                                   │
+  ├───────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Hash verification         │ Yes    │ Manifests + hashing.py work for any single package                                                                                       │
+  │ per-package               │        │                                                                                                                                          │
+  ├───────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Receipt tracking          │ Mostly │ 7/8 receipts exist. GENESIS-000 gap is by-design.                                                                                        │
+  ├───────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Ledger consistency        │ Yes    │ 14 entries, STARTED/INSTALLED pairs match. Even caught the failed attempt.                                                               │
+  ├───────────────────────────┼────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Ownership tracking (G0B)  │ No     │ This is the critical gap. file_ownership.csv only knows about KERNEL-001's 22 files. The other 50 governed files are orphans from the    │
+  │                           │        │ ownership system's perspective.                                                                                                          │
+  └───────────────────────────┴────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  The ownership gap is the blocker. The kernel can verify any individual package's files against its manifest, but it cannot answer "who owns this file?" for 50 of its 72 files.
+  That means am_i_intact() and what_is_ungoverned() would both produce wrong results right now.
+
+  Root cause: genesis_bootstrap.py writes file_ownership.csv for KERNEL-001. But package_install.py doesn't append to it when subsequent packages are installed. Each package has a
+   receipt with its manifest (including file hashes), but the central ownership registry never gets updated.
+
+  The fix: package_install.py needs to append to file_ownership.csv after a successful install. This is the auth wiring work item (Q3) — GOVERNANCE-UPGRADE-001's copy of
+  package_install.py is where both fixes land.
+
+  ---
+  Q2: Should G0B Run at Every Install or On-Demand?
+
+  Given what the builder found, I'd say both, but differently:
+
+  - At install time (lightweight): Before installing package N, verify that the files from packages 1 through N-1 are still intact. This catches corruption introduced between
+  installs. It's just: for each receipt, hash the files, compare to manifest. Fast at 72 files.
+  - On-demand (full): The three self-model queries (am_i_intact, what_am_i, what_is_ungoverned) available as a CLI command. For debugging, auditing, and the builder agent's Task 2
+   scenario.
+
+  The install-time check is the gate. The on-demand check is the diagnostic tool. G0B is the gate.
+
+  Q3 + Work: What Needs to Happen in package_install.py
+
+  There are now three things that need to land in GOVERNANCE-UPGRADE-001's package_install.py:
+
+  1. file_ownership.csv append — after successful install, register all assets from the new package
+  2. InstallerClaims wiring — the auth flow from Part 3 of today's plan
+  3. G0B pre-install check — verify existing system integrity before adding new packages
+
+  All three go in the same file, in the same package. Want me to read the current GOVERNANCE-UPGRADE-001 copy of package_install.py and draft the changes? That's the concrete next
+   step — and it addresses Q1 (ownership gap), Q2 (gate design), and Q3 (auth wiring) simultaneously.
+
+✻ Cogitated for 35s
+
+❯ I like the above, lock it in, but, why is it that the file_ownership.csv, is not updated after an install, by signalling some sort of installation validation step? like a
+  validtion of the install?
+
+⏺ That's a sharp observation and it reveals a design gap in the install lifecycle.
+
+  What the Install Pipeline Actually Does Today
+
+  Pre-install          Execute              Post-install
+  ─────────────        ─────────────        ─────────────
+  G0A (declared?)      Extract to workspace  Write receipt
+  G1  (chain valid?)   Copy files to root    Write ledger INSTALLED
+  G5  (signature?)
+                                             ← nothing else
+
+  There's no post-install validation phase. The install is considered "done" the moment files are copied and the receipt is written. Nobody verifies that what landed on disk
+  matches what was in the archive. Nobody registers the new files in the ownership system. Nobody checks that the system is still coherent after the change.
+
+  Why That's Wrong
+
+  Every serious deployment system has three phases:
+
+  1. Pre-flight — can we do this? (gates — we have this)
+  2. Execute — do it (copy files — we have this)
+  3. Post-flight / commit — did it work? prove it. register it. (we don't have this)
+
+  Phase 3 is where file_ownership.csv update naturally belongs — not as a bolted-on bookkeeping step, but as part of proving the install succeeded. The validation step would:
+
+  1. Re-hash every file that was just installed against the manifest (verify the copy was clean)
+  2. Update file_ownership.csv (register new files — now the system knows who owns them)
+  3. Optionally run a lightweight G0B (verify system integrity wasn't broken by the install)
+  4. Only THEN write INSTALLED to the ledger
+
+  Right now, INSTALLED gets written to the ledger after copying files — which means the ledger says "installed" even if the copy silently corrupted a file. The ledger is lying by
+  omission.
+
+  Why It Wasn't Built This Way
+
+  genesis_bootstrap.py does write file_ownership.csv — because it was hand-written for the bootstrap case, where nothing existed yet and the author knew ownership tracking was
+  needed.
+
+  package_install.py was built with the focus on gates and extraction — the pre-flight and execute phases. The "it worked" signal is the receipt + ledger entry. But "I wrote a
+  receipt" is not the same as "I verified the result." It's like signing a delivery slip without opening the box.
+
+  The Fix (Design-Level, Not Just Code)
+
+  The install lifecycle should be:
+
+  Pre-install          Execute              Validate              Commit
+  ─────────────        ─────────────        ─────────────         ─────────────
+  G0A (declared?)      Extract to workspace  Re-hash installed     Update file_ownership.csv
+  G1  (chain valid?)   Copy files to root    files vs manifest     Write receipt
+  G0B (system intact?)                       Detect conflicts      Write INSTALLED to ledger
+  G5  (signature?)                           with existing files
+  Auth (claims valid?)
+
+  The key change: INSTALLED is not written until validation passes. If post-install hashing finds a mismatch, the install is rolled back (or at minimum, INSTALL_FAILED is written
+  with details). The ledger becomes truthful — INSTALLED means "verified installed," not "probably installed."
+
+  And file_ownership.csv isn't a separate concern anymore. It's just one of the things that happens during the commit phase. The system updates its self-model as a natural
+  consequence of completing an operation, not as an afterthought.
+
+  Want me to lock this into the Phase 2 doc and then draft the actual changes to GOVERNANCE-UPGRADE-001's package_install.py?
+
+✻ Worked for 38s
+
+❯ now I do want you to write this an hand off to the builder ASAP, I also want roll back (no leaving messes, no half installs, this is pristine. but my question, is what is
+  the GOVERNANCE-UPGRADE-001 - is it already installed? why does it iexist, in the new directory, is it a remenant of the old control plane?
+
+
+⏺ Good question — let me be precise about what it is and why it exists.
+
+  What Is GOVERNANCE-UPGRADE-001?
+
+  It's a Layer 2 clean bootstrap package, not a remnant. It exists because of bootstrap circularity:
+
+  Problem:
+    Layer 0 needs package_install.py to install anything
+    But Layer 0 can't have governance features (no frameworks, no specs exist yet)
+
+  Solution:
+    KERNEL-001 (Layer 0) ships a basic package_install.py
+    GOVERNANCE-UPGRADE-001 (Layer 2) ships an UPGRADED package_install.py
+    that takes ownership from KERNEL-001 via transfer_paths
+
+  So after the full 8-package bootstrap:
+  - The package_install.py on disk is GOVERNANCE-UPGRADE-001's version
+  - KERNEL-001's version was overwritten during the Layer 2 install
+  - file_ownership.csv (if it were working) would show package_install.py owned by GOVERNANCE-UPGRADE-001, not KERNEL-001
+
+  Let me verify what's actually in it:
+
+⏺ Read 1 file (ctrl+o to expand)
+
+⏺ 3 assets: package_install.py, gate_check.py, test_framework_completeness.py. All clean, built during our bootstrap session. Dependencies are KERNEL-001 and VOCABULARY-001 (both
+  Layer 0-1).
+
+  So this is where the post-install validation + auth wiring + file_ownership append all land. It's the right package — it's the governance upgrade to the installer itself.
+
+  Now let me draft the handoff. The changes are:
+
+  1. Post-install validation phase (re-hash installed files vs manifest)
+  2. file_ownership.csv append (register new files during commit)
+  3. Rollback on validation failure (clean up copied files, write INSTALL_FAILED)
+  4. InstallerClaims wiring (auth flow from Part 3 of today's plan)
+  5. G0B pre-install check (verify existing system integrity before adding)
+
+  Let me read the current package_install.py to draft precisely:
+
+⏺ Read 1 file (ctrl+o to expand)
+
+⏺ Good, I've read the full file. Now I can see exactly where the changes land. Let me lock in the design update and write the builder handoff.
+
+⏺ Update(~/Brain_Garden/playground/Control_Plane_v2/KERNEL_PHASE_2.md)
+  ⎿  Added 50 lines, removed 1 line
+      287
+      288  ## Outstanding Questions
+      289
+      290 -_See next section — to be populated during planning continuation._
+      290 +| # | Question | Status | Answer |
+      291 +|---|---|---|---|
+      292 +| Q1 | Can the kernel verify itself? | **Answered** | Partially. G1 chain yes, hash verification yes, receipts 7/8, ledger consistent. **G0B ownership FAILS** —
+          +file_ownership.csv only tracks KERNEL-001's 22 files; other 50 files are orphans to the ownership system. |
+      293 +| Q2 | Should G0B run at every install or on-demand? | **Answered** | Both. Lightweight at install time (pre-install: verify existing files are intact). Full on-
+          +demand via CLI (am_i_intact, what_am_i, what_is_ungoverned). |
+      294 +| Q3 | How do we wire InstallerClaims? | **Answered** | In GOVERNANCE-UPGRADE-001's package_install.py main(). Replace `authz.require(identity, "install")` with
+          +InstallerClaims flow. |
+      295 +| Q4 | What is an agent in this system? | Open | Stage 1.5 — next planning session |
+      296 +| Q5 | What does the end state look like? | Open | Vision conversation needed |
+      297 +| Q6 | How do we govern agents, not just files? | Open | After Q4 |
+      298 +| Q7 | What's the resource/cost model? | Open | After Stage 2 |
+      299 +
+      300 +## Design Decision: Install Lifecycle (2026-02-10)
+      301 +
+      302 +### The Missing Phase
+      303 +
+      304 +The install pipeline had pre-flight (gates) and execute (copy) but no **post-flight / validation / commit** phase. This meant:
+      305 +- file_ownership.csv never updated after install (only genesis_bootstrap writes it)
+      306 +- No verification that copied files match the archive
+      307 +- INSTALLED written to ledger before proving the install succeeded
+      308 +- No rollback mechanism for failed post-install validation
+      309 +
+      310 +### Corrected Lifecycle
+      311 +
+      312 +```
+      313 +Pre-install              Execute              Validate              Commit
+      314 +─────────────            ─────────────        ─────────────         ─────────────
+      315 +G0B (system intact?)     Extract to workspace  Re-hash installed     Update file_ownership.csv
+      316 +G0A (declared?)          Copy files to root    files vs manifest     Write receipt
+      317 +G1  (chain valid?)                             Detect conflicts      Write INSTALLED to ledger
+      318 +G1-COMPLETE (wired?)                           with existing files
+      319 +G5  (signature?)
+      320 +Auth (claims valid?)                           ON FAILURE:
+      321 +                                               Remove copied files
+      322 +                                               Write INSTALL_FAILED
+      323 +                                               Clean state guaranteed
+      324 +```
+      325 +
+      326 +Key principle: **INSTALLED is not written until validation passes.** The ledger becomes truthful — INSTALLED means "verified installed," not "probably installed.
+          +"
+      327 +
+      328 +file_ownership.csv append is a natural consequence of the commit phase, not a bolted-on afterthought.
+      329 +
+      330 +### Rollback Design
+      331 +
+      332 +If post-install validation fails:
+      333 +1. Remove all files that were just copied (tracked in installed_files list)
+      334 +2. Restore any files that were overwritten (ownership transfers) from workspace backup
+      335 +3. Write INSTALL_FAILED to ledger with validation details
+      336 +4. Clean up workspace
+      337 +5. System is in the same state as before the install attempt
+      338 +
+      339 +No half-installs. No orphaned files. Pristine.
+
+⏺ Now the builder handoff prompt:
+
+⏺ Write(BUILDER_HANDOFF_2_install_lifecycle.md)
+  ⎿  Wrote 436 lines to BUILDER_HANDOFF_2_install_lifecycle.md
+      1 Read `Control_Plane_v2/_staging/AGENT_PROMPT_builder_qa.md` first if you haven't already — it has the full context about staging vs repo, the two-control-plane boun
+        dary, and the tar format rules.
+      2
+      3 ## Task: Upgrade package_install.py with Post-Install Validation, Rollback, Auth, and G0B
+      4
+      5 You are modifying ONE file: `_staging/PKG-GOVERNANCE-UPGRADE-001/HOT/scripts/package_install.py`
+      6
+      7 This is the install pipeline that runs after Layer 0. It currently has pre-install gates and file copying, but NO post-install validation. The install lifecycle is
+        incomplete. You're completing it.
+      8
+      9 ---
+     … +426 lines (ctrl+o to expand)
+
+⏺ Done. File is at _staging/BUILDER_HANDOFF_2_install_lifecycle.md.
+
+  Here's what the builder gets:
+
+  8 changes to one file (package_install.py in GOVERNANCE-UPGRADE-001):
+  ┌────────────────────────────┬──────────────────────────────────────────────┐
+  │           Change           │                What It Solves                │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ G0B pre-install check      │ Q1: system self-verification at install time │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ Backup before overwrite    │ Enables clean rollback                       │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ Post-install validation    │ Proves the install actually worked           │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ Rollback function          │ No half-installs, pristine guaranteed        │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ file_ownership.csv append  │ Q1: ownership gap (the 50 orphan files)      │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ INSTALLED after validation │ Ledger becomes truthful                      │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ InstallerClaims wiring     │ Q3: auth actually enforced in non-dev mode   │
+  ├────────────────────────────┼──────────────────────────────────────────────┤
+  │ Backup cleanup             │ Hygiene                                      │
+  └────────────────────────────┴──────────────────────────────────────────────┘
+  5 verification tests including deliberate corruption detection and rollback testing.
+
+  The cascade is simple this time — only GOVERNANCE-UPGRADE-001.tar.gz and CP_BOOTSTRAP.tar.gz need rebuilding. No seed_registry changes.
+
+✻ Crunched for 2m 40s
+
+❯ Wait i would argue that overwriting the  package_install.py is a risk, and it breaks prvaenance an lineage? Why isn't there a signature based trigger in
+  package_install.py? maybe we ship the original 8 no auth, then when the first kernel package installs, it triggers a state change and now, we have the first auth seed, and
+   package_install.py now behaves like GOVERNANCE-UPGRADE-001 with additional fixes we discussed, seems simpler and more elegant? run the thre advisaries against it.
+
+⏺ You're right — and this is a better architecture. Let me formalize your proposal, then run the adversaries.
+
+  The Proposal: State-Gated Installer (No File Replacement)
+
+  One package_install.py, shipped in KERNEL-001, with all capabilities built in. Features activate based on system state, not file replacement.
+
+  How it works
+
+  Bootstrap phase (--dev, no auth infrastructure):
+    package_install.py runs in BOOTSTRAP mode
+    - Gates: G0A, G1, G5 (waived)
+    - No G0B (no receipts to check yet)
+    - No post-install validation
+    - No auth enforcement
+    - No file_ownership append (genesis_bootstrap handles it)
+
+  After bootstrap (first authenticated install):
+    package_install.py detects auth infrastructure exists → GOVERNED mode
+    - Gates: G0B + G0A + G1 + G1-COMPLETE + G5 (enforced)
+    - Post-install validation (re-hash)
+    - Auth via InstallerClaims
+    - file_ownership.csv append
+    - Rollback on failure
+
+  The trigger: the presence of a signed/authenticated operation. The first non---dev install is the state transition. Or more concretely: the installer checks what's installed
+  (receipts exist? registries populated? auth config present?) and enables features accordingly.
+
+  GOVERNANCE-UPGRADE-001 no longer ships a replacement package_install.py. It ships gate_check.py, the completeness test, and possibly the auth seed config — but the installer
+  itself is unchanged. Provenance intact. Same file, same hash, always.
+
+  ---
+  Adversarial 1: Hurdles
+  #: H1
+  Hurdle: KERNEL-001 gets significantly larger. It now ships an installer with G0B, validation, rollback, auth wiring, file_ownership append — all features that currently don't
+    exist. The manifest grows, the hash changes, the archive grows. The KERNEL-001 we just rebuilt needs another rebuild.
+  ────────────────────────────────────────
+  #: H2
+  Hurdle: Layer 0 ships code that imports Layer 1+ concepts. The installer would import FrameworkCompletenessValidator, InstallerClaims, registry code — but those modules are also
+
+    in KERNEL-001. Wait — they already are. install_auth.py is in KERNEL-001. preflight.py with FrameworkCompletenessValidator is in KERNEL-001. So this might actually be
+    fine. The imports exist; the gating is at runtime, not import time.
+  ────────────────────────────────────────
+  #: H3
+  Hurdle: State detection must be bulletproof. If the installer incorrectly detects "governed mode" during bootstrap, it blocks the bootstrap itself (G0B fails because no
+  receipts,
+     auth fails because no HMAC secret). If it incorrectly stays in "bootstrap mode" after bootstrap, governance is never enforced. The detection logic is a critical path.
+  ────────────────────────────────────────
+  #: H4
+  Hurdle: Testing complexity. One file with two modes means every test needs to exercise both modes. The test surface doubles.
+  ────────────────────────────────────────
+  #: H5
+  Hurdle: What constitutes the trigger? "First authenticated install" is conceptual. Concretely: is it the absence of --dev flag? The presence of a specific file? A config value?
+  A
+     receipt count threshold? Each option has different failure modes.
+  ────────────────────────────────────────
+  #: H6
+  Hurdle: GOVERNANCE-UPGRADE-001 loses its reason to exist (for the installer). It still ships gate_check.py and the test, but its name ("governance upgrade") implies it upgrades
+    the installer. If the installer doesn't change, the package name is misleading. Minor, but naming matters for provenance.
+  Adversarial 2: Too Much
+
+  The state detection might be over-engineered. The simplest version: --dev flag = bootstrap mode, no --dev flag = governed mode. That's already how it works. The "state-gated"
+  behavior is just making the --dev conditional more granular. You don't need a "trigger" or "state change" — you need the non-dev code path to actually work.
+
+  One massive file is harder to maintain. 761 lines already. Adding G0B, validation, rollback, auth wiring, and ownership append could push it past 1000 lines. Two separate files
+  (one basic, one governed) might actually be more readable, even if the overwrite pattern has provenance concerns.
+
+  The "signature-based trigger" adds ceremony without value. If the trigger is just "am I in dev mode or not," you don't need a signature-based state machine. The --dev flag IS
+  the trigger. Remove --dev from your command line, and you're in governed mode.
+
+  Adversarial 3: Not Enough
+
+  No versioning of governance behavior. If all features are in one file from the start, how do you evolve governance rules? If G0B needs to change its checking logic six months
+  from now, you need to modify KERNEL-001's package_install.py — which means rebuilding the foundation package. With the overwrite model, you could ship a GOVERNANCE-UPGRADE-002
+  that only changes the governance layer without touching the base installer.
+
+  No degraded mode. The proposal has two modes: bootstrap and governed. What about a third: degraded? "Auth infrastructure exists but is corrupted. Run with reduced governance but
+   flag everything for review." The two-mode model is binary — fully governed or fully open. Biology has graceful degradation; this doesn't.
+
+  Rollback of the governance transition itself. If you transition to governed mode and something is wrong, how do you go back to bootstrap mode? With file replacement, you could
+  reinstall KERNEL-001 and get the basic installer back. With state-gated, you'd need to tear down the auth infrastructure — which might be harder.
+
+  The trigger still needs a source of trust. "First authenticated install" means someone provides a valid HMAC token. But where does the HMAC shared secret come from? It has to be
+   provisioned before the first authenticated install. That provisioning step is the real trigger — and it's outside the package system entirely. The proposal doesn't address how
+  the auth seed gets into the system.
+
+  ---
+  Hurdle Test Against Proposal
+  ┌───────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬─────────────┐
+  │            Hurdle             │                                                      Proposal Handles It?                                                       │   Verdict   │
+  ├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ H1: KERNEL-001 gets bigger    │ Yes, but manageable — the imports already exist. It's adding ~200 lines of new functions behind conditionals.                   │ Acceptable  │
+  ├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ H2: Layer 0 ships Layer 1+    │ Already true — KERNEL-001 ships install_auth.py, FrameworkCompletenessValidator. The code exists; it just doesn't activate      │ Non-issue   │
+  │ concepts                      │ until state allows.                                                                                                             │             │
+  ├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ H3: State detection must be   │ Partially. If detection = "is --dev flag absent AND does HMAC secret exist," that's two clear, testable conditions. But needs   │ Needs       │
+  │ bulletproof                   │ explicit fallback: if detection is ambiguous, fail-closed to bootstrap mode (safe) not governed mode (might block).             │ design      │
+  ├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ H4: Testing complexity        │ Real concern. Mitigated by: test both modes explicitly, don't rely on implicit state. Each test declares its mode.              │ Manageable  │
+  ├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ H5: What's the trigger?       │ Needs decision. Three candidates: (a) --dev flag absence, (b) presence of HMAC secret in env, (c) presence of a specific        │ Needs       │
+  │                               │ "governance enabled" config file. Each has tradeoffs.                                                                           │ decision    │
+  ├───────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ H6: GOVERNANCE-UPGRADE-001    │ Minor. Rename to PKG-GOVERNANCE-CONFIG-001 or similar, shipping gate_check.py + auth seed config.                               │ Cosmetic    │
+  │ name                          │                                                                                                                                 │             │
+  └───────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴─────────────┘
+  ---
+  Refined Proposal
+
+  Keep the core idea: one installer, state-gated behavior
+
+  The provenance argument is strong. Overwriting your own installer is an anti-pattern. The installer should evolve its behavior, not be replaced.
+
+  The trigger is simple: two conditions
+
+  def is_governed_mode(plane_root: Path, dev_flag: bool) -> bool:
+      """Determine if the system should enforce governance."""
+      if dev_flag:
+          return False  # Explicit bypass always wins
+
+      # Check if auth infrastructure is provisioned
+      has_auth = bool(os.getenv("CONTROL_PLANE_SHARED_SECRET"))
+
+      # Check if at least one governed package is installed (beyond bootstrap)
+      receipts_dir = plane_root / "HOT" / "installed"
+      has_receipts = receipts_dir.exists() and any(receipts_dir.iterdir())
+
+      return has_auth and has_receipts
+
+  - --dev = always bootstrap mode (explicit)
+  - No --dev + no HMAC secret = error ("auth required but not configured")
+  - No --dev + HMAC secret + receipts = governed mode
+  - No --dev + HMAC secret + no receipts = bootstrap-to-governed transition (first real install)
+
+  Fail-closed: if ambiguous, refuse to install rather than silently downgrade.
+
+  What GOVERNANCE-UPGRADE-001 becomes
+
+  It no longer ships package_install.py. It ships:
+  - gate_check.py (unchanged)
+  - test_framework_completeness.py (unchanged)
+  - Possibly an auth seed config (e.g., HOT/config/governance_policy.json that declares what governance features are enabled — future extensibility)
+
+  The "upgrade" is that installing this package proves the system is capable of governed operation — the frameworks and specs it wires are the governance infrastructure that makes
+   governed mode meaningful.
+
+  What goes into KERNEL-001
+
+  KERNEL-001's package_install.py gains:
+  - is_governed_mode() — state detection
+  - check_g0b_system_integrity() — pre-install verification
+  - validate_installed_files() — post-install verification
+  - rollback_install() — clean failure recovery
+  - append_file_ownership() — ownership registration
+  - The InstallerClaims auth flow (already imported, just needs wiring)
+
+  All gated behind is_governed_mode(). In bootstrap mode, the existing behavior is unchanged.
+
+  What's explicitly deferred
+  ┌───────────────────────┬──────────────────────────────────────────────────────────────────────────────┐
+  │      Capability       │                                     Why                                      │
+  ├───────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
+  │ Degraded mode         │ Binary (governed/bootstrap) is sufficient until we have evidence of need     │
+  ├───────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
+  │ Governance versioning │ Evolve via config files, not installer replacement. Design when needed.      │
+  ├───────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
+  │ Governance rollback   │ If governed mode breaks, --dev flag is the escape hatch. Sufficient for now. │
+  └───────────────────────┴──────────────────────────────────────────────────────────────────────────────┘
+
+✻ Churned for 1m 36s
+
+❯ are you adding the write to file_ownership.csv capibilities too read from ledger etc? is there anything else we need to consider, to imrpve this once and for all?
+
+⏺ Let me think about this properly. If we're touching package_install.py "once and for all," we need to identify every gap, not just the ones we've discussed.
+
+  What the Installer Does Today
+  ┌──────────────┬───────────────────────────┬────────────────────────────────────────────────┐
+  │    Phase     │        Capability         │                     Status                     │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Pre-install  │ Auth                      │ Exists but dead code (--dev bypasses)          │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Pre-install  │ G0A, G1, G1-COMPLETE, G5  │ Working                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Pre-install  │ Ownership conflict check  │ Reads file_ownership.csv — but it's incomplete │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Execute      │ Atomic copy               │ Working                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Post-install │ Receipt                   │ Working                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Post-install │ Ledger write              │ Working                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Post-install │ Validation                │ Missing                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Post-install │ Rollback                  │ Missing                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Post-install │ file_ownership.csv append │ Missing                                        │
+  ├──────────────┼───────────────────────────┼────────────────────────────────────────────────┤
+  │ Pre-install  │ G0B (system integrity)    │ Missing                                        │
+  └──────────────┴───────────────────────────┴────────────────────────────────────────────────┘
+  What Else Is Missing (The "Once and For All" List)
+  #: 1
+  Gap: file_ownership.csv is write-only during install
+  Description: The installer appends but never rebuilds. After an ownership transfer (GOVERNANCE-UPGRADE-001 takes package_install.py from KERNEL-001), the old KERNEL-001 entry is
+
+    still there. Stale entries accumulate.
+  ────────────────────────────────────────
+  #: 2
+  Gap: No archive digest verification
+  Description: genesis_bootstrap.py checks the archive hash against seed_registry.json. package_install.py doesn't. Anyone can hand it a modified archive and it'll install it as
+    long as the internal manifest hashes match.
+  ────────────────────────────────────────
+  #: 3
+  Gap: No idempotency
+  Description: Installing the same package twice fails with "target exists." Should it detect "already installed, same version, same hash" and no-op?
+  ────────────────────────────────────────
+  #: 4
+  Gap: No reinstall/upgrade path
+  Description: Installing a newer version of an existing package hits ownership conflicts. No --upgrade that atomically replaces.
+  ────────────────────────────────────────
+  #: 5
+  Gap: Derived registries stale after install
+  Description: file_ownership.csv gets appended, but packages_state.csv, frameworks_registry.csv, specs_registry.csv, compiled/*.json are all stale until someone manually runs
+    rebuild_derived_registries.py.
+  ────────────────────────────────────────
+  #: 6
+  Gap: Ledger is write-only
+  Description: The installer writes INSTALL_STARTED/INSTALLED/INSTALL_FAILED to the ledger but never reads it. Could detect: "this package failed last time," "system has history
+  of
+     failures," "this is a reinstall."
+  ────────────────────────────────────────
+  #: 7
+  Gap: No post-install hooks
+  Description: Some packages may need post-install actions (rebuild registries, run a validation suite). Currently prints "run rebuild_derived_registries.py" as text advice. No
+    formal mechanism.
+  ────────────────────────────────────────
+  #: 8
+  Gap: GENESIS-000 has no receipt
+  Description: By design — it's manually seeded. But this means G0B can't verify genesis files. The integrity chain has a gap at the root.
+  Now the Key Question: What Goes in "Once and For All" vs "Later"?
+
+  Here's my assessment:
+
+  Must Go In (Without These, the Installer Is Incomplete)
+  ┌───────────────────────────┬──────────────────────────────┬─────────────────────────────────────────────────────┐
+  │             #             │             What             │                         Why                         │
+  ├───────────────────────────┼──────────────────────────────┼─────────────────────────────────────────────────────┤
+  │ G0B                       │ Pre-install system integrity │ You can't install on a broken foundation            │
+  ├───────────────────────────┼──────────────────────────────┼─────────────────────────────────────────────────────┤
+  │ Post-install validation   │ Re-hash installed files      │ "INSTALLED" must mean "verified installed"          │
+  ├───────────────────────────┼──────────────────────────────┼─────────────────────────────────────────────────────┤
+  │ Rollback                  │ Clean failure recovery       │ No half-installs, pristine guaranteed               │
+  ├───────────────────────────┼──────────────────────────────┼─────────────────────────────────────────────────────┤
+  │ file_ownership.csv append │ Register new files           │ Ownership must be tracked for G0B and self-model    │
+  ├───────────────────────────┼──────────────────────────────┼─────────────────────────────────────────────────────┤
+  │ InstallerClaims auth      │ Non-dev auth flow            │ The system must be able to enforce auth             │
+  ├───────────────────────────┼──────────────────────────────┼─────────────────────────────────────────────────────┤
+  │ is_governed_mode()        │ State detection              │ One file, two behaviors — the core of this redesign │
+  └───────────────────────────┴──────────────────────────────┴─────────────────────────────────────────────────────┘
+  Should Go In (Makes the Installer Robust)
+  #: Ownership transfer cleanup
+  What: When package B takes a file from package A, update (not just append) file_ownership.csv
+  Why: Prevents stale entries. The append-only model leaves ghosts.
+  ────────────────────────────────────────
+  #: Archive digest verification
+  What: Check archive hash against seed_registry.json or a trusted source before extracting
+  Why: Closes the "modified archive" attack vector
+  ────────────────────────────────────────
+  #: Idempotency
+  What: Detect "already installed, same version" → no-op
+  Why: Prevents accidental double-installs during scripted bootstrap
+  ────────────────────────────────────────
+  #: Derived registry rebuild trigger
+  What: After install, call a lightweight registry update (at minimum packages_state.csv)
+  Why: Eliminates the manual "run rebuild_derived_registries.py" step
+  Defer (Genuine "Later")
+  ┌─────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────┬───────────┐
+  │                #                │                                           What                                            │ Why Defer │
+  ├─────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┼───────────┤
+  │ Upgrade path (--upgrade)        │ Requires uninstall + reinstall atomically. Needs uninstall design first.                  │           │
+  ├─────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┼───────────┤
+  │ Post-install hooks              │ Need a real use case before designing the hook system. Over-engineering risk.             │           │
+  ├─────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┼───────────┤
+  │ Ledger read (history awareness) │ Useful but not blocking. The installer works without knowing its own history.             │           │
+  ├─────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┼───────────┤
+  │ GENESIS-000 receipt gap         │ By design — genesis is pre-installer. Could add a retroactive receipt, but it's cosmetic. │           │
+  └─────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────┴───────────┘
+  The "Read From Ledger" Question
+
+  You asked specifically about reading from the ledger. Here's where it matters:
+
+  For file_ownership.csv: Should file_ownership.csv be derived from the ledger rather than maintained incrementally? That's the "agents don't READ, they don't REMEMBER" pattern —
+  rebuild from evidence rather than maintain state.
+
+  Two options:
+  - Option A (append during install, rebuild periodically): The installer appends to file_ownership.csv inline (fast, immediate). rebuild_derived_registries.py does a full
+  reconstruction from receipts when needed. Belt and suspenders.
+  - Option B (always rebuild from receipts): The installer doesn't touch file_ownership.csv at all. Instead, G0B and self-model always reconstruct ownership from
+  HOT/installed/*/receipt.json on the fly. No stale entries possible. Slower but trustworthy.
+
+  Option B is more aligned with our design philosophy ("reconstruct from evidence"). The receipts ARE the source of truth — they have the complete file list with hashes for each
+  package. file_ownership.csv is just a convenience cache. If we accept that, the installer doesn't need to append to it at all — G0B reads receipts directly, and
+  rebuild_derived_registries.py rebuilds the CSV when you want the convenience view.
+
+  My recommendation: Option B. Don't append to file_ownership.csv in the installer. Instead:
+  - G0B reads receipts directly (source of truth)
+  - what_am_i() and what_is_ungoverned() also read receipts
+  - rebuild_derived_registries.py builds the CSV from receipts when you want a flat file
+  - file_ownership.csv becomes a derived artifact, not a primary record
+
+  This eliminates the stale entry problem entirely. No ghosts, no duplicates, no ownership transfer cleanup needed. The receipts are the ledger of ownership.
+
+  Revised "Once and For All" Changes
+  ┌──────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────┐
+  │            Change            │                              In KERNEL-001's package_install.py                               │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ is_governed_mode()           │ State detection: --dev / HMAC secret / receipts exist                                         │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ check_g0b_system_integrity() │ Read ALL receipts, re-hash ALL files. No file_ownership.csv dependency.                       │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ validate_installed_files()   │ Post-install: re-hash installed files against manifest                                        │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ rollback_install()           │ Backup before overwrite, restore on failure, clean dirs                                       │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ verify_archive_digest()      │ Check archive hash against seed_registry.json before extracting                               │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ InstallerClaims auth flow    │ In main(), gated behind is_governed_mode()                                                    │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Idempotency check            │ Detect already-installed same-version → no-op                                                 │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ rebuild_packages_state()     │ Lightweight: append to packages_state.csv after install (just package ID, version, timestamp) │
+  ├──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ INSTALLED after validation   │ Ledger write moved to after validation passes                                                 │
+  └──────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────┘
+  file_ownership.csv is NOT touched by the installer. It becomes a derived artifact rebuilt from receipts. This is cleaner, more trustworthy, and eliminates an entire class of
+  bugs.
+
+  GOVERNANCE-UPGRADE-001 no longer ships package_install.py. It ships gate_check.py + test only.
+
+  Want me to run the adversaries against this revised version, or does this address your question and we should lock it in and write the builder handoff?
+
+
+Two options:
+    - Option A (append during install, rebuild periodically): The installer appends to file_ownership.csv inline (fast, immediate). rebuild_derived_registries.py does a full
+    reconstruction from receipts when needed. Belt and suspenders. - I would also say it is important that we keep full record, do not overwrit, you can add a replaced date, and
+  supperceded by column for complete history and record. I agree ledger is the system truth, even thought it can be wierd in the early stages, it needs to be writte first, and
+  should contain the same info that the reciept does, ledger will be read by many others, recipts will not.
+
+
+⏺ Clear decisions. Let me make sure I have them right:
+
+  What You're Saying
+
+  1. file_ownership.csv is append-only with history columns.
+
+  Not a current-state cache. Not overwritten. Every entry lives forever with provenance:
+
+  file_path,package_id,sha256,classification,installed_date,replaced_date,superseded_by
+  HOT/scripts/package_install.py,PKG-KERNEL-001,sha256:3db4...,script,2026-02-09T04:00:00Z,2026-02-10T01:00:00Z,PKG-GOVERNANCE-UPGRADE-001
+  HOT/scripts/package_install.py,PKG-GOVERNANCE-UPGRADE-001,sha256:4b8e...,script,2026-02-10T01:00:00Z,,
+
+  You can trace the full ownership lineage of any file. The "current owner" is the entry with no replaced_date. But the history is never lost.
+
+  2. Ledger is written first, with full detail.
+
+  The INSTALLED ledger entry contains everything the receipt does — full file list, hashes, classifications. The ledger is the system truth that many consumers read. The receipt
+  is a convenience snapshot that lives next to the installed package for quick access.
+
+  Commit order becomes:
+  Validate (re-hash) → INSTALLED to ledger (full detail) → Receipt → file_ownership.csv append
+
+  If it fails after ledger write but before receipt — the ledger has the truth. Receipt and ownership CSV can be reconstructed from it. The ledger is the one record that must
+  never be lost.
+
+  3. Ledger entry for INSTALLED should look like:
+
+  {
+    "event_type": "INSTALLED",
+    "submission_id": "PKG-VOCABULARY-001",
+    "manifest_hash": "sha256:a717...",
+    "version": "1.0.0",
+    "assets_count": 2,
+    "assets": [
+      {"path": "HOT/...", "sha256": "sha256:...", "classification": "library"}
+    ],
+    "installed_by": "dev",
+    "plane_id": "hot",
+    "validation": "PASSED"
+  }
+
+  The receipt becomes derivable from the ledger — not the other way around.
+
+  4. For the state-gated installer (no file overwrite):
+
+  Even though we keep one package_install.py, ownership transfers still happen for OTHER files (gate_check.py from KERNEL-001 to GOVERNANCE-UPGRADE-001, for example). Those
+  transfers get the replaced_date + superseded_by treatment in file_ownership.csv. Full lineage preserved.
+
+  ---
+  Is that the right read? If so, I'll lock this into KERNEL_PHASE_2.md and write the builder handoff with all of this baked in.
+
+✻ Sautéed for 33s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ yes write the hand off, but then answer, why do these also get replaced? gate_check.py from KERNEL-001 to GOVERNANCE-UPGRADE-001, this seems like jr. level work, right?:w
+

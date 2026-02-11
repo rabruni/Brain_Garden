@@ -738,7 +738,7 @@ class LedgerClient:
         cross-chain lineage information linking to the parent ledger.
 
         Args:
-            tier: Tier name (HO3, HO2, HO1)
+            tier: Tier name (HOT, HO2, HO1)
             plane_root: Absolute path to plane root directory
             parent_ledger: Path/URI to parent tier's ledger (optional)
             parent_hash: Hash of last entry in parent ledger (optional)
@@ -937,7 +937,7 @@ def get_session_ledger_path(
     planes/<tier>/sessions/<session_id>/ledger/<type>.jsonl
 
     Args:
-        tier: Tier name (ho1, ho2, ho3)
+        tier: Tier name (ho1, ho2, hot)
         session_id: Session identifier (SES-...)
         ledger_type: Ledger type - "exec" or "evidence"
         root: Control plane root directory (default: parent of lib/)
@@ -963,7 +963,7 @@ def create_session_ledger_client(
     planes/<tier>/sessions/<session_id>/ledger/<type>.jsonl
 
     Args:
-        tier: Tier name (ho1, ho2, ho3)
+        tier: Tier name (ho1, ho2, hot)
         session_id: Session identifier (SES-...)
         ledger_type: Ledger type - "exec" or "evidence"
         root: Control plane root directory
@@ -993,7 +993,7 @@ def read_recent_from_tier(
     """Read recent entries from a tier's governance ledger.
 
     Args:
-        tier: Tier name (ho1, ho2, ho3 or HO1, HO2, HO3)
+        tier: Tier name (ho1, ho2, hot or HO1, HO2, HOT)
         limit: Maximum number of entries to return
         root: Control plane root directory
 
@@ -1007,8 +1007,8 @@ def read_recent_from_tier(
     tier_lower = tier.lower()
 
     # Determine ledger path based on tier
-    if tier_lower == "ho3" or tier_lower == "hot":
-        # HO3/HOT uses the main governance ledger
+    if tier_lower == "hot":
+        # HOT uses the main governance ledger
         ledger_path = root / "ledger" / "governance.jsonl"
     else:
         # HO1, HO2 use plane-specific ledgers
@@ -1028,7 +1028,7 @@ def list_session_ledgers(
     """List all session ledgers for a tier.
 
     Args:
-        tier: Tier name (ho1, ho2, ho3)
+        tier: Tier name (ho1, ho2, hot)
         root: Control plane root directory
 
     Returns:
