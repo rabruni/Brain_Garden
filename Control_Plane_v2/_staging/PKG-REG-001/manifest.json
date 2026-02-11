@@ -1,0 +1,45 @@
+{
+  "package_id": "PKG-REG-001",
+  "spec_id": "SPEC-REG-001",
+  "framework_id": "FMWK-000",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "plane_id": "hot",
+  "title": "Registry Management",
+  "description": "Spec-bound ownership transfer package for Registry Management",
+  "assets": [
+    {
+      "path": "HOT/kernel/registry.py",
+      "sha256": "sha256:a78cff8b0b37ab690668dccbb8e61491c6406acd7450d7ec85103d62887b8bb8",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/resolve.py",
+      "sha256": "sha256:3ae724262c9e4a5c87d2c721b7839d3f0b114ad53cb5ba1c390f59469e018364",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/kernel/id_allocator.py",
+      "sha256": "sha256:a461f03fa0b7f73f3841bacb09490f3c1d594ab69cee6707ac7a12f4de2df931",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/registries/control_plane_registry.csv",
+      "sha256": "sha256:47fafd34085a4eff3cbd95828e5f36416373a1e498554d2abe8d811df325d52f",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/frameworks_registry.csv",
+      "sha256": "sha256:e2dea3c230de90c5c70e9bd0d7ed48c932289ced0def30af9a45b06e0c923edb",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/specs_registry.csv",
+      "sha256": "sha256:fcf275d05ef58706243314cf4dc51deca3e356a13179fd2ecad382499acf9300",
+      "classification": "registry"
+    }
+  ],
+  "dependencies": [
+    "PKG-KERNEL-001"
+  ]
+}

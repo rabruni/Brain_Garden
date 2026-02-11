@@ -1,0 +1,39 @@
+framework_id: FMWK-000
+title: Control Plane Governance Framework
+version: "2.1.0"
+status: active
+ring: kernel
+plane_id: hot
+created_at: "2026-02-01T00:00:00Z"
+assets:
+  - governance_framework.md
+expected_specs:
+  - SPEC-CORE-001
+  - SPEC-GATE-001
+  - SPEC-GENESIS-001
+  - SPEC-INT-001
+  - SPEC-PLANE-001
+  - SPEC-POLICY-001
+  - SPEC-REG-001
+  - SPEC-VER-001
+invariants:
+  - level: MUST
+    statement: Every file MUST be mapped exactly once to a Spec
+  - level: MUST
+    statement: All components MUST be installed via package manager
+  - level: MUST NOT
+    statement: Gate failures MUST NOT be ignored
+path_authorizations:
+  - "HOT/kernel/*.py"
+  - "HOT/scripts/*.py"
+  - "HOT/schemas/*.json"
+  - "HOT/config/*.json"
+  - "HOT/tests/test_*.py"
+required_gates:
+  - G0
+  - G1
+  - G2
+  - G3
+  - G4
+  - G5
+  - G6

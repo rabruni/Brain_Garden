@@ -1,0 +1,47 @@
+spec_id: SPEC-SEC-001
+title: Security & Auth
+framework_id: FMWK-001
+status: active
+version: 1.0.0
+plane_id: ho3
+assets:
+- HOT/kernel/auth.py
+- HOT/kernel/authz.py
+- HOT/kernel/pristine.py
+- HOT/kernel/install_auth.py
+- HOT/scripts/cp_init_auth.py
+- HOT/scripts/seal_guard.py
+- HOT/scripts/wo_approve.py
+- HOT/scripts/wo_keygen.py
+- HOT/scripts/wo_verify.py
+- HOT/config/signing_keys.json
+- HOT/config/trusted_keys.json
+- HOT/tests/test_auth.py
+- HOT/tests/test_authz.py
+- HOT/tests/test_pristine.py
+- HOT/tests/test_cross_tier_provenance.py
+- HO3/scripts/pristine_rebuild_drill.sh
+interfaces:
+- name: authenticate
+  description: Authenticate request with configured provider
+- name: authorize
+  description: Check role-based authorization
+- name: enforce_pristine
+  description: Enforce write boundaries for pristine directories
+- name: init_auth_secrets
+  description: Initialize external auth secrets
+invariants:
+- Authentication MUST fail-closed on invalid credentials
+- Authorization MUST fail-closed on missing role
+- Pristine enforcement MUST block all writes outside boundary
+- Secrets MUST NOT be logged or exposed
+acceptance:
+  tests:
+  - pytest tests/test_auth.py
+  - pytest tests/test_authz.py
+  - pytest tests/test_pristine.py
+  checks:
+  - python3 -c 'from lib.auth import get_auth_provider; print(get_auth_provider)'
+non_goals:
+- This spec does NOT handle key rotation
+- This spec does NOT handle SSO integration

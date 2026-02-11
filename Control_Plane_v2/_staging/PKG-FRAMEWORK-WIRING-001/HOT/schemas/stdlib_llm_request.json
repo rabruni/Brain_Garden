@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stdlib_llm_request.json",
+  "title": "LLM Stdlib Request",
+  "description": "Request schema for the LLM Standard Library CLI",
+  "type": "object",
+  "oneOf": [
+    {
+      "description": "Complete operation - execute LLM completion",
+      "properties": {
+        "operation": {
+          "const": "complete"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "The rendered prompt text to complete"
+        },
+        "prompt_pack_id": {
+          "type": "string",
+          "description": "REQUIRED - governed prompt reference (e.g., PRM-ADMIN-001)",
+          "pattern": "^PRM-[A-Z]+-[0-9]+$"
+        },
+        "schema": {
+          "type": "object",
+          "description": "Optional JSON schema for structured output"
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "default": 1024,
+          "description": "Maximum tokens in response"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "default": 0,
+          "description": "Sampling temperature (0.0 = deterministic)"
+        },
+        "provider_id": {
+          "type": "string",
+          "description": "Provider to use (uses default if not specified)"
+        }
+      },
+      "required": ["prompt", "prompt_pack_id"]
+    },
+    {
+      "description": "Load prompt operation - load a governed prompt",
+      "properties": {
+        "operation": {
+          "const": "load_prompt"
+        },
+        "prompt_pack_id": {
+          "type": "string",
+          "description": "Prompt pack identifier (e.g., PRM-ADMIN-001)",
+          "pattern": "^PRM-[A-Z]+-[0-9]+$"
+        }
+      },
+      "required": ["operation", "prompt_pack_id"]
+    },
+    {
+      "description": "List providers operation",
+      "properties": {
+        "operation": {
+          "const": "list_providers"
+        }
+      },
+      "required": ["operation"]
+    }
+  ]
+}

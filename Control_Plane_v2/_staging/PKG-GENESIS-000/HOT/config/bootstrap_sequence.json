@@ -1,0 +1,54 @@
+{
+  "description": "Install packages in this order to build the control plane from scratch",
+  "schema_version": "1.0",
+  "layers": [
+    {
+      "layer": 0,
+      "name": "axioms",
+      "vocabulary_introduced": ["file", "package", "hash", "ledger"],
+      "installer": "genesis_bootstrap.py",
+      "packages": ["PKG-KERNEL-001"],
+      "after_this": "package_install.py now works"
+    },
+    {
+      "layer": 1,
+      "name": "vocabulary",
+      "vocabulary_introduced": ["framework", "spec", "plane", "ring", "tier"],
+      "installer": "package_install.py",
+      "packages": ["PKG-VOCABULARY-001", "PKG-REG-001"],
+      "after_this": "system can validate governance chains and manage registries"
+    },
+    {
+      "layer": 2,
+      "name": "governance_enforcement",
+      "vocabulary_introduced": ["expected_specs", "completeness", "bidirectional_chain"],
+      "installer": "package_install.py",
+      "packages": ["PKG-GOVERNANCE-UPGRADE-001"],
+      "after_this": "schemas are enforced, completeness gate is live"
+    },
+    {
+      "layer": 2,
+      "name": "framework_wiring",
+      "vocabulary_introduced": [],
+      "installer": "package_install.py",
+      "packages": ["PKG-FRAMEWORK-WIRING-001"],
+      "after_this": "every framework declares its expected_specs"
+    },
+    {
+      "layer": 2,
+      "name": "spec_conformance",
+      "vocabulary_introduced": [],
+      "installer": "package_install.py",
+      "packages": ["PKG-SPEC-CONFORMANCE-001"],
+      "after_this": "every file belongs to a spec, zero orphans"
+    },
+    {
+      "layer": 2,
+      "name": "layout",
+      "vocabulary_introduced": ["layout", "tier_dirs", "registry_files"],
+      "installer": "package_install.py",
+      "packages": ["PKG-LAYOUT-001"],
+      "after_this": "paths are dynamic, configurable via layout.json"
+    }
+  ]
+}

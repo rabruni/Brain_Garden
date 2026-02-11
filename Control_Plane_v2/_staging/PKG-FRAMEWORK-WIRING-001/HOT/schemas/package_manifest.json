@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-plane.local/schemas/package_manifest.json",
+  "title": "Package Manifest Schema v1.2",
+  "description": "Schema for Control Plane package manifest.json files (FMWK-PKG-001, CP-IMPL-001) - includes plane-aware fields and namespaced install targets",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "version"
+  ],
+  "oneOf": [
+    {
+      "description": "Legacy format (v1.0/v1.1): requires id, tier, artifact_paths, deps",
+      "required": ["id", "tier", "artifact_paths", "deps"],
+      "properties": {
+        "schema_version": { "enum": ["1.0", "1.1"] }
+      }
+    },
+    {
+      "description": "New format (v1.2): requires package_id, assets",
+      "required": ["package_id", "assets"],
+      "properties": {
+        "schema_version": { "enum": ["1.2"] }
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0", "1.1", "1.2"],
+      "description": "Manifest schema version (1.0, 1.1, or 1.2)"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$",
+      "description": "LEGACY: Package identifier (e.g., PKG-T0-001). Use package_id for v1.2+"
+    },
+    "package_id": {
+      "type": "string",
+      "pattern": "^PKG-[A-Z0-9-]+$",
+      "description": "Package identifier (e.g., PKG-BASELINE-HO3-000, PKG-SDLC-100)"
+    },
+    "package_type": {
+      "type": "string",
+      "enum": ["baseline", "framework", "spec", "library", "gate", "tool"],
+      "description": "Package type classification (v1.2). baseline = claims ownership of existing files, others = deliver new files"
+    },
+    "install_targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["namespace", "root"],
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "enum": ["pristine", "config", "registry", "ledger"],
+            "description": "Namespace for installation (pristine = governed code roots)"
+          },
+          "root": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Root path relative to plane (e.g., 'lib/', 'scripts/', 'config/')"
+          },
+          "writable": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether files in this target are writable post-install (false for pristine)"
+          }
+        }
+      },
+      "default": [],
+      "description": "Namespaced install targets for v1.2 packages. Determines where assets are installed."
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "File path relative to plane root"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "description": "Content hash in sha256:<64hex> format"
+          },
+          "classification": {
+            "type": "string",
+            "enum": ["code", "config", "schema", "policy", "framework", "test", "doc", "data"],
+            "default": "code",
+            "description": "Asset classification for governance rules"
+          },
+          "install_target": {
+            "type": "string",
+            "description": "Which install_target namespace this asset belongs to (must match a namespace in install_targets)"
+          }
+        }
+      },
+      "description": "Full asset list with hashes and classification (v1.2 format)"
+    },
+    "asset_classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["lib/**/*.py", "scripts/**/*.py", "modules/**/*.py"],
+          "description": "Glob patterns for code files"
+        },
+        "config": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["config/**/*.json", "config/**/*.yaml"],
+          "description": "Glob patterns for config files"
+        },
+        "schema": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["schemas/**/*.json"],
+          "description": "Glob patterns for schema files"
+        },
+        "policy": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["scripts/policies/**/*.yaml", "scripts/policies/**/*.json"],
+          "description": "Glob patterns for policy files"
+        },
+        "framework": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["frameworks/**/*.md"],
+          "description": "Glob patterns for framework definition files"
+        },
+        "test": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["tests/**/*.py"],
+          "description": "Glob patterns for test files"
+        },
+        "doc": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": ["docs/**/*.md"],
+          "description": "Glob patterns for documentation files"
+        },
+        "data": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\*\\*?/.*$|^[^*].*$" },
+          "default": [],
+          "description": "Glob patterns for data files"
+        }
+      },
+      "description": "Classification rules mapping glob patterns to asset types (v1.2). Used for fail-closed ambiguity detection."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable package name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:[-+].*)?$",
+      "description": "Semantic version (e.g., 1.0.0)"
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["G0", "T0", "T1", "T2", "T3"],
+      "description": "Package tier level"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "default": "",
+      "description": "Package description"
+    },
+    "artifact_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "description": "Paths to installed artifacts relative to CONTROL_PLANE"
+    },
+    "deps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$"
+      },
+      "default": [],
+      "description": "Package ID dependencies (LOCAL PACKAGES ONLY - within same plane)"
+    },
+    "target_plane": {
+      "type": "string",
+      "enum": ["ho3", "ho2", "ho1", "hot", "first", "second", "any"],
+      "default": "any",
+      "description": "Target plane for installation (v1.1). Canonical names: ho3, ho2, ho1. Legacy: hot, first, second. 'any' allows installation in any plane."
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["local_only", "exportable"],
+      "default": "local_only",
+      "description": "Package scope - local_only means deps must be in same plane"
+    },
+    "external_interfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "source_plane"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Interface/contract name"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+            "description": "Interface version (major.minor)"
+          },
+          "source_plane": {
+            "type": "string",
+            "enum": ["ho3", "ho2", "ho1", "hot", "first", "second"],
+            "description": "Plane where the interface originates (READ-ONLY reference). Canonical: ho3, ho2, ho1. Legacy: hot, first, second."
+          },
+          "schema_ref": {
+            "type": "string",
+            "description": "Optional reference to schema file"
+          }
+        }
+      },
+      "default": [],
+      "description": "READ-ONLY dependencies on external plane interfaces (schemas/contracts)"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^PKG-(G0|T0|T1|T2|T3)-[0-9]{3}$"
+      },
+      "default": [],
+      "description": "Conflicting package IDs"
+    },
+    "platform": {
+      "type": "string",
+      "enum": ["any", "linux", "darwin", "windows"],
+      "default": "any",
+      "description": "Target platform"
+    },
+    "arch": {
+      "type": "string",
+      "enum": ["any", "x86_64", "arm64"],
+      "default": "any",
+      "description": "Target architecture"
+    },
+    "license": {
+      "type": "string",
+      "default": "MIT",
+      "description": "Package license (SPDX identifier)"
+    },
+    "author": {
+      "type": "string",
+      "default": "",
+      "description": "Package author"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 creation timestamp"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^([0-9a-fA-F]{64})?$",
+      "default": "",
+      "description": "HMAC-SHA256 signature (64 hex chars)"
+    },
+    "attestation": {
+      "type": ["object", "null"],
+      "default": null,
+      "properties": {
+        "builder": {
+          "type": "string",
+          "description": "Build system identifier"
+        },
+        "build_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Build timestamp"
+        },
+        "build_env_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "description": "SHA256 hash of build environment"
+        },
+        "source_commit": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{40}$",
+          "description": "Git commit SHA"
+        }
+      },
+      "description": "Build attestation details"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "G0" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "maxItems": 0,
+            "description": "Genesis packages MUST have zero dependencies (I5-GENESIS-ZERO)"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T0" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-G0-[0-9]{3}$"
+            },
+            "description": "T0 packages can only depend on G0"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T1" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-(G0|T0)-[0-9]{3}$"
+            },
+            "description": "T1 packages can only depend on G0 or T0"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T2" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-(G0|T0|T1)-[0-9]{3}$"
+            },
+            "description": "T2 packages can only depend on G0, T0, or T1"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tier": { "const": "T3" }
+        }
+      },
+      "then": {
+        "properties": {
+          "deps": {
+            "items": {
+              "pattern": "^PKG-(G0|T0|T1|T2)-[0-9]{3}$"
+            },
+            "description": "T3 packages can depend on any lower tier"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "tier_order": {
+      "description": "Tier ordering for dependency validation: G0 < T0 < T1 < T2 < T3",
+      "type": "object",
+      "properties": {
+        "G0": { "const": 0 },
+        "T0": { "const": 1 },
+        "T1": { "const": 2 },
+        "T2": { "const": 3 },
+        "T3": { "const": 4 }
+      }
+    },
+    "plane_direction_rules": {
+      "description": "External interface direction rules: HO3->HO2->HO1 (higher privilege can reference lower). Legacy: HOT->FIRST->SECOND",
+      "type": "object",
+      "properties": {
+        "ho3_can_reference": ["ho2", "ho1"],
+        "ho2_can_reference": ["ho1"],
+        "ho1_can_reference": [],
+        "hot_can_reference": ["first", "second"],
+        "first_can_reference": ["second"],
+        "second_can_reference": []
+      }
+    }
+  }
+}

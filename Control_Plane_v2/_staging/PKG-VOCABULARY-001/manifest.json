@@ -1,0 +1,25 @@
+{
+  "package_id": "PKG-VOCABULARY-001",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "plane_id": "hot",
+  "title": "G1 Chain Validation",
+  "description": "Rewrites check_g1_chain() to validate PKG->SPEC->FMWK chains across the plane",
+  "assets": [
+    {
+      "path": "HOT/scripts/gate_check.py",
+      "sha256": "sha256:8c58378c63362822e46fc846f211ea5ea3cf80d69c95581dc06669eed94322b5",
+      "classification": "script"
+    },
+    {
+      "path": "HOT/tests/test_vocabulary.py",
+      "sha256": "sha256:060ab206740f02846520e9f7efc40ed7513d12211bf044d900ef6e1d82d4bbd8",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-KERNEL-001"
+  ]
+}

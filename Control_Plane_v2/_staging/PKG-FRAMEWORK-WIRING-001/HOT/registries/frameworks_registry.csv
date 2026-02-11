@@ -1,0 +1,5 @@
+framework_id,title,status,version,plane_id,created_at
+FMWK-000,Control Plane Governance Framework,active,2.1.0,hot,2026-02-01T00:00:00Z
+FMWK-001,Provenance Attestation Standard,active,1.1.0,hot,2026-01-31T00:00:00Z
+FMWK-002,Ledger Protocol Standard,active,1.1.0,hot,2026-01-30T00:00:00Z
+FMWK-007,Package Management Standard,active,1.2.0,hot,2026-01-30T00:00:00Z

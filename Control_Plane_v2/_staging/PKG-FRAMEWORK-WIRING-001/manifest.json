@@ -1,0 +1,166 @@
+{
+  "package_id": "PKG-FRAMEWORK-WIRING-001",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "plane_id": "hot",
+  "title": "Framework Wiring",
+  "description": "Deliver framework manifests, spec pack manifests, schemas, and updated governance registries",
+  "assets": [
+    {
+      "path": "HOT/FMWK-000_Governance/manifest.yaml",
+      "sha256": "sha256:59d0dd6b3ae68a821d7dc5d0d61bddfae1d43f82a4fd1625ad4ad39ec26dd771",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/FMWK-000_Governance/governance_framework.md",
+      "sha256": "sha256:167e09eb82316793fe019f4cefe993ade6d561146a3d67cd75badd4105e835d2",
+      "classification": "doc"
+    },
+    {
+      "path": "HOT/FMWK-001_Provenance_Attestation/manifest.yaml",
+      "sha256": "sha256:3bcf4cf4de692a59b5919b3ada0771fa4b61a66b1358a8c767845540b05d9306",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/FMWK-001_Provenance_Attestation/provenance_attestation_standard.md",
+      "sha256": "sha256:c662c87e74d97065c9deb7ac87588ae7f54a71a552a63dc813ce6210b8093502",
+      "classification": "doc"
+    },
+    {
+      "path": "HOT/FMWK-002_Ledger_Protocol/manifest.yaml",
+      "sha256": "sha256:491b342d974707bef72bbfd5467ac9db292e3c20e678643d9825cec825594c1f",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/FMWK-002_Ledger_Protocol/ledger_protocol.md",
+      "sha256": "sha256:8d8fbb43b0eba9e4e3037a03f9c5ec94592169278bb4068c036e1d6c81583c47",
+      "classification": "doc"
+    },
+    {
+      "path": "HOT/FMWK-007_Package_Management/manifest.yaml",
+      "sha256": "sha256:c043b2dfa86ae2e9d3f3d91fe2f18e995c6e85e5a129c9c56adb2c2f494e74c8",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/FMWK-007_Package_Management/package_management_standard.md",
+      "sha256": "sha256:f2d0c6c87a6182012082338f842c9fec174e51088ffbcd49782d4d8da4c423b8",
+      "classification": "doc"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-CORE-001/manifest.yaml",
+      "sha256": "sha256:7da8a7d33a253fb719ad8f85fee8b7a13f838a9a7d2b79db5ad23119996f242d",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-GATE-001/manifest.yaml",
+      "sha256": "sha256:b6e3de5a6d70196c1462ae9ceb3344969ec485e217873649f8038135544b9290",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-GENESIS-001/manifest.yaml",
+      "sha256": "sha256:d79135f72fbc994f881b26f619866689ffa3024d68160815187e6ba7a9b874e6",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-INT-001/manifest.yaml",
+      "sha256": "sha256:53fc2044b481aeaa48e144075d957e2b890fb15f19d6839d302d75695c8d3da8",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-LEDGER-001/manifest.yaml",
+      "sha256": "sha256:d2c6ab5f635911cf29c1c8e0980f7fb6b8ca103e7818df8c8bf223e0ee3b5782",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-PKG-001/manifest.yaml",
+      "sha256": "sha256:b1e234dd884742d3dfd23ec09e30bc2b34987b404b688cdf08da681d8aeb7152",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-PLANE-001/manifest.yaml",
+      "sha256": "sha256:6c4c61c2bc7cf4c88ea52239e30fb90186ab03bc9c2524c6406497db5ad330f4",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-POLICY-001/manifest.yaml",
+      "sha256": "sha256:13c5402e44746633bff4b451659c1bd864163c5c7f11daf538286628deef719e",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-REG-001/manifest.yaml",
+      "sha256": "sha256:ce781b60ba7868279deb8045b2ab27cf1c59fe8214b474e471975e6f4c5466ed",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-SEC-001/manifest.yaml",
+      "sha256": "sha256:78593edd9368d6222d266ab87990a8c8f1c307c3e0cb43e653dcfb205c0b331c",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/spec_packs/SPEC-VER-001/manifest.yaml",
+      "sha256": "sha256:0516ab85b3e0c5fc4672213fdf753c24fe649f52acedf98d33742362f7fbca83",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/schemas/framework.schema.json",
+      "sha256": "sha256:3a4506cc672015fbdb772ea721eb216669018586ab410e0b754cdf026f87865a",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/spec.schema.json",
+      "sha256": "sha256:3c5c49af0eb092f6c611c6239ebf0b856cd48caf8006e982d15c93bc9470b145",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/package_manifest.json",
+      "sha256": "sha256:aca81037e01de61582023029ad9f958ddf4e61134569bcfd0d83eda32572e0e2",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/work_order.schema.json",
+      "sha256": "sha256:6e180fb621e142cb6dd1773c8c16016df426b808d47324cbee78b7d2a24d4fbf",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/attention_envelope.json",
+      "sha256": "sha256:2bee888e7cf90ad964fef6c4bbc35338b446f97f3b1fe0ad645712d441bc72f1",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/stdlib_llm_request.json",
+      "sha256": "sha256:73f715a937895e2671ce687b667eeb0655e75e62e4411787fde0865f84769141",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/schemas/stdlib_llm_response.json",
+      "sha256": "sha256:2b6b14c76db601da13395f3f809e588122ac6d4fa97285354298af0ee8e10e02",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/registries/frameworks_registry.csv",
+      "sha256": "sha256:57f98f1982ac461890e1ec622db4e46b096632c6aaea3fea644a994427489c52",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/registries/specs_registry.csv",
+      "sha256": "sha256:bb32f1aa4852ea8a48a2dd54a96f17c84f13ea7ffcb74761618980bb69ddb5ea",
+      "classification": "registry"
+    },
+    {
+      "path": "HOT/tests/test_framework_wiring.py",
+      "sha256": "sha256:f12fded5bc48546ef8dbdda2c8c05e4af371c6cd94860de0b28adaf6724a649b",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-REG-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-09T23:00:00+00:00",
+    "author": "bootstrap",
+    "description": "Layer 2 framework wiring: 4 framework manifests, 11 spec packs, 7 schemas, governance registries"
+  }
+}

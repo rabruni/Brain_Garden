@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "description": "Seed registry for cold-boot. Lists packages available for installation.",
+  "packages": [
+    {
+      "id": "PKG-KERNEL-001",
+      "version": "1.0.0",
+      "tier": "G0",
+      "digest": "sha256:21d482d5b8c3f1204a6630761898b2bd8900d40d68ca9dd531fb749e38046ad0",
+      "description": "Kernel libs + package_install.py \u2014 unlocks the full install pipeline"
+    }
+  ]
+}

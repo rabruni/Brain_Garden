@@ -70,6 +70,29 @@ This directory (`/Users/raymondbruni/Brain_Garden/playground`) functions as a mo
 *   **Dependencies:** Requires CUDA 12.6+ and `flash-attention` (2 or 3 depending on GPU).
 *   **Model:** Recurrent architecture with High-level (planning) and Low-level (compute) modules.
 
+### Logic & Structure Commands (Meta)
+
+#### #1 COMMAND: `lp` — Logic Path
+**Highest priority override.** When `lp` or `lp <thing>` is invoked:
+1. **Read the source code** — trace the full call chain.
+2. **Draw ASCII flow** showing inputs, data transformations, and side effects (`📝` write, `→` call, `← LLM`).
+3. **No prose** — diagram + summary tables only.
+
+#### #2 COMMAND: `mp` — Markdown Map
+When `mp <file.md>` is invoked:
+1. **Read the markdown** — parse headings and lists.
+2. **Emit indented bullet outline** showing document structure.
+3. **No prose** — outline only.
+
+#### #3 COMMAND: `js` — JSON Structure
+When `js <file.json>` is invoked:
+1. **Parse JSON** — analyze structure and types.
+2. **Emit three sections**:
+   - **Structure Outline**: Indented keys/values.
+   - **Schema Summary**: Tree of key paths and types (e.g., `object (N keys)`, `array[N] of string`).
+   - **Pretty-Print**: Fenced JSON block.
+3. **No prose** — sections only.
+
 ---
 
 ## General Notes

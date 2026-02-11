@@ -1,0 +1,41 @@
+spec_id: SPEC-REG-001
+title: Registry Management
+framework_id: FMWK-000
+status: active
+version: 1.0.0
+plane_id: ho3
+assets:
+- HOT/kernel/registry.py
+- HOT/kernel/resolve.py
+- HOT/kernel/id_allocator.py
+- HOT/registries/control_plane_registry.csv
+- HO3/registries/file_ownership.csv
+- HO3/registries/packages_state.csv
+- HOT/registries/frameworks_registry.csv
+- HOT/registries/packages_registry.csv
+- HOT/registries/specs_registry.csv
+interfaces:
+- name: read_registry
+  description: Read registry CSV into structured data
+- name: write_registry
+  description: Write structured data to registry CSV
+- name: resolve_artifact
+  description: Resolve artifact path from ID
+- name: allocate_id
+  description: Allocate new ID with entity prefix
+invariants:
+- Registry writes MUST be atomic
+- ID allocation MUST be unique within entity type
+- Registry schema MUST be validated on write
+acceptance:
+  tests:
+  - pytest tests/test_registry.py
+  checks:
+  - python3 -c 'from lib.registry import read_registry; print(read_registry)'
+dependencies:
+- spec_id: SPEC-CORE-001
+  interfaces:
+  - get_control_plane_root
+non_goals:
+- This spec does NOT handle registry migrations
+- This spec does NOT handle registry backup

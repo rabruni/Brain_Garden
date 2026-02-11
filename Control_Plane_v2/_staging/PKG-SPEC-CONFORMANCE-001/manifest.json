@@ -1,0 +1,25 @@
+{
+  "package_id": "PKG-SPEC-CONFORMANCE-001",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "plane_id": "hot",
+  "title": "Spec Conformance Validation",
+  "description": "Validate governance mesh: all specs have plane_id, interfaces, and pass validate_spec()",
+  "assets": [
+    {
+      "path": "HOT/tests/test_spec_conformance.py",
+      "sha256": "sha256:27f944de087b6d298e354c04759721c6ad79bbc80bab5f5e5514fa13990f541b",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-FRAMEWORK-WIRING-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-09T23:00:00+00:00",
+    "author": "bootstrap",
+    "description": "Layer 2 spec conformance: validates governance mesh completeness"
+  }
+}

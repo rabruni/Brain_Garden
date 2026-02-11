@@ -1,0 +1,10 @@
+{
+  "tier": "HO2",
+  "tier_root": "HO2",
+  "ledger_path": "ledger/workorder.jsonl",
+  "parent_ledger": "../HOT/ledger/governance.jsonl",
+  "work_order_id": null,
+  "session_id": null,
+  "created_at": "2026-01-31T00:00:00.000000+00:00",
+  "status": "active"
+}
