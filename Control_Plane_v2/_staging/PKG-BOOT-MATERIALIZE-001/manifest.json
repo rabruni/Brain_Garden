@@ -1,0 +1,27 @@
+{
+  "package_id": "PKG-BOOT-MATERIALIZE-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Boot-Time Tier Materializer",
+  "description": "Ensure tier manifests and GENESIS chains exist before ADMIN session start",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-LAYOUT-002"
+  ],
+  "assets": [
+    {
+      "path": "HOT/scripts/boot_materialize.py",
+      "sha256": "sha256:eccf4e2e320854aa4e5dfecb05f953ea37509b74fcf074c511ec2a3370b795c8",
+      "classification": "script"
+    },
+    {
+      "path": "HOT/tests/test_boot_materialize.py",
+      "sha256": "sha256:b49f39e2914618e80c5d0da107b5d2a35048aa77da474c57ac1164ab715e763a",
+      "classification": "test"
+    }
+  ]
+}
