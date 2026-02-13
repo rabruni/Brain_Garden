@@ -4,12 +4,14 @@ Tests verify:
 - Registry files claimed by SPEC-REG-001
 - New config/schema files claimed by appropriate specs
 - 14 dead spec dirs are removed
-- Exactly 11 specs, 4 frameworks, 8 schemas remain
+- Baseline specs, frameworks, schemas present (regression guard)
+- All schemas, frameworks, specs registered in file_ownership.csv (ownership validation)
 - No surviving spec has HO3/tests/ in its assets
 - All active specs have at least 1 interface
 - All specs have plane_id
 - All spec manifests pass validate_spec()
 """
+import csv
 import json
 import sys
 from pathlib import Path
@@ -155,29 +157,100 @@ class TestRemovedSpecsGone:
         assert not spec_dir.exists(), f"{spec_id} is dead — dir must be deleted"
 
 
+def _load_owned_files(cp_root: Path) -> set[str]:
+    """Load currently-owned file paths from file_ownership.csv."""
+    csv_path = cp_root / "HOT" / "registries" / "file_ownership.csv"
+    if not csv_path.exists():
+        return set()
+    owned = set()
+    with open(csv_path) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Only current owners (not superseded)
+            if not row.get("replaced_date"):
+                owned.add(row["file_path"])
+    return owned
+
+
 class TestGovernanceHealth:
-    """After strip, exact counts must match target state."""
+    """Governance health: baseline regression + ownership validation."""
 
-    def test_exactly_11_specs(self):
-        spec_dirs = sorted(d.name for d in SPEC_PACKS.iterdir() if d.is_dir() and d.name.startswith("SPEC-"))
-        assert spec_dirs == sorted(SURVIVING_SPECS), \
-            f"Expected 11 specs {sorted(SURVIVING_SPECS)}, got {spec_dirs}"
+    # ── Baselines (Layer 0-2 foundation) ──
 
-    def test_exactly_4_frameworks(self):
-        fmwk_dirs = sorted(d.name.split("_")[0] for d in HOT_ROOT.iterdir()
+    BASELINE_SCHEMAS = [
+        "attention_envelope.json", "framework.schema.json",
+        "package_manifest.json", "spec.schema.json",
+        "stdlib_llm_request.json", "stdlib_llm_response.json",
+        "work_order.schema.json",
+    ]
+
+    BASELINE_FRAMEWORKS = ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-007"]
+
+    BASELINE_SPECS = [
+        "SPEC-CORE-001", "SPEC-GATE-001", "SPEC-GENESIS-001",
+        "SPEC-INT-001", "SPEC-LEDGER-001", "SPEC-PKG-001",
+        "SPEC-PLANE-001", "SPEC-POLICY-001", "SPEC-REG-001",
+        "SPEC-SEC-001", "SPEC-VER-001",
+    ]
+
+    def test_baseline_schemas_present(self):
+        """Layer 0-2 schemas must always exist (regression guard)."""
+        schemas = {f.name for f in (HOT_ROOT / "schemas").glob("*.json")}
+        for baseline in self.BASELINE_SCHEMAS:
+            assert baseline in schemas, f"Baseline schema missing: {baseline}"
+
+    def test_baseline_frameworks_present(self):
+        """Layer 0-2 frameworks must always exist (regression guard)."""
+        fmwk_dirs = {d.name.split("_")[0] for d in HOT_ROOT.iterdir()
+                     if d.is_dir() and d.name.startswith("FMWK-")}
+        for baseline in self.BASELINE_FRAMEWORKS:
+            assert baseline in fmwk_dirs, f"Baseline framework missing: {baseline}"
+
+    def test_baseline_specs_present(self):
+        """Layer 0-2 specs must always exist (regression guard)."""
+        spec_dirs = {d.name for d in SPEC_PACKS.iterdir()
+                     if d.is_dir() and d.name.startswith("SPEC-")}
+        for baseline in self.BASELINE_SPECS:
+            assert baseline in spec_dirs, f"Baseline spec missing: {baseline}"
+
+    # ── Ownership validation (scales with packages) ──
+
+    def test_all_schemas_owned(self):
+        """Every schema in HOT/schemas/ must be registered in file_ownership.csv."""
+        owned = _load_owned_files(CP_ROOT)
+        schemas = sorted(f for f in (HOT_ROOT / "schemas").glob("*.json"))
+        orphans = []
+        for schema_path in schemas:
+            rel_path = f"HOT/schemas/{schema_path.name}"
+            if rel_path not in owned:
+                orphans.append(rel_path)
+        assert not orphans, f"Unregistered schemas (no owner in file_ownership.csv): {orphans}"
+
+    def test_all_framework_dirs_owned(self):
+        """Every FMWK-* dir must have at least one registered file."""
+        owned = _load_owned_files(CP_ROOT)
+        fmwk_dirs = sorted(d.name for d in HOT_ROOT.iterdir()
                            if d.is_dir() and d.name.startswith("FMWK-"))
-        assert fmwk_dirs == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-007"], \
-            f"Expected 4 frameworks, got {fmwk_dirs}"
+        unowned = []
+        for fmwk_dir in fmwk_dirs:
+            prefix = f"HOT/{fmwk_dir}/"
+            has_owned_file = any(f.startswith(prefix) for f in owned)
+            if not has_owned_file:
+                unowned.append(fmwk_dir)
+        assert not unowned, f"Framework dirs with no registered files: {unowned}"
 
-    def test_exactly_8_schemas(self):
-        schemas = sorted(f.name for f in (HOT_ROOT / "schemas").glob("*.json"))
-        expected = sorted([
-            "attention_envelope.json", "framework.schema.json",
-            "package_manifest.json", "package_manifest_l0.json",
-            "spec.schema.json", "stdlib_llm_request.json",
-            "stdlib_llm_response.json", "work_order.schema.json",
-        ])
-        assert schemas == expected, f"Expected 8 schemas {expected}, got {schemas}"
+    def test_all_spec_dirs_owned(self):
+        """Every SPEC-* dir must have at least one registered file."""
+        owned = _load_owned_files(CP_ROOT)
+        spec_dirs = sorted(d.name for d in SPEC_PACKS.iterdir()
+                           if d.is_dir() and d.name.startswith("SPEC-"))
+        unowned = []
+        for spec_dir in spec_dirs:
+            prefix = f"HOT/spec_packs/{spec_dir}/"
+            has_owned_file = any(f.startswith(prefix) for f in owned)
+            if not has_owned_file:
+                unowned.append(spec_dir)
+        assert not unowned, f"Spec dirs with no registered files: {unowned}"
 
 
 class TestSpecAssetPaths:

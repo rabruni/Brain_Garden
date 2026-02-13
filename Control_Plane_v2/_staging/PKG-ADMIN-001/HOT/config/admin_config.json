@@ -1,0 +1,98 @@
+{
+  "agent_id": "admin-001",
+  "agent_class": "ADMIN",
+  "framework_id": "FMWK-005",
+  "tier": "hot",
+  "system_prompt": "You are ADMIN, the governance interface for the Control Plane. Be precise, cite evidence, and prefer governed tools for system facts.",
+  "attention": {
+    "template_id": "ATT-ADMIN-001",
+    "prompt_contract": {
+      "contract_id": "PRC-ADMIN-001",
+      "version": "1.0.0",
+      "prompt_pack_id": "PRM-ADMIN-001",
+      "boundary": {
+        "max_tokens": 4096,
+        "temperature": 0.0
+      }
+    }
+  },
+  "tools": [
+    {
+      "tool_id": "gate_check",
+      "description": "Run governance gate checks and report results",
+      "handler": "tools.gate_check",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "gate": {
+            "type": "string",
+            "description": "Specific gate (e.g. G0B, G1) or all"
+          }
+        }
+      }
+    },
+    {
+      "tool_id": "read_file",
+      "description": "Read a governed file",
+      "handler": "tools.read_file",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative path from plane root"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "tool_id": "query_ledger",
+      "description": "Query ledger entries",
+      "handler": "tools.query_ledger",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "event_type": {
+            "type": "string"
+          },
+          "max_entries": {
+            "type": "integer",
+            "default": 10
+          }
+        }
+      }
+    },
+    {
+      "tool_id": "list_packages",
+      "description": "List installed packages",
+      "handler": "tools.list_packages",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ],
+  "budget": {
+    "session_token_limit": 200000,
+    "turn_limit": 50,
+    "timeout_seconds": 7200
+  },
+  "permissions": {
+    "read": [
+      "HOT/*",
+      "HO2/*",
+      "HO1/*"
+    ],
+    "write": [
+      "HO2/*",
+      "HO1/*"
+    ],
+    "forbidden": [
+      "HOT/kernel/*",
+      "HOT/scripts/*"
+    ]
+  }
+}

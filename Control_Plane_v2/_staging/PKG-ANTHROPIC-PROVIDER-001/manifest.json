@@ -17,7 +17,7 @@
   "assets": [
     {
       "path": "HOT/kernel/anthropic_provider.py",
-      "sha256": "sha256:caf1faa028038767421418a8370d3cbef3eed235c3b0512b5f86c559f382b809",
+      "sha256": "sha256:0559a0a8a9e0030bd3c52f9ad6030fad91f16567a7619433ae058887ec4c8f02",
       "classification": "kernel"
     },
     {

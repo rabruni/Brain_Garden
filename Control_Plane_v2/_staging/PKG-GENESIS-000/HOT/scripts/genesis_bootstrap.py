@@ -233,25 +233,75 @@ def write_file_ownership(
                 classification = classification_map.get(rel_path, "unknown")
                 writer.writerow([rel_path, pkg_id, digest, classification, now, "", ""])
 
-    # Register genesis package files (from installed manifest if available)
-    genesis_manifest = root / "HOT" / "installed" / "PKG-GENESIS-000" / "manifest.json"
-    if genesis_manifest.exists():
-        gm = json.loads(genesis_manifest.read_text(encoding="utf-8"))
-        for asset in gm.get("assets", []):
-            g_path = asset.get("path", "")
-            g_full = root / g_path
-            if g_full.exists() and g_full.is_file():
-                g_digest = sha256_file(g_full)
-                g_class = asset.get("classification", "genesis")
-                with open(ownership_csv, "a", newline="", encoding="utf-8") as f:
-                    writer = csv.writer(f)
-                    writer.writerow([g_path, "PKG-GENESIS-000", g_digest, g_class, now, "", ""])
-
     # NOTE: file_ownership.csv is NOT self-registered because it's an append-only
     # derived registry whose hash changes with every install. It's excluded from
     # G0B via excluded_patterns.
 
     return ownership_csv
+
+
+def load_manifest_from_archive(archive: Path) -> Optional[Dict[str, Any]]:
+    """Read manifest.json from inside a tar.gz archive.
+
+    Args:
+        archive: Path to tar.gz archive
+
+    Returns:
+        Parsed manifest dict, or None if not found
+    """
+    if not archive.exists():
+        return None
+    try:
+        with tarfile.open(archive, "r:gz") as tf:
+            for member in tf.getmembers():
+                if member.name == "manifest.json" or (
+                    member.name.endswith("/manifest.json") and member.name.count("/") <= 1
+                ):
+                    mf = tf.extractfile(member)
+                    if mf:
+                        return json.load(mf)
+    except (tarfile.TarError, json.JSONDecodeError):
+        pass
+    return None
+
+
+def register_genesis_files(
+    genesis_archive: Path,
+    root: Path,
+    ownership_csv: Path,
+) -> int:
+    """Register genesis package files in file_ownership.csv.
+
+    Reads manifest.json from the genesis archive and appends
+    ownership rows for each genesis file found on disk.
+
+    Args:
+        genesis_archive: Path to PKG-GENESIS-000.tar.gz
+        root: Control Plane root
+        ownership_csv: Path to file_ownership.csv
+
+    Returns:
+        Number of genesis files registered
+    """
+    manifest = load_manifest_from_archive(genesis_archive)
+    if not manifest:
+        return 0
+
+    now = datetime.now(timezone.utc).isoformat()
+    count = 0
+
+    with open(ownership_csv, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        for asset in manifest.get("assets", []):
+            g_path = asset.get("path", "")
+            g_full = root / g_path
+            if g_full.exists() and g_full.is_file():
+                g_digest = sha256_file(g_full)
+                g_class = asset.get("classification", "genesis")
+                writer.writerow([g_path, "PKG-GENESIS-000", g_digest, g_class, now, "", ""])
+                count += 1
+
+    return count
 
 
 def list_archive_files(archive: Path, root: Path) -> List[str]:
@@ -375,7 +425,8 @@ def install_package(
     seed_entry: Dict[str, Any],
     root: Path,
     force: bool = False,
-    verify_only: bool = False
+    verify_only: bool = False,
+    genesis_archive: Optional[Path] = None,
 ) -> int:
     """Install a package from archive.
 
@@ -433,19 +484,7 @@ def install_package(
             print("  (continuing due to --force)")
 
     # Load manifest from archive for classification data
-    manifest = None
-    try:
-        with tarfile.open(archive, "r:gz") as tf:
-            for member in tf.getmembers():
-                if member.name == "manifest.json" or (
-                    member.name.endswith("/manifest.json") and member.name.count("/") <= 1
-                ):
-                    mf = tf.extractfile(member)
-                    if mf:
-                        manifest = json.load(mf)
-                        break
-    except (tarfile.TarError, json.JSONDecodeError):
-        pass  # Non-fatal: classification will be "unknown"
+    manifest = load_manifest_from_archive(archive)
 
     # Extract archive
     print("  Extracting...")
@@ -478,6 +517,26 @@ def install_package(
         manifest=manifest,
     )
     print(f"  Ownership: {ownership_path}")
+
+    # Register genesis files from genesis archive (if provided)
+    if genesis_archive and genesis_archive.exists():
+        print("  Registering genesis files...")
+        genesis_file_count = register_genesis_files(genesis_archive, root, ownership_path)
+        print(f"  Registered {genesis_file_count} genesis files")
+
+        # Write genesis receipt
+        genesis_manifest = load_manifest_from_archive(genesis_archive)
+        if genesis_manifest:
+            genesis_files_list = [a["path"] for a in genesis_manifest.get("assets", [])]
+            genesis_receipt = write_install_receipt(
+                pkg_id="PKG-GENESIS-000",
+                version=genesis_manifest.get("version", "0.0.0"),
+                archive_path=genesis_archive,
+                files=genesis_files_list,
+                root=root,
+                installer="genesis_bootstrap",
+            )
+            print(f"  Genesis receipt: {genesis_receipt}")
 
     print(f"  OK: {pkg_id} installed")
     return 0
@@ -538,6 +597,10 @@ Environment Variables:
         help="Only verify package, don't install"
     )
     parser.add_argument(
+        "--genesis-archive",
+        help="Path to PKG-GENESIS-000.tar.gz (registers genesis files in file_ownership.csv)"
+    )
+    parser.add_argument(
         "--version",
         action="store_true",
         help="Show bootstrapper version"
@@ -596,13 +659,22 @@ Environment Variables:
         print(f"  Available: {[p['id'] for p in seed.get('packages', [])]}")
         return 1
 
+    # Resolve genesis archive path (if provided)
+    genesis_archive = None
+    if args.genesis_archive:
+        genesis_archive = Path(args.genesis_archive)
+        if not genesis_archive.is_absolute():
+            genesis_archive = root / genesis_archive
+        genesis_archive = genesis_archive.resolve()
+
     # Install package
     return install_package(
         archive=archive,
         seed_entry=entry,
         root=root,
         force=args.force,
-        verify_only=args.verify_only
+        verify_only=args.verify_only,
+        genesis_archive=genesis_archive,
     )
 
 

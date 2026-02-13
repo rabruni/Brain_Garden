@@ -1,0 +1,31 @@
+{
+  "package_id": "PKG-TOKEN-BUDGETER-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Token Budgeter",
+  "description": "Hierarchical token budget management with rate limiting, cost tracking, and ledger integration",
+  "spec_id": "SPEC-CORE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/token_budgeter.py",
+      "sha256": "sha256:3a9b21cea6d17efa66aeee179017dd06a2a98d14d5404d748e218faad9b0b0f3",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/schemas/budget_config.schema.json",
+      "sha256": "sha256:2412a9d5c0ccb63aebfedecca6909c22fdabe027aeb5c0323a5523ef7c00f751",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/tests/test_token_budgeter.py",
+      "sha256": "sha256:813dff8549adb2dea9a39a8ed419b7ee5313ccb4f3409cbb26af5510e13c6f78",
+      "classification": "test"
+    }
+  ]
+}

@@ -29,7 +29,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Set, Optional, TYPE_CHECKING
+from typing import Set, Optional, Union, TYPE_CHECKING
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -58,6 +58,7 @@ class PathClass(str, Enum):
 
 
 # Directory classifications relative to CONTROL_PLANE
+# Includes both flat-layout and HOT tier-layout paths.
 PRISTINE_PATHS: Set[str] = {
     "frameworks",
     "lib",
@@ -67,10 +68,19 @@ PRISTINE_PATHS: Set[str] = {
     "schemas",
     "policies",
     "specs",
+    # HOT tier-layout
+    "HOT/kernel",
+    "HOT/scripts",
+    "HOT/registries",
+    "HOT/schemas",
+    "HOT/config",
+    "HOT/tests",
 }
 
 APPEND_ONLY_PATHS: Set[str] = {
     "ledger",
+    # HOT tier-layout
+    "HOT/ledger",
 }
 
 DERIVED_PATHS: Set[str] = {
@@ -80,6 +90,9 @@ DERIVED_PATHS: Set[str] = {
     "tmp",
     "_staging",
     "installed",
+    # HOT tier-layout
+    "HOT/installed",
+    "HOT/registries/compiled",
 }
 
 # Special case: packages_registry.csv is PRISTINE but writable in BOOTSTRAP mode
@@ -143,21 +156,23 @@ class OutsideBoundaryViolation(Exception):
         super().__init__(self.message)
 
 
-def _get_plane_root(plane: Optional["PlaneContext"] = None) -> Path:
+def _get_plane_root(plane: Optional[Union["PlaneContext", Path]] = None) -> Path:
     """Get the root path for a plane, or CONTROL_PLANE as fallback.
 
     Args:
-        plane: Optional PlaneContext to use
+        plane: Optional PlaneContext or Path to use
 
     Returns:
         The plane's root path, or CONTROL_PLANE if not provided
     """
     if plane is not None:
+        if isinstance(plane, Path):
+            return plane
         return plane.root
     return CONTROL_PLANE
 
 
-def is_inside_control_plane(path: Path, plane: Optional["PlaneContext"] = None) -> bool:
+def is_inside_control_plane(path: Path, plane: Optional[Union["PlaneContext", Path]] = None) -> bool:
     """Check if a path is inside the control plane root.
 
     Args:
@@ -181,7 +196,7 @@ def is_inside_control_plane(path: Path, plane: Optional["PlaneContext"] = None) 
 def assert_inside_control_plane(
     path: Path,
     log_violation: bool = True,
-    plane: Optional["PlaneContext"] = None,
+    plane: Optional[Union["PlaneContext", Path]] = None,
 ) -> None:
     """
     Assert that a path is inside the control plane root.
@@ -215,7 +230,7 @@ def assert_inside_control_plane(
     if log_violation:
         _log_event("OUTSIDE_DENIED", path, get_current_mode(), allowed=False, plane=plane)
 
-    plane_name = plane.name if plane else "CONTROL_PLANE"
+    plane_name = plane.name if hasattr(plane, 'name') else str(plane) if plane else "CONTROL_PLANE"
     raise OutsideBoundaryViolation(
         path,
         f"Write outside {plane_name} denied: {path}. "
@@ -223,7 +238,7 @@ def assert_inside_control_plane(
     )
 
 
-def classify_path(path: Path, plane: Optional["PlaneContext"] = None) -> PathClass:
+def classify_path(path: Path, plane: Optional[Union["PlaneContext", Path]] = None) -> PathClass:
     """
     Classify a path into its directory class.
 
@@ -267,9 +282,9 @@ def classify_path(path: Path, plane: Optional["PlaneContext"] = None) -> PathCla
         return PathClass.PRISTINE  # Root is pristine
 
     # Use plane-specific directory lists if available, else defaults
-    derived_paths = set(plane.derived_roots) if plane else DERIVED_PATHS
-    append_only_paths = set(plane.append_only_roots) if plane else APPEND_ONLY_PATHS
-    pristine_paths = set(plane.pristine_roots) if plane else PRISTINE_PATHS
+    derived_paths = set(plane.derived_roots) if hasattr(plane, 'derived_roots') else DERIVED_PATHS
+    append_only_paths = set(plane.append_only_roots) if hasattr(plane, 'append_only_roots') else APPEND_ONLY_PATHS
+    pristine_paths = set(plane.pristine_roots) if hasattr(plane, 'pristine_roots') else PRISTINE_PATHS
 
     # Check derived first (more specific paths)
     for derived in derived_paths:
@@ -294,7 +309,7 @@ def classify_path(path: Path, plane: Optional["PlaneContext"] = None) -> PathCla
     return PathClass.DERIVED
 
 
-def is_bootstrap_writable(path: Path, plane: Optional["PlaneContext"] = None) -> bool:
+def is_bootstrap_writable(path: Path, plane: Optional[Union["PlaneContext", Path]] = None) -> bool:
     """Check if path is writable during bootstrap mode.
 
     Args:
@@ -332,7 +347,7 @@ def assert_write_allowed(
     path: Path,
     mode: Optional[WriteMode] = None,
     log_violation: bool = True,
-    plane: Optional["PlaneContext"] = None,
+    plane: Optional[Union["PlaneContext", Path]] = None,
 ) -> None:
     """
     Assert that a write operation is allowed.
@@ -402,7 +417,7 @@ def _log_event(
     path: Path,
     mode: WriteMode,
     allowed: bool,
-    plane: Optional["PlaneContext"] = None,
+    plane: Optional[Union["PlaneContext", Path]] = None,
 ) -> None:
     """Log a pristine boundary event to the ledger.
 
@@ -415,8 +430,10 @@ def _log_event(
     """
     try:
         # Use plane-scoped ledger if available
-        if plane is not None:
+        if plane is not None and hasattr(plane, 'ledger_dir'):
             ledger = LedgerClient(ledger_path=plane.ledger_dir / "governance.jsonl")
+        elif isinstance(plane, Path):
+            ledger = LedgerClient(ledger_path=plane / "HOT" / "ledger" / "governance.jsonl")
         else:
             ledger = LedgerClient()
         entry = LedgerEntry(
@@ -429,7 +446,7 @@ def _log_event(
                 "mode": mode.value,
                 "path_class": classify_path(path, plane=plane).value,
                 "allowed": allowed,
-                "plane": plane.name if plane else "default",
+                "plane": plane.name if hasattr(plane, 'name') else str(plane) if plane else "default",
             },
         )
         ledger.write(entry)
@@ -438,7 +455,7 @@ def _log_event(
         pass
 
 
-def assert_append_only(path: Path, plane: Optional["PlaneContext"] = None) -> None:
+def assert_append_only(path: Path, plane: Optional[Union["PlaneContext", Path]] = None) -> None:
     """
     Assert that a path is in an append-only directory.
 

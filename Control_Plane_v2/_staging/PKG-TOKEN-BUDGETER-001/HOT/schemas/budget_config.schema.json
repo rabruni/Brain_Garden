@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Token Budget Configuration Schema v1.0",
+  "description": "Config-driven budget parameters for hierarchical token management",
+  "type": "object",
+  "required": ["defaults"],
+  "properties": {
+    "defaults": {
+      "type": "object",
+      "description": "Default budget limits applied when no override is specified",
+      "required": ["session_token_limit", "wo_token_limit", "agent_token_limit", "wo_turn_limit", "wo_timeout_seconds"],
+      "properties": {
+        "session_token_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens per session"
+        },
+        "wo_token_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens per work order"
+        },
+        "agent_token_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens per agent invocation"
+        },
+        "wo_turn_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum turns per work order"
+        },
+        "wo_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Work order timeout in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "rate_limits": {
+      "type": "object",
+      "description": "Rate limiting configuration",
+      "properties": {
+        "requests_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum requests per minute"
+        },
+        "tokens_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens per minute"
+        },
+        "burst_allowance": {
+          "type": "number",
+          "minimum": 1.0,
+          "description": "Multiplier for burst capacity (e.g., 1.5 = 50% burst over limit)"
+        },
+        "cooldown_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Cooldown period in milliseconds after rate limit hit"
+        },
+        "window_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 60,
+          "description": "Sliding window size in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "provider_limits": {
+      "type": "object",
+      "description": "Per-provider rate limits, keyed by provider_id",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "rpm_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Requests per minute for this provider"
+          },
+          "tpm_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Tokens per minute for this provider"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "description": "Per-model pricing, keyed by model_id",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "input_per_1k": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Cost per 1000 input tokens"
+          },
+          "output_per_1k": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Cost per 1000 output tokens"
+          }
+        },
+        "required": ["input_per_1k", "output_per_1k"],
+        "additionalProperties": false
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "description": "Enforcement behavior configuration",
+      "properties": {
+        "hard_limit": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, reject requests over budget. If false, warn only."
+        },
+        "warn_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.8,
+          "description": "Fraction of budget at which to emit warnings (0-1)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

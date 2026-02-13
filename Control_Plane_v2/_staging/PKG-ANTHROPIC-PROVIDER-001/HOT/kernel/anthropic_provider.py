@@ -7,6 +7,7 @@ constraint applies to kernel (Layers 0-2) only.
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -53,6 +54,7 @@ class AnthropicProvider:
         temperature: float = 0.0,
         timeout_ms: int = 30000,
         structured_output: Optional[dict[str, Any]] = None,
+        tools: Optional[list[dict[str, Any]]] = None,
     ) -> AnthropicResponse:
         """Send a prompt to the Anthropic Messages API."""
         kwargs: dict[str, Any] = {
@@ -63,7 +65,10 @@ class AnthropicProvider:
             "timeout": timeout_ms / 1000.0,
         }
 
-        if structured_output is not None:
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = {"type": "auto"}
+        elif structured_output is not None:
             kwargs["tools"] = [{
                 "name": "output_json",
                 "description": "Return structured output matching the schema.",
@@ -108,11 +113,21 @@ class AnthropicProvider:
 
         blocks = response.content
         text_parts = [b.text for b in blocks if b.type == "text"]
+        tool_use_parts = [b for b in blocks if b.type == "tool_use"]
         content_dicts = tuple(b.model_dump() for b in blocks)
         finish = STOP_REASON_MAP.get(response.stop_reason or "", "stop")
 
+        if tool_use_parts:
+            tool_use_list = [
+                {"tool_id": b.name, "arguments": b.input}
+                for b in tool_use_parts
+            ]
+            content = json.dumps({"tool_use": tool_use_list})
+        else:
+            content = "".join(text_parts)
+
         return AnthropicResponse(
-            content="".join(text_parts),
+            content=content,
             model=response.model,
             input_tokens=response.usage.input_tokens,
             output_tokens=response.usage.output_tokens,

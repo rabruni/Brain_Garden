@@ -68,7 +68,11 @@ class TierContext:
 
 
 # Default ledger location
-DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "ledger" / "governance.jsonl"
+try:
+    from kernel.paths import LEDGER_DIR as _LDIR
+    DEFAULT_LEDGER_PATH = _LDIR / "governance.jsonl"
+except Exception:
+    DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "ledger" / "governance.jsonl"
 # Note: Index paths are now computed per-instance in LedgerClient.__init__
 # to support multi-ledger isolation (tier-agnostic capability)
 

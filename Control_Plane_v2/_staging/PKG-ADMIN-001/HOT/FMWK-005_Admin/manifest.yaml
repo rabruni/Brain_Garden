@@ -1,0 +1,8 @@
+framework_id: FMWK-005
+name: Admin Framework
+version: 1.0.0
+status: active
+description: Governs ADMIN runtime configuration and boundaries.
+owned_by_package: PKG-ADMIN-001
+plane_id: hot
+spec_id: SPEC-GATE-001

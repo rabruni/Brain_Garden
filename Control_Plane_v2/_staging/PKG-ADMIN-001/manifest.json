@@ -1,0 +1,50 @@
+{
+  "package_id": "PKG-ADMIN-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "ADMIN First Boot",
+  "description": "ADMIN configuration and CLI entrypoint on top of Session Host",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-SESSION-HOST-001",
+    "PKG-ATTENTION-001",
+    "PKG-PROMPT-ROUTER-001",
+    "PKG-ANTHROPIC-PROVIDER-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/admin/main.py",
+      "sha256": "sha256:85df1b27f09991dc076fa536cf4ac12ccf46df2046b9f57b93fdfc86b71e9fc7",
+      "classification": "application"
+    },
+    {
+      "path": "HOT/config/admin_config.json",
+      "sha256": "sha256:c4f9cc69a8969c8ca7ba209c36ce70e03b8c3feb00b988e4031eb829e4c2c251",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/attention_templates/ATT-ADMIN-001.json",
+      "sha256": "sha256:a5f3e7696afb8028936068e4f45f662ea21977c3892f639d98b760d852c4826d",
+      "classification": "config"
+    },
+    {
+      "path": "HOT/FMWK-005_Admin/manifest.yaml",
+      "sha256": "sha256:54bf77783e508c12716ebb100bf75fcb1449f78a4a914cdc3515e8d82b129e51",
+      "classification": "framework"
+    },
+    {
+      "path": "HOT/schemas/admin_config.schema.json",
+      "sha256": "sha256:f2e85abeee5e29cbfdf9ad9631d92c4fd1344acd48554360e35bd9ae7001ec19",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/tests/test_admin.py",
+      "sha256": "sha256:19e6e27e293d3298ed0d35e02a1522f32fae902b0fcb651320dc236f839bed53",
+      "classification": "test"
+    }
+  ]
+}

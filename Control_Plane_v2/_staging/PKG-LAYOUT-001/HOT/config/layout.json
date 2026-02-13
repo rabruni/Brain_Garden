@@ -2,7 +2,6 @@
   "schema_version": "1.0",
   "tiers": {
     "HOT": "HOT",
-    "HO3": "HO3",
     "HO2": "HO2",
     "HO1": "HO1"
   },
