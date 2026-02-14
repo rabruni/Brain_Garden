@@ -42,11 +42,13 @@ def _ensure_import_paths(root: Path | None = None) -> None:
         staging / "PKG-ANTHROPIC-PROVIDER-001" / "HOT" / "kernel",
         staging / "PKG-ATTENTION-001" / "HOT" / "kernel",
         staging / "PKG-SESSION-HOST-001" / "HOT" / "kernel",
+        staging / "PKG-BOOT-MATERIALIZE-001" / "HOT" / "scripts",
+        staging / "PKG-LAYOUT-002" / "HOT" / "scripts",
         staging / "PKG-KERNEL-001" / "HOT",
         staging / "PKG-ATTENTION-001" / "HOT",
     ]
     if root is not None:
-        add = [Path(root) / "HOT", Path(root) / "HOT" / "kernel"] + add
+        add = [Path(root) / "HOT", Path(root) / "HOT" / "kernel", Path(root) / "HOT" / "scripts"] + add
     for path in add:
         p = str(path)
         if p not in sys.path:
@@ -186,12 +188,21 @@ def run_cli(
     output_fn: Callable[[str], None] = print,
 ) -> int:
     """Interactive ADMIN loop."""
-    host = build_session_host(root=root, config_path=config_path, dev_mode=dev_mode)
+    root = Path(root)
+    _ensure_import_paths(root=root)
+
     pristine_patch = None
     if dev_mode:
         # Dev/test mode may run outside governed roots; bypass append-only guard.
         pristine_patch = patch("kernel.pristine.assert_append_only", return_value=None)
         pristine_patch.start()
+    from boot_materialize import boot_materialize
+
+    mat_result = boot_materialize(root)
+    if mat_result != 0:
+        output_fn(f"WARNING: Boot materialization returned {mat_result} (non-fatal)")
+
+    host = build_session_host(root=root, config_path=config_path, dev_mode=dev_mode)
     session_id = host.start_session()
     output_fn(f"Session started: {session_id}")
 

@@ -164,6 +164,13 @@ cython_debug/
 # Control Plane — auto-generated LLM call logs
 Control_Plane_v2/ledger/llm-*.jsonl
 
+# CP_2.1 — runtime install target (scaffold dirs only, no content)
+CP_2.1/*
+!CP_2.1/.gitkeep
+!CP_2.1/_staging/
+CP_2.1/_staging/*
+!CP_2.1/_staging/.gitkeep
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

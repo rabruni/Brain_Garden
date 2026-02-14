@@ -200,13 +200,11 @@ Every handoff includes a copy-paste agent prompt. Format:
 ```
 You are a builder agent for the Control Plane v2 project. Your task is defined in a handoff document.
 
-**YOUR IDENTITY — print this FIRST before doing anything else:**
-> **Agent: [HANDOFF_ID]** — [one-line mission summary]
-> Example: **Agent: FOLLOWUP-3C** — PKG-LAYOUT-002: remove HO3, materialize HO2/HO1 tier directories
+**Agent: [HANDOFF_ID]** — [one-line mission summary]
 
-This identifies you in the user's terminal. Always print your identity line as your very first output.
+Read your specification, answer the 10 questions below, then STOP and WAIT for approval.
 
-**Read this file FIRST — it is your complete specification:**
+**Specification:**
 `Control_Plane_v2/_staging/<HANDOFF_FILE>.md`
 
 **Mandatory rules:**
@@ -228,26 +226,14 @@ This identifies you in the user's terminal. Always print your identity line as y
 
 ### Agent Self-Identification
 
-**Every agent MUST print an identity line as its very first output.** Format:
-
-> **Agent: [HANDOFF_ID]** — [one-line mission]
-
-Examples:
-- **Agent: HANDOFF-3** — PKG-PROMPT-ROUTER-001 + PKG-TOKEN-BUDGETER-001
-- **Agent: FOLLOWUP-3A** — Governance health tests: ownership-based validation
-- **Agent: FOLLOWUP-3B** — install.sh + INSTALL.md for CP_BOOTSTRAP.tar.gz
-- **Agent: FOLLOWUP-3C** — PKG-LAYOUT-002: remove HO3, materialize tier directories
-- **Agent: HANDOFF-4** — PKG-ATTENTION-001: context assembly pipeline
-
-This lets the user immediately identify which agent is reporting in their terminal without reading through code or feedback.
+The first line of the prompt IS the identity. The agent does not need to "print" it — it's stated as context. The user sees which agent is active from the prompt itself.
 
 ### 10-Question Gate (STOP and WAIT)
 
 The 10-question verification is a **checkpoint, not a warm-up**. The agent:
-1. Prints its identity line
-2. Reads the handoff document and referenced code
-3. Answers all 10 questions
-4. **STOPS and WAITS for user approval**
+1. Reads the handoff document and referenced code
+2. Answers all 10 questions
+3. **STOPS and WAITS for user approval**
 
 The agent must NOT:
 - Start creating directories after answering questions
@@ -308,10 +294,10 @@ Track architectural concerns that span multiple handoffs. These are NOT immediat
 | Concern | Affects | Decision Point | Current Status |
 |---------|---------|---------------|----------------|
 | Cross-tier ledger reads | Handoffs #6 (ledger query), #8 (learning loops) | When first HO2 package exists | Data centralized in HOT. `scope.tier` field enables filtered queries. Physical split deferred. |
-| Tier privilege enforcement | authz.py, package_install.py, flow runner | When first HO2 agent is built | Unimplemented. Isolation is conceptual. Will be enforced in authz.py at API boundary. |
+| Tier privilege enforcement | authz.py, package_install.py, HO2 supervisor | When first HO2 agent is built | Unimplemented. Isolation is conceptual. Will be enforced in authz.py at API boundary. |
 | Per-tier registries | file_ownership.csv, gate_check.py | When first package targets HO2 | Single centralized registry. `plane_id` in manifests enables future split. |
-| Framework auto-registration | package_install.py, registry CSVs | After flow runner is stable | State-gating: FMWK manifests ship as assets, registered when capability exists. |
-| Dynamic tier provisioning | flow runner, layout.json | When a framework requests a non-base tier | Not built. Base 3 tiers created at bootstrap. |
+| Framework auto-registration | package_install.py, registry CSVs | After HO2 supervisor is stable | State-gating: FMWK manifests ship as assets, registered when capability exists. |
+| Dynamic tier provisioning | HO2 supervisor, layout.json | When a framework requests a non-base tier | Not built. Base 3 tiers created at bootstrap. |
 
 ---
 
@@ -325,7 +311,7 @@ Every time a handoff is dispatched to an agent, the reviewer MUST add a row:
 |------------|-----------|----------|--------|-----------|-------------|
 | FOLLOWUP-3D | genesis fix + G0K removal | Claude | DISPATCHED | — | — |
 | HANDOFF-4 | PKG-ATTENTION-001 | ? | COMPLETE (unvalidated) | FOLLOWUP-3D | Missing |
-| HANDOFF-5 | PKG-FLOW-RUNNER-001 | ? | COMPLETE (unvalidated) | FOLLOWUP-3D, HANDOFF-4 | Missing |
+| HANDOFF-5 | PKG-FLOW-RUNNER-001 | — | SUPERSEDED (absorbed by HO2+HO1, CLEANUP-1) | — | — |
 | ... | ... | ... | ... | ... | ... |
 
 **Status values:**

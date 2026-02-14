@@ -14,6 +14,7 @@ import pytest
 _staging = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(_staging / "PKG-ADMIN-001" / "HOT" / "admin"))
 
+import main as admin_main  # noqa: E402
 from main import build_session_host, load_admin_config, run_cli  # noqa: E402
 
 
@@ -63,6 +64,15 @@ def _write_admin_files(tmp_path: Path):
     cfg_path.write_text(json.dumps(cfg))
     tpl_path.write_text(json.dumps(tpl))
     return cfg_path, tpl_path
+
+
+def _write_layout_json(tmp_path: Path) -> Path:
+    layout_src = _staging / "PKG-LAYOUT-002" / "HOT" / "config" / "layout.json"
+    cfg_dir = tmp_path / "HOT" / "config"
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    dst = cfg_dir / "layout.json"
+    dst.write_text(layout_src.read_text())
+    return dst
 
 
 class TestAdminConfig:
@@ -155,3 +165,103 @@ class TestAdminEntrypoint:
         bad.write_text("{}")
         with pytest.raises(ValueError, match="required"):
             load_admin_config(bad)
+
+
+class TestBootMaterializeDevBypass:
+    def test_boot_materialize_runs_under_pristine_bypass(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files(tmp_path)
+        _write_layout_json(tmp_path)
+        outputs = []
+
+        code = run_cli(
+            root=tmp_path,
+            config_path=cfg_path,
+            dev_mode=True,
+            input_fn=lambda _p: "exit",
+            output_fn=lambda s: outputs.append(s),
+        )
+
+        assert code == 0
+        assert (tmp_path / "HO2" / "ledger" / "governance.jsonl").exists()
+
+    def test_boot_materialize_called_before_session_host(self, tmp_path: Path, monkeypatch):
+        _write_admin_files(tmp_path)
+        _write_layout_json(tmp_path)
+        order = []
+
+        class DummyHost:
+            def start_session(self):
+                return "SES-ORDER"
+
+            def end_session(self):
+                return None
+
+            def process_turn(self, _text):
+                raise AssertionError("process_turn should not run for immediate exit")
+
+        import boot_materialize as boot_materialize_mod
+
+        def fake_boot(root):
+            assert root == tmp_path
+            order.append("boot")
+            return 0
+
+        def fake_build(root, config_path, dev_mode=False):
+            assert root == tmp_path
+            assert config_path == tmp_path / "HOT" / "config" / "admin_config.json"
+            assert dev_mode is True
+            order.append("build")
+            return DummyHost()
+
+        monkeypatch.setattr(boot_materialize_mod, "boot_materialize", fake_boot)
+        monkeypatch.setattr(admin_main, "build_session_host", fake_build)
+
+        code = run_cli(
+            root=tmp_path,
+            config_path=tmp_path / "HOT" / "config" / "admin_config.json",
+            dev_mode=True,
+            input_fn=lambda _p: "exit",
+            output_fn=lambda _s: None,
+        )
+
+        assert code == 0
+        assert order == ["boot", "build"]
+
+    def test_pristine_patch_stopped_on_exit(self, tmp_path: Path, monkeypatch):
+        _write_admin_files(tmp_path)
+        _write_layout_json(tmp_path)
+        observations = {}
+
+        import boot_materialize as boot_materialize_mod
+        import kernel.pristine as pristine_mod
+
+        original = pristine_mod.assert_append_only
+
+        class DummyHost:
+            def start_session(self):
+                return "SES-PATCH"
+
+            def end_session(self):
+                return None
+
+            def process_turn(self, _text):
+                raise AssertionError("process_turn should not run for immediate exit")
+
+        def fake_boot(_root):
+            observations["during_boot_is_patched"] = pristine_mod.assert_append_only is not original
+            return 0
+
+        monkeypatch.setattr(boot_materialize_mod, "boot_materialize", fake_boot)
+        monkeypatch.setattr(admin_main, "build_session_host", lambda **_kwargs: DummyHost())
+
+        code = run_cli(
+            root=tmp_path,
+            config_path=tmp_path / "HOT" / "config" / "admin_config.json",
+            dev_mode=True,
+            input_fn=lambda _p: "exit",
+            output_fn=lambda _s: None,
+        )
+
+        assert code == 0
+        assert observations["during_boot_is_patched"] is True
+        assert pristine_mod.assert_append_only is original
