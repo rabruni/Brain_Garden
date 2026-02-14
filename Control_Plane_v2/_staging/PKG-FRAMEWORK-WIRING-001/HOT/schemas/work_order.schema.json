@@ -26,7 +26,7 @@
     },
     "plane_id": {
       "type": "string",
-      "enum": ["ho3", "ho2", "ho1"],
+      "enum": ["hot", "ho2", "ho1"],
       "description": "Target plane for this work order"
     },
     "spec_id": {
@@ -38,6 +38,11 @@
       "type": "string",
       "pattern": "^FMWK-[A-Z0-9-]+$",
       "description": "Framework governing this work order"
+    },
+    "agent_class": {
+      "type": "string",
+      "enum": ["KERNEL.syntactic", "KERNEL.semantic", "ADMIN", "RESIDENT"],
+      "description": "Agent class authorized to execute this work order"
     },
     "title": {
       "type": "string",
@@ -82,6 +87,79 @@
         }
       },
       "description": "Additional constraints beyond scope"
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "token_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens this WO may consume across all prompts"
+        },
+        "turn_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum LLM round-trips"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock timeout for entire WO execution"
+        }
+      },
+      "description": "Resource budget for this work order"
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "authorized_by": {
+          "type": "string",
+          "description": "Identity that authorized this WO (human or agent ID)"
+        },
+        "authorization_chain": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Chain of approvals: [human → DoPeJar → HO2 agent → ...]"
+        },
+        "session_id": {
+          "type": "string",
+          "pattern": "^SES-[A-Z0-9]{8}$",
+          "description": "Session this WO belongs to"
+        },
+        "parent_work_order_id": {
+          "type": "string",
+          "pattern": "^WO-\\d{8}-\\d{3}$",
+          "description": "Parent WO if this is a sub-WO (HO2→HO1 delegation)"
+        }
+      },
+      "description": "Authorization and delegation chain"
+    },
+    "tool_permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool_id": { "type": "string" },
+          "allowed": { "type": "boolean", "default": true },
+          "constraints": { "type": "object" }
+        },
+        "required": ["tool_id"]
+      },
+      "description": "Tools the executing agent may invoke"
+    },
+    "io_schema": {
+      "type": "object",
+      "properties": {
+        "input_schema": {
+          "type": "object",
+          "description": "JSON Schema for expected input to this WO"
+        },
+        "output_schema": {
+          "type": "object",
+          "description": "JSON Schema for expected output from this WO"
+        }
+      },
+      "description": "Typed I/O contract for this work order"
     },
     "acceptance": {
       "type": "object",
@@ -141,5 +219,5 @@
       "description": "Optional metadata"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

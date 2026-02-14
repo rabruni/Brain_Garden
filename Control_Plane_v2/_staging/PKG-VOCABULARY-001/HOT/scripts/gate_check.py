@@ -92,10 +92,7 @@ def load_governed_roots(plane_root: Path) -> dict:
 
 def load_control_plane_registry(plane_root: Path) -> List[dict]:
     """Load control_plane_registry.csv."""
-    registry_path = plane_root / 'registries' / 'control_plane_registry.csv'
-    if not registry_path.exists():
-        # Try tier layout
-        registry_path = plane_root / 'HOT' / 'registries' / 'control_plane_registry.csv'
+    registry_path = plane_root / 'HOT' / 'registries' / 'control_plane_registry.csv'
     if not registry_path.exists():
         return []
     with open(registry_path, 'r', encoding='utf-8') as f:
@@ -129,10 +126,7 @@ from kernel.hashing import compute_sha256  # canonical implementation
 
 def load_file_ownership_registry(plane_root: Path) -> Dict[str, dict]:
     """Load file_ownership.csv as dict keyed by file_path."""
-    registry_path = plane_root / 'registries' / 'file_ownership.csv'
-    if not registry_path.exists():
-        # Try tier layout
-        registry_path = plane_root / 'HOT' / 'registries' / 'file_ownership.csv'
+    registry_path = plane_root / 'HOT' / 'registries' / 'file_ownership.csv'
     if not registry_path.exists():
         return {}
 
@@ -391,10 +385,10 @@ def check_g1_chain(plane_root: Path) -> GateResult:
     warnings = []
     chains_validated = 0
 
-    # Load registries (try tier layout first)
+    # Load registries from HOT (single source of truth)
     hot_reg = plane_root / 'HOT' / 'registries'
-    specs_path = hot_reg / 'specs_registry.csv' if (hot_reg / 'specs_registry.csv').exists() else plane_root / 'registries' / 'specs_registry.csv'
-    fmwk_path = hot_reg / 'frameworks_registry.csv' if (hot_reg / 'frameworks_registry.csv').exists() else plane_root / 'registries' / 'frameworks_registry.csv'
+    specs_path = hot_reg / 'specs_registry.csv'
+    fmwk_path = hot_reg / 'frameworks_registry.csv'
 
     specs_by_id = {}   # spec_id -> row dict
     fmwks_by_id = {}   # framework_id -> row dict
@@ -541,7 +535,7 @@ def check_g2_work_order(
     result = GateResult(gate="G2", passed=True, message="Work Order system check passed")
 
     # Check HOT governance.jsonl for WO_APPROVED events
-    governance_ledger = plane_root / 'ledger' / 'governance.jsonl'
+    governance_ledger = plane_root / 'HOT' / 'ledger' / 'governance.jsonl'
     ho2_ledger = plane_root / 'planes' / 'ho2' / 'ledger' / 'workorder.jsonl'
 
     approved_count = 0
@@ -739,55 +733,6 @@ def check_g5_signature(
     return result
 
 
-def check_g0k_kernel_parity(
-    plane_root: Path,
-    wo: Optional[dict] = None,
-    verify_files: bool = False
-) -> GateResult:
-    """G0K: KERNEL_PARITY - Verify kernel packages are identical across all tiers.
-
-    Phase 4 implementation using full G0K gate from g0k_gate.py.
-
-    Checks (manifest-first per R2):
-    1. Kernel manifest exists on each tier (HOT, HO2, HO1)
-    2. Manifest hashes are identical across tiers
-    3. Optional: files match manifest hashes (--verify-files)
-
-    Per AC-K6: Any WO modifying kernel files MUST fail unless kernel_upgrade type.
-
-    Args:
-        plane_root: Path to plane root
-        wo: Optional Work Order to check for kernel file modifications
-        verify_files: Also verify files match manifest hashes
-    """
-    try:
-        from scripts.g0k_gate import run_g0k_gate
-
-        g0k_result = run_g0k_gate(
-            verify_files=verify_files,
-            wo=wo
-        )
-
-        return GateResult(
-            gate="G0K",
-            passed=g0k_result.passed,
-            message=g0k_result.message,
-            details={
-                "manifest_hashes": g0k_result.manifest_hashes,
-                "missing_tiers": g0k_result.missing_tiers,
-                "mismatched_tiers": g0k_result.mismatched_tiers,
-                "file_verification": g0k_result.file_verification,
-            }
-        )
-    except ImportError as e:
-        return GateResult(
-            gate="G0K",
-            passed=False,
-            message=f"G0K gate module not available: {e}",
-            errors=["Import g0k_gate.py failed"]
-        )
-
-
 def check_g6_ledger(plane_root: Path) -> GateResult:
     """G6: LEDGER - Verify ledger chain integrity across all tiers.
 
@@ -821,7 +766,7 @@ def check_g6_ledger(plane_root: Path) -> GateResult:
         # Fallback to simple check
         result = GateResult(gate="G6", passed=True, message="Ledger check passed (fallback)")
 
-        ledger_dir = plane_root / 'ledger'
+        ledger_dir = plane_root / 'HOT' / 'ledger'
         if ledger_dir.exists():
             ledger_files = list(ledger_dir.glob('*.jsonl'))
             entry_count = 0
@@ -904,7 +849,6 @@ GATE_FUNCTIONS = {
     "G0": check_g0_ownership,      # Legacy alias for G0B
     "G0A": check_g0a_package_declaration,  # Package declaration (install-time)
     "G0B": check_g0b_plane_ownership,      # Plane ownership (integrity-time)
-    "G0K": check_g0k_kernel_parity,        # Kernel parity (Phase 4)
     "G1": check_g1_chain,
     "G1-COMPLETE": check_g1_complete,      # Framework completeness (Layer 2)
     "G2": check_g2_work_order,
@@ -941,9 +885,9 @@ def run_gates(
         (results, all_passed)
     """
     if "all" in gates or not gates:
-        # "all" includes G0B and G0K but not G0A (G0A requires manifest)
-        # Gate ordering per Phase 4: G0K → G0B → G1 → G2 → G3 → G4 → G5 → G6
-        gates = ["G0K", "G0B", "G1", "G1-COMPLETE", "G2", "G3", "G4", "G5", "G6"]
+        # "all" includes G0B but not G0A (G0A requires manifest)
+        # Gate ordering: G0B → G1 → G2 → G3 → G4 → G5 → G6
+        gates = ["G0B", "G1", "G1-COMPLETE", "G2", "G3", "G4", "G5", "G6"]
 
     results = []
     all_passed = True

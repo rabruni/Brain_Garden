@@ -70,9 +70,8 @@ def get_control_plane_root() -> Path:
 
     Priority:
     0) CONTROL_PLANE_ROOT env var (highest priority)
-    1) If this file lives under a Control_Plane_v2 tree, return that.
-    2) Else if a Control_Plane tree exists under the repo root, return it.
-    3) Fallback to the repo root.
+    1) Walk parents looking for structural marker (HOT/kernel/ exists).
+    2) Fallback to the repo root.
     """
     _deprecation_warning("get_control_plane_root()")
     env_root = os.getenv("CONTROL_PLANE_ROOT")
@@ -80,16 +79,8 @@ def get_control_plane_root() -> Path:
         return Path(env_root).resolve()
     current = Path(__file__).resolve()
     for parent in [current] + list(current.parents):
-        if parent.name == "Control_Plane_v2":
+        if (parent / "HOT" / "kernel").is_dir():
             return parent
-
-    candidate = REPO_ROOT / "Control_Plane_v2"
-    if (candidate / "HOT").is_dir() and (candidate / "HOT" / "kernel").is_dir():
-        return candidate
-
-    candidate = REPO_ROOT / "Control_Plane"
-    if (candidate / "HOT").is_dir() and (candidate / "HOT" / "kernel").is_dir():
-        return candidate
 
     return REPO_ROOT
 
@@ -109,12 +100,11 @@ def get_control_plane_root() -> Path:
 CONTROL_PLANE = get_control_plane_root()
 """DEPRECATED: Global control plane root. Use PlaneContext.root instead."""
 
-try:
-    from kernel.layout import LAYOUT as _LAYOUT
-    REGISTRIES_DIR = _LAYOUT.hot.registries
-except Exception:
-    REGISTRIES_DIR = CONTROL_PLANE / "HOT" / "registries"
-"""DEPRECATED: Use plane.root / 'registries' instead."""
+REGISTRIES_DIR = CONTROL_PLANE / "HOT" / "registries"
+"""DEPRECATED: Use plane.root / 'HOT' / 'registries' instead."""
+
+LEDGER_DIR = CONTROL_PLANE / "HOT" / "ledger"
+"""DEPRECATED: Use plane.root / 'HOT' / 'ledger' instead."""
 
 
 # =============================================================================

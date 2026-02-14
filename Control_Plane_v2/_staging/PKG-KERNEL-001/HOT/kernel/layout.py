@@ -20,8 +20,22 @@ from typing import Dict, Optional
 
 
 def _find_cp_root() -> Path:
-    """Find the Control_Plane_v2 root by walking up from this file."""
+    """Find the Control Plane root.
+
+    Priority:
+    1) CONTROL_PLANE_ROOT env var (highest priority)
+    2) Walk parents of this file looking for structural marker (HOT/kernel/ exists)
+    3) Walk parents looking for legacy name ("Control_Plane_v2")
+    4) Fallback to cwd
+    """
+    import os
+    env_root = os.getenv("CONTROL_PLANE_ROOT")
+    if env_root:
+        return Path(env_root).resolve()
     current = Path(__file__).resolve()
+    for parent in [current] + list(current.parents):
+        if (parent / "HOT" / "kernel").is_dir():
+            return parent
     for parent in [current] + list(current.parents):
         if parent.name == "Control_Plane_v2":
             return parent

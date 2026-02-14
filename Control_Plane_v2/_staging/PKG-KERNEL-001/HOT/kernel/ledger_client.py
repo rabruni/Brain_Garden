@@ -68,7 +68,11 @@ class TierContext:
 
 
 # Default ledger location
-DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "ledger" / "governance.jsonl"
+try:
+    from kernel.paths import LEDGER_DIR as _LDIR
+    DEFAULT_LEDGER_PATH = _LDIR / "governance.jsonl"
+except Exception:
+    DEFAULT_LEDGER_PATH = Path(__file__).resolve().parent.parent / "ledger" / "governance.jsonl"
 # Note: Index paths are now computed per-instance in LedgerClient.__init__
 # to support multi-ledger isolation (tier-agnostic capability)
 
@@ -934,7 +938,7 @@ def get_session_ledger_path(
     """Get path to session-specific ledger file.
 
     Session ledgers follow the path pattern:
-    planes/<tier>/sessions/<session_id>/ledger/<type>.jsonl
+    <TIER>/sessions/<session_id>/ledger/<type>.jsonl
 
     Args:
         tier: Tier name (ho1, ho2, hot)
@@ -947,7 +951,7 @@ def get_session_ledger_path(
     """
     if root is None:
         root = Path(__file__).resolve().parent.parent
-    return root / "planes" / tier / "sessions" / session_id / "ledger" / f"{ledger_type}.jsonl"
+    return root / tier.upper() / "sessions" / session_id / "ledger" / f"{ledger_type}.jsonl"
 
 
 def create_session_ledger_client(
@@ -960,7 +964,7 @@ def create_session_ledger_client(
     """Create a LedgerClient for a session-specific ledger.
 
     Creates the client configured for the session ledger path:
-    planes/<tier>/sessions/<session_id>/ledger/<type>.jsonl
+    <TIER>/sessions/<session_id>/ledger/<type>.jsonl
 
     Args:
         tier: Tier name (ho1, ho2, hot)
@@ -1004,15 +1008,13 @@ def read_recent_from_tier(
         root = Path(__file__).resolve().parent.parent
 
     # Normalize tier name
-    tier_lower = tier.lower()
+    tier_upper = tier.upper()
 
     # Determine ledger path based on tier
-    if tier_lower == "hot":
-        # HOT uses the main governance ledger
-        ledger_path = root / "ledger" / "governance.jsonl"
+    if tier_upper == "HOT":
+        ledger_path = root / "HOT" / "ledger" / "governance.jsonl"
     else:
-        # HO1, HO2 use plane-specific ledgers
-        ledger_path = root / "planes" / tier_lower / "ledger" / "governance.jsonl"
+        ledger_path = root / tier_upper / "ledger" / "governance.jsonl"
 
     if not ledger_path.exists():
         return []
@@ -1037,7 +1039,7 @@ def list_session_ledgers(
     if root is None:
         root = Path(__file__).resolve().parent.parent
 
-    sessions_dir = root / "planes" / tier / "sessions"
+    sessions_dir = root / tier.upper() / "sessions"
     if not sessions_dir.exists():
         return []
 

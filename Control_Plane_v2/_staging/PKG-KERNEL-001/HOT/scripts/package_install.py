@@ -39,7 +39,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "HOT"))
 
-from kernel.paths import CONTROL_PLANE, REGISTRIES_DIR
+from kernel.paths import CONTROL_PLANE, REGISTRIES_DIR, LEDGER_DIR
 from kernel.plane import (
     PlaneContext,
     get_current_plane,
@@ -85,8 +85,8 @@ from kernel.preflight import (
 
 
 # === Constants ===
-PKG_REG = CONTROL_PLANE / "registries" / "packages_registry.csv"
-L_PACKAGE_LEDGER = CONTROL_PLANE / "ledger" / "packages.jsonl"
+PKG_REG = REGISTRIES_DIR / "packages_registry.csv"
+L_PACKAGE_LEDGER = LEDGER_DIR / "packages.jsonl"
 FILE_OWNERSHIP_CSV = REGISTRIES_DIR / "file_ownership.csv"
 
 
@@ -830,7 +830,7 @@ def install_package(
             # Verify each target path is allowed
             for rel_path in workspace_files:
                 target = plane_root / rel_path
-                assert_write_allowed(target, mode=WriteMode.INSTALL)
+                assert_write_allowed(target, mode=WriteMode.INSTALL, plane=plane_root)
 
             installed_files = atomic_copy_files(workspace_files, plane_root, force, transfer_paths)
 

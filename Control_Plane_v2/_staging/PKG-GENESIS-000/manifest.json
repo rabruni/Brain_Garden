@@ -8,7 +8,7 @@
   "assets": [
     {
       "path": "HOT/scripts/genesis_bootstrap.py",
-      "sha256": "sha256:982fa2f8a828f9ed44a7f5e14cddff3fdc97fedfd71847caaea9d8344e085266",
+      "sha256": "sha256:2215c7edc75794f670575edf840afbd6389b83bbf86869d0a62c564eeee7777a",
       "classification": "script"
     },
     {
@@ -18,7 +18,7 @@
     },
     {
       "path": "HOT/config/seed_registry.json",
-      "sha256": "sha256:df4cd82fca6e30a8e821a89e01f9352fb866290dbe9bfbe07aaea46abc90951b",
+      "sha256": "sha256:7d3dfa148af38056e1b37380e426afd641a8e5948a51ad7e706a8982231a8e8f",
       "classification": "config"
     },
     {

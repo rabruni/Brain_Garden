@@ -1,0 +1,33 @@
+{
+  "package_id": "PKG-SESSION-HOST-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Session Host",
+  "description": "Governed multi-turn host runtime with attention routing and tool dispatch",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-PROMPT-ROUTER-001",
+    "PKG-ATTENTION-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/session_host.py",
+      "sha256": "sha256:cdf763db9962b6899bbe0b092686af84be8772f28be3a7ff713680e0d0c8c952",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/kernel/tool_dispatch.py",
+      "sha256": "sha256:8c50b55ca76d90d3b18eb04089d09e46ffa64e422d9289066c64152ab4ff0b60",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/tests/test_session_host.py",
+      "sha256": "sha256:355e77db38c2d9beab51d483c9f69297900470ebb02b5d508745e184d70e2ca0",
+      "classification": "test"
+    }
+  ]
+}

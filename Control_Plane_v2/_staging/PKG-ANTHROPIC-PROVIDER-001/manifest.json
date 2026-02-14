@@ -1,0 +1,29 @@
+{
+  "package_id": "PKG-ANTHROPIC-PROVIDER-001",
+  "version": "1.1.0",
+  "schema_version": "1.2",
+  "title": "Anthropic API Provider",
+  "description": "Anthropic Messages API provider using official SDK, implementing LLMProvider Protocol",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-PROMPT-ROUTER-001"
+  ],
+  "external_deps": [
+    "anthropic>=0.40.0"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/anthropic_provider.py",
+      "sha256": "sha256:0559a0a8a9e0030bd3c52f9ad6030fad91f16567a7619433ae058887ec4c8f02",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/tests/test_anthropic_provider.py",
+      "sha256": "sha256:1611816e7b76c97d87f28002a8ab0cd0e07544f6384659527f47332fc30619ce",
+      "classification": "test"
+    }
+  ]
+}

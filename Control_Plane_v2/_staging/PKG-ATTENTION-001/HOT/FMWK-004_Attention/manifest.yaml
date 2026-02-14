@@ -1,0 +1,34 @@
+framework_id: FMWK-004
+title: Attention Framework
+version: "1.0.0"
+status: active
+ring: kernel
+plane_id: hot
+created_at: "2026-02-10T00:00:00Z"
+assets:
+  - attention_standard.md
+expected_specs:
+  - SPEC-ATTENTION-001
+invariants:
+  - level: MUST
+    statement: Context assembly MUST follow the pipeline defined in the attention template — no ad-hoc assembly
+  - level: MUST
+    statement: Every pipeline stage MUST be config-driven via the template's config object
+  - level: MUST NOT
+    statement: Thresholds, weights, patterns, and search depths MUST NOT be hardcoded
+  - level: MUST
+    statement: Context assembly MUST respect budget constraints (max_context_tokens, max_queries, timeout_ms)
+  - level: MUST
+    statement: Halting decisions MUST be explicit and logged — no implicit "good enough" stops
+  - level: MUST NOT
+    statement: The attention service MUST NOT send prompts — it assembles context and returns it to the caller
+path_authorizations:
+  - "HOT/kernel/attention_service.py"
+  - "HOT/kernel/attention_stages.py"
+  - "HOT/FMWK-004_Attention/*.yaml"
+  - "HOT/FMWK-004_Attention/*.md"
+  - "HOT/tests/test_attention_service.py"
+required_gates:
+  - G0
+  - G1
+  - G5

@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Prompt Router Configuration Schema v1.0",
+  "description": "Config-driven router parameters for prompt routing infrastructure",
+  "type": "object",
+  "required": ["default_provider", "default_model", "default_timeout_ms"],
+  "properties": {
+    "default_provider": {
+      "type": "string",
+      "description": "Default LLM provider ID"
+    },
+    "default_model": {
+      "type": "string",
+      "description": "Default model ID"
+    },
+    "default_timeout_ms": {
+      "type": "integer",
+      "minimum": 100,
+      "description": "Default request timeout in milliseconds"
+    },
+    "circuit_breaker": {
+      "type": "object",
+      "description": "Circuit breaker configuration for provider resilience",
+      "properties": {
+        "failure_threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 3,
+          "description": "Number of consecutive failures before opening circuit"
+        },
+        "recovery_timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 30000,
+          "description": "Time in ms before attempting recovery (OPEN → HALF_OPEN)"
+        },
+        "half_open_max": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Max concurrent requests in HALF_OPEN state"
+        }
+      },
+      "additionalProperties": false
+    },
+    "retry_policy": {
+      "type": "object",
+      "description": "Retry policy for transient failures",
+      "properties": {
+        "max_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 2,
+          "description": "Maximum retry attempts"
+        },
+        "backoff_base_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1000,
+          "description": "Base backoff time in milliseconds"
+        },
+        "backoff_multiplier": {
+          "type": "number",
+          "minimum": 1,
+          "default": 2.0,
+          "description": "Multiplier for exponential backoff"
+        },
+        "retryable_errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["TIMEOUT", "RATE_LIMITED", "SERVER_ERROR"],
+          "description": "Error codes that are eligible for retry"
+        }
+      },
+      "additionalProperties": false
+    },
+    "providers": {
+      "type": "object",
+      "description": "Map of provider_id to provider configuration",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["provider_class"],
+        "properties": {
+          "provider_class": {
+            "type": "string",
+            "description": "Provider implementation class name"
+          },
+          "config": {
+            "type": "object",
+            "description": "Provider-specific configuration",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "dev_mode": {
+      "type": "object",
+      "description": "Development mode overrides",
+      "properties": {
+        "use_mock_provider": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use mock provider instead of real LLM"
+        },
+        "bypass_auth": {
+          "type": "boolean",
+          "default": false,
+          "description": "Skip authentication checks"
+        },
+        "bypass_budget": {
+          "type": "boolean",
+          "default": false,
+          "description": "Skip budget checks"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

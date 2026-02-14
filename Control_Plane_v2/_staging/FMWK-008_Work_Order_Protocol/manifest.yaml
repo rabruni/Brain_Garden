@@ -1,0 +1,37 @@
+framework_id: FMWK-008
+title: Work Order Protocol — Cognitive Dispatch
+version: "1.0.0"
+status: draft
+ring: kernel
+plane_id: hot
+created_at: "2026-02-12T00:00:00Z"
+assets:
+  - work_order_protocol.md
+expected_specs:
+  - SPEC-WO-001
+invariants:
+  - level: MUST
+    statement: Every work order MUST have a unique wo_id within its session
+  - level: MUST
+    statement: Every WO state transition MUST produce a ledger entry
+  - level: MUST NOT
+    statement: WO state MUST NOT regress (completed → executing is forbidden)
+  - level: MUST
+    statement: Every WO MUST reference a session_id and specify a tier_target
+  - level: MUST
+    statement: Every WO MUST have a bounded token budget
+  - level: MUST NOT
+    statement: HO1 executors MUST NOT create work orders (only HO2 dispatches)
+path_authorizations:
+  - "HOT/kernel/work_order.py"
+  - "HOT/kernel/wo_ledger.py"
+  - "HOT/config/wo_schema.json"
+  - "HO2/kernel/ho2_supervisor.py"
+  - "HO1/kernel/ho1_executor.py"
+  - "HO2/ledger/workorder.jsonl"
+  - "HO1/ledger/worker.jsonl"
+required_gates:
+  - G0
+  - G1
+  - G2
+  - G6

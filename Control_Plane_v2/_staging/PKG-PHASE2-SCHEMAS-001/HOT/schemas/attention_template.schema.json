@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-plane.local/schemas/attention_template.schema.json",
+  "title": "Attention Template Schema v1.0",
+  "description": "Defines how attention assembles context for an agent — tier selection, queries, structuring, halting",
+  "type": "object",
+  "required": ["template_id", "version", "pipeline"],
+  "properties": {
+    "template_id": {
+      "type": "string",
+      "pattern": "^ATT-[A-Z]+-[0-9]+$",
+      "description": "Unique attention template identifier"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this template is for"
+    },
+    "applies_to": {
+      "type": "object",
+      "properties": {
+        "agent_class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["KERNEL.syntactic", "KERNEL.semantic", "ADMIN", "RESIDENT"]
+          },
+          "description": "Agent classes this template applies to"
+        },
+        "framework_id": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^FMWK-[A-Z0-9-]+$" },
+          "description": "Specific frameworks this template applies to"
+        },
+        "tier": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["hot", "ho2", "ho1"] },
+          "description": "Tiers where this template is active"
+        }
+      },
+      "description": "Selector: which agents/frameworks/tiers use this template"
+    },
+    "pipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "type"],
+        "properties": {
+          "stage": {
+            "type": "string",
+            "description": "Stage name (e.g., 'tier_select', 'horizontal_search', 'structuring', 'halting')"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["tier_select", "ledger_query", "registry_query", "file_read", "horizontal_search", "structuring", "halting", "custom"],
+            "description": "Pipeline stage type"
+          },
+          "config": {
+            "type": "object",
+            "description": "Stage-specific configuration (all config-driven, no hardcoding)",
+            "additionalProperties": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this stage is active"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Ordered pipeline stages: tier_select → queries → structuring → halting"
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "max_context_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens in assembled context"
+        },
+        "max_queries": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum ledger/registry queries"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Timeout for context assembly"
+        }
+      },
+      "description": "Budget constraints for context assembly"
+    },
+    "fallback": {
+      "type": "object",
+      "properties": {
+        "on_timeout": {
+          "type": "string",
+          "enum": ["return_partial", "fail", "use_cached"],
+          "default": "return_partial",
+          "description": "Behavior when budget is exhausted"
+        },
+        "on_empty": {
+          "type": "string",
+          "enum": ["proceed_empty", "fail", "use_default"],
+          "default": "proceed_empty",
+          "description": "Behavior when no context found"
+        }
+      },
+      "description": "Fallback behavior"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional template metadata"
+    }
+  },
+  "additionalProperties": true
+}

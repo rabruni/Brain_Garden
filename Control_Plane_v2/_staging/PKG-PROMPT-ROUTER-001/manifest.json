@@ -1,0 +1,39 @@
+{
+  "package_id": "PKG-PROMPT-ROUTER-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Prompt Router",
+  "description": "Single-shot prompt router with ledger logging, circuit breaker, and budget integration",
+  "spec_id": "SPEC-CORE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-PHASE2-SCHEMAS-001",
+    "PKG-FRAMEWORK-WIRING-001",
+    "PKG-TOKEN-BUDGETER-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/prompt_router.py",
+      "sha256": "sha256:4e19def13282877a9009d8fd7725f4d43b0ae865792582bf6ebd53309560bb4f",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/kernel/provider.py",
+      "sha256": "sha256:7b9567deb6255fc7c6879bb55c4e37bc3587bce5f74684c16317f207ba99d34c",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/schemas/router_config.schema.json",
+      "sha256": "sha256:6ff3b37edd4ee35307471f2dcfe03c6c68da4de98fa355e2f42627da8d2e5f10",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/tests/test_prompt_router.py",
+      "sha256": "sha256:f967e55502be799eb6306930dfd8b1b4664f428eca11c7f3eef424f084c756c0",
+      "classification": "test"
+    }
+  ]
+}

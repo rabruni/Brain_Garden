@@ -1,0 +1,67 @@
+{
+  "template_id": "ATT-ADMIN-001",
+  "version": "1.0.0",
+  "description": "Full visibility context for ADMIN agent",
+  "applies_to": {
+    "agent_class": [
+      "ADMIN"
+    ],
+    "framework_id": [
+      "FMWK-005"
+    ]
+  },
+  "pipeline": [
+    {
+      "stage": "select_tiers",
+      "type": "tier_select",
+      "config": {
+        "tiers": [
+          "hot",
+          "ho2",
+          "ho1"
+        ]
+      }
+    },
+    {
+      "stage": "recent_exchanges",
+      "type": "ledger_query",
+      "config": {
+        "event_type": "EXCHANGE",
+        "max_entries": 10,
+        "recency": "session"
+      }
+    },
+    {
+      "stage": "recent_installs",
+      "type": "ledger_query",
+      "config": {
+        "event_type": "INSTALLED",
+        "max_entries": 5
+      }
+    },
+    {
+      "stage": "structure",
+      "type": "structuring",
+      "config": {
+        "strategy": "chronological",
+        "max_tokens": 8000
+      }
+    },
+    {
+      "stage": "halt",
+      "type": "halting",
+      "config": {
+        "min_fragments": 0
+      }
+    }
+  ],
+  "budget": {
+    "max_context_tokens": 10000,
+    "max_queries": 20,
+    "timeout_ms": 5000
+  },
+  "fallback": {
+    "on_timeout": "return_partial",
+    "on_empty": "proceed_empty"
+  }
+}
