@@ -1,0 +1,47 @@
+framework_id: FMWK-009
+title: Tier Boundary — Visibility, Syscalls, and Isolation
+version: "1.0.0"
+status: draft
+ring: kernel
+plane_id: hot
+created_at: "2026-02-14T00:00:00Z"
+assets:
+  - tier_boundary.md
+expected_specs:
+  - SPEC-TIER-001
+invariants:
+  - level: MUST NOT
+    statement: Lower tiers MUST NOT read higher tier state directly (reading up is forbidden)
+  - level: MUST
+    statement: All inter-tier service invocations MUST use enumerated syscalls
+  - level: MUST
+    statement: Every LLM call MUST flow through the LLM_GATEWAY_CALL syscall (v2 Invariant #1)
+  - level: MUST
+    statement: Every syscall invocation MUST be logged in the calling tier's ledger
+  - level: MUST
+    statement: Every ledger entry MUST include a scope.tier field set to the originating tier (hot, ho2, or ho1)
+  - level: MUST
+    statement: Token budgets MUST be enforced at every tier level — session ceiling (HO3), per-WO allocation (HO2), per-call debit (HO1) (v2 Invariant #5)
+  - level: MUST NOT
+    statement: HO1 code MUST NOT import modules from HO2/ or HOT/ that expose tier state
+  - level: MUST NOT
+    statement: HO2 code MUST NOT import modules from HOT/ that expose HO3 governance state
+  - level: MUST
+    statement: Both role (authz.py) and tier (FMWK-009) checks MUST pass for access to be granted
+  - level: MUST NOT
+    statement: HO1 MUST NOT create or dispatch work orders (only HO2 dispatches)
+  - level: MUST NOT
+    statement: Syscall targets MUST NOT expose higher-tier internal state to the caller
+path_authorizations:
+  - "HOT/kernel/llm_gateway.py"
+  - "HOT/kernel/ledger_client.py"
+  - "HOT/kernel/token_budgeter.py"
+  - "HOT/kernel/authz.py"
+  - "HOT/config/layout.json"
+  - "HO2/kernel/ho2_supervisor.py"
+  - "HO1/kernel/ho1_executor.py"
+required_gates:
+  - G0
+  - G1
+  - G2
+  - G6

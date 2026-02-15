@@ -1,10 +1,12 @@
 framework_id: FMWK-008
 title: Work Order Protocol — Cognitive Dispatch
-version: "1.0.0"
+version: "1.1.0"
 status: draft
 ring: kernel
 plane_id: hot
 created_at: "2026-02-12T00:00:00Z"
+updated_at: "2026-02-14T00:00:00Z"
+design_authority: "_staging/architecture/KERNEL_PHASE_2_v2.md"
 assets:
   - work_order_protocol.md
 expected_specs:
@@ -22,6 +24,14 @@ invariants:
     statement: Every WO MUST have a bounded token budget
   - level: MUST NOT
     statement: HO1 executors MUST NOT create work orders (only HO2 dispatches)
+  - level: MUST
+    statement: Every HO2 terminal event (WO_CHAIN_COMPLETE, WO_QUALITY_GATE) MUST include a trace_hash linking to the corresponding HO1 trace entries
+  - level: MUST
+    statement: Every ledger entry MUST populate relational.parent_event_id when a causal parent exists
+  - level: MUST
+    statement: Every ledger entry at chain boundaries MUST populate relational.root_event_id to enable causal chain traversal
+  - level: MUST NOT
+    statement: The metadata key standard MUST NOT redefine fields already in ledger_entry_metadata.schema.json — reference only
 path_authorizations:
   - "HOT/kernel/work_order.py"
   - "HOT/kernel/wo_ledger.py"

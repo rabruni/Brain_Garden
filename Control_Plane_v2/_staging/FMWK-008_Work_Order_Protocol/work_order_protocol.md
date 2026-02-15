@@ -39,12 +39,26 @@ Both schemas share common fields (`wo_id`, `session_id`, `budget`, `authorizatio
 
 ## 2. Work Order Types
 
-| Type | Tier Target | Description | LLM Call? |
-|------|-------------|-------------|-----------|
-| `classify` | HO1 | Classify user intent, input type, or content | YES |
-| `tool_call` | HO1 | Execute a registered tool (read file, query ledger, gate check) | NO |
-| `synthesize` | HO1 | Combine, format, or summarize prior WO results | YES |
-| `execute` | HO1 | General-purpose LLM call with full context | YES |
+| Type | Tier Target | Kitchener Step | Description | LLM Call? |
+|------|-------------|----------------|-------------|-----------|
+| `classify` | HO1 | Step 3: Execution (L1) | Classify user intent, input type, or content | YES |
+| `tool_call` | HO1 | Step 3: Execution (L1) | Execute a registered tool (read file, query ledger, gate check) | NO |
+| `synthesize` | HO1 | Step 3: Execution (L1) | Combine, format, or summarize prior WO results | YES |
+| `execute` | HO1 | Step 3: Execution (L1) | General-purpose LLM call with full context | YES |
+
+### Kitchener Step Mapping
+
+All four WO types target HO1 and execute during **Step 3: Execution** of the canonical dispatch loop (v2 Section 1: Grounding Model: The Kitchener Orchestration Stack). The Kitchener steps that bracket WO execution are owned by HO2 and HO3:
+
+| Kitchener Step | Tier | WO Relationship |
+|----------------|------|-----------------|
+| Step 1: Ideation (L3) | HO3 | Sets objective. Deferred — HO3 bookend not yet built. |
+| Step 2: Scoping (L2) | HO2 | HO2 creates WOs with acceptance criteria. No WO type — this IS the WO creation act. |
+| Step 3: Execution (L1) | HO1 | All four WO types execute here. HO1 loads prompt contract, calls LLM Gateway, returns result. |
+| Step 4: Verification (L2) | HO2 | HO2 checks WO output against Step 2 criteria. Recorded as `WO_QUALITY_GATE`. |
+| Step 5: Synthesis (L3) | HO3 | Final sign-off. Deferred — HO3 bookend not yet built. |
+
+**Build approach**: Current implementation covers Steps 2-3-4 (the inner loop). Steps 1 and 5 are added when HO3 cognitive process is built (v2 Section 1: Grounding Model: The Kitchener Orchestration Stack).
 
 ### Type Rules
 
@@ -62,23 +76,25 @@ planned → dispatched → executing → completed
                                  → failed
 ```
 
-| State | Set By | Meaning |
-|-------|--------|---------|
-| `planned` | HO2 | WO created, validated, queued for dispatch |
-| `dispatched` | HO2 | WO sent to HO1 executor |
-| `executing` | HO1 | HO1 has picked up the WO and is working |
-| `completed` | HO1 | Execution finished successfully, result attached |
-| `failed` | HO1 | Execution failed — error, timeout, or budget exhaustion |
+| State | Set By | Kitchener Step | Controlling Tier | Meaning |
+|-------|--------|----------------|------------------|---------|
+| `planned` | HO2 | Step 2: Scoping (L2) | HO2 | WO created, validated, queued for dispatch |
+| `dispatched` | HO2 | Step 2: Scoping (L2) | HO2 | WO sent to HO1 executor |
+| `executing` | HO1 | Step 3: Execution (L1) | HO1 | HO1 has picked up the WO and is working |
+| `completed` | HO1 | Step 3: Execution (L1) | HO1 | Execution finished successfully, result attached |
+| `failed` | HO1/HO2 | Step 3/4 | HO1 or HO2 | Execution failed — error, timeout, or budget exhaustion |
+
+**Tier ownership**: HO2 owns the `planned` and `dispatched` states (Step 2: Scoping). HO1 owns `executing` and `completed` (Step 3: Execution). The `failed` state can be set by either tier — HO1 during execution, or HO2 at planning-time validation. After all WOs complete, HO2 performs Step 4: Verification via the `WO_QUALITY_GATE` event (v2 Section 1: Grounding Model: The Kitchener Orchestration Stack).
 
 ### State Transition Rules
 
-| From | To | Who | Condition |
-|------|----|-----|-----------|
-| `planned` | `dispatched` | HO2 | WO passes validation |
-| `dispatched` | `executing` | HO1 | HO1 picks up the WO |
-| `executing` | `completed` | HO1 | Result produced, output validates against contract |
-| `executing` | `failed` | HO1 | Error, timeout, budget exceeded, or output validation failure |
-| `planned` | `failed` | HO2 | Validation fails at planning time |
+| From | To | Who | Kitchener Step | Condition |
+|------|----|-----|----------------|-----------|
+| `planned` | `dispatched` | HO2 | Step 2 → Step 3 boundary | WO passes validation |
+| `dispatched` | `executing` | HO1 | Step 3: Execution | HO1 picks up the WO |
+| `executing` | `completed` | HO1 | Step 3: Execution | Result produced, output validates against contract |
+| `executing` | `failed` | HO1 | Step 3: Execution | Error, timeout, budget exceeded, or output validation failure |
+| `planned` | `failed` | HO2 | Step 2: Scoping | Validation fails at planning time |
 
 ### Forbidden Transitions
 
@@ -157,26 +173,26 @@ Every state transition produces a ledger entry. Two ledger files are involved:
 
 ### HO2 Ledger: `HO2/ledger/workorder.jsonl`
 
-Records HO2's decisions — creation, dispatch, chain completion.
+Records HO2's decisions — creation, dispatch, chain completion. HO2 events carry governance summaries; detailed traces live in HO1's ledger and are linked via `trace_hash` (see Section 5a).
 
-| Event Type | When | Key Fields |
-|------------|------|------------|
-| `WO_PLANNED` | HO2 creates WO | wo_id, wo_type, session_id, input_context summary |
-| `WO_DISPATCHED` | HO2 sends to HO1 | wo_id, tier_target |
-| `WO_CHAIN_COMPLETE` | All WOs in a user turn are done | session_id, wo_count, total_cost |
-| `WO_QUALITY_GATE` | HO2 approves or rejects final result | session_id, decision (pass/retry/escalate) |
+| Event Type | When | Key Fields | Relational Metadata |
+|------------|------|------------|---------------------|
+| `WO_PLANNED` | HO2 creates WO | wo_id, wo_type, session_id, input_context summary | `relational.root_event_id`, `relational.related_artifacts` |
+| `WO_DISPATCHED` | HO2 sends to HO1 | wo_id, tier_target | `relational.parent_event_id` (points to `WO_PLANNED` entry) |
+| `WO_CHAIN_COMPLETE` | All WOs in a user turn are done | session_id, wo_count, total_cost, **`trace_hash`** | `relational.root_event_id`, `relational.related_artifacts` (all WOs in chain) |
+| `WO_QUALITY_GATE` | HO2 approves or rejects final result | session_id, decision (pass/retry/escalate), **`trace_hash`** | `relational.parent_event_id` (points to `WO_CHAIN_COMPLETE`) |
 
 ### HO1 Ledger: `HO1/ledger/worker.jsonl`
 
-Records HO1's execution — the canonical trace of all LLM calls and tool invocations.
+Records HO1's execution — the canonical trace of all LLM calls and tool invocations. This is the detailed trace that HO2's `trace_hash` verifies (see Section 5a).
 
-| Event Type | When | Key Fields |
-|------------|------|------------|
-| `WO_EXECUTING` | HO1 picks up WO | wo_id, wo_type |
-| `LLM_CALL` | HO1 makes an LLM call | wo_id, contract_id, input_tokens, output_tokens |
-| `TOOL_CALL` | HO1 invokes a tool | wo_id, tool_id, args_summary, result_summary |
-| `WO_COMPLETED` | Execution succeeds | wo_id, output_result summary, cost |
-| `WO_FAILED` | Execution fails | wo_id, error, cost |
+| Event Type | When | Key Fields | Relational Metadata |
+|------------|------|------------|---------------------|
+| `WO_EXECUTING` | HO1 picks up WO | wo_id, wo_type | `relational.parent_event_id` (points to HO2's `WO_DISPATCHED`), `relational.root_event_id` |
+| `LLM_CALL` | HO1 makes an LLM call | wo_id, contract_id, input_tokens, output_tokens | `relational.parent_event_id` (points to `WO_EXECUTING`), `relational.related_artifacts` [{type: "framework", id: contract_id}] |
+| `TOOL_CALL` | HO1 invokes a tool | wo_id, tool_id, args_summary, result_summary | `relational.parent_event_id` (points to `WO_EXECUTING`) |
+| `WO_COMPLETED` | Execution succeeds | wo_id, output_result summary, cost | `relational.parent_event_id` (points to `WO_EXECUTING`), `relational.root_event_id` |
+| `WO_FAILED` | Execution fails | wo_id, error, cost | `relational.parent_event_id` (points to `WO_EXECUTING`), `relational.root_event_id` |
 
 ### Ledger Invariants
 
@@ -184,6 +200,114 @@ Records HO1's execution — the canonical trace of all LLM calls and tool invoca
 - Every `WO_EXECUTING` MUST resolve to exactly one `WO_COMPLETED` or `WO_FAILED`
 - `cost` fields MUST be populated on terminal events
 - Ledger entries are append-only (FMWK-002 applies)
+- Every HO2 terminal event (`WO_CHAIN_COMPLETE`, `WO_QUALITY_GATE`) MUST include a `trace_hash` field (see Section 5a)
+- Every ledger entry MUST populate `relational.parent_event_id` when a causal parent exists (see Section 5b)
+- Every ledger entry at chain boundaries MUST populate `relational.root_event_id` to enable causal chain traversal
+
+---
+
+## 5a. Hash-Anchored Trace Model
+
+### Problem
+
+The governance ledger (HO2m) must record verifiable summaries of what happened during WO execution. But storing full execution detail in HO2m causes ledger bloat — every LLM call, every tool invocation, every intermediate result would duplicate what HO1m already records. Without a linking mechanism, governance summaries become unverifiable claims (v2 Section 18: Critical Path — What's Next, open question: "Ledger efficiency / hash-anchored trace").
+
+### Two-Tier Recording Model
+
+| Tier | Ledger | What It Records | Purpose |
+|------|--------|-----------------|---------|
+| HO2 | `HO2/ledger/workorder.jsonl` | Governance summaries: WO planned, dispatched, chain complete, quality gate decision | Decision audit trail |
+| HO1 | `HO1/ledger/worker.jsonl` | Detailed execution trace: every LLM call, tool call, token count, result | Execution evidence |
+
+The `trace_hash` field links these two tiers. When HO2 writes a terminal governance event (`WO_CHAIN_COMPLETE` or `WO_QUALITY_GATE`), it includes a SHA256 hash of the corresponding HO1 trace entries. This hash is the integrity link — it proves that the governance summary corresponds to a specific, unmodified execution trace.
+
+### trace_hash Computation
+
+1. HO1 completes all WOs in a chain and writes trace entries to `HO1/ledger/worker.jsonl`
+2. HO2 reads the HO1 trace entries for the completed chain (identified by `wo_id` and `session_id`)
+3. HO2 computes `SHA256(concatenated HO1 trace entries for this chain, in ledger order)`
+4. HO2 writes the hash as the `trace_hash` field on `WO_CHAIN_COMPLETE` and `WO_QUALITY_GATE` events
+
+**Ordering**: The `trace_hash` is computed AFTER HO1 completes, so HO2 reads the written trace before computing the hash. This avoids coordination race conditions.
+
+### trace_hash Field Location
+
+The `trace_hash` value is stored in the ledger entry's `metadata.context_fingerprint.context_hash` field, as defined in `ledger_entry_metadata.schema.json` (PKG-PHASE2-SCHEMAS-001). This framework does NOT redefine the schema — it consumes the existing `context_fingerprint.context_hash` field for this purpose.
+
+### Verification
+
+Any auditor (ADMIN, KERNEL.semantic meta agent) can verify a governance summary by:
+
+1. Reading the `trace_hash` from the HO2 governance event
+2. Reading the corresponding HO1 trace entries (using `relational.root_event_id` to find the chain)
+3. Recomputing the SHA256 hash
+4. Comparing: match = verified, mismatch = integrity violation
+
+### Implementation Boundary
+
+This section defines the **protocol** — the two-tier model, the hash computation sequence, and the verification procedure. The **implementation** (hash computation code, trace entry serialization format, coordination mechanism) belongs to PKG-WORK-ORDER-001 (HANDOFF-13).
+
+---
+
+## 5b. Metadata Key Standard
+
+### Purpose
+
+Define how relational and graph metadata fields appear in all ledger entries produced by the work order protocol. These fields create a graph structure over the append-only ledger, enabling relationship-based retrieval (Graph RAG) without breaking immutability (v2 Section 6: Memory Architecture — "Meta ledger is graph-indexed").
+
+### Schema Reference
+
+All relational metadata fields are defined in `ledger_entry_metadata.schema.json` (PKG-PHASE2-SCHEMAS-001). This framework references that schema as-is. If extensions are needed, they are documented below as Schema Extension Proposals — the schema file is NOT modified by this framework.
+
+### Required Relational Fields
+
+Every ledger entry produced by the work order protocol MUST include the applicable relational metadata fields under the `metadata.relational` namespace:
+
+| Field Path | Type | When Required | Description |
+|------------|------|---------------|-------------|
+| `metadata.relational.parent_event_id` | string (`LED-{8 hex}`) | When a causal parent exists | Points to the direct parent ledger entry. Example: `WO_DISPATCHED` points to its `WO_PLANNED` entry. |
+| `metadata.relational.root_event_id` | string (`LED-{8 hex}`) | At chain boundaries and terminal events | Points to the root of the causal chain. Example: all events in a WO chain share the same root (the first `WO_PLANNED`). |
+| `metadata.relational.related_artifacts` | array of `{type, id}` | When the event references governed artifacts | Lists artifacts this event touches. Types: `package`, `framework`, `spec`, `file`, `registry`, `ledger_entry`. |
+
+### Provenance Fields
+
+Every ledger entry produced by the work order protocol SHOULD include provenance metadata under the `metadata.provenance` namespace:
+
+| Field Path | Type | When Required | Description |
+|------------|------|---------------|-------------|
+| `metadata.provenance.agent_id` | string | Always | The specific agent instance that created the entry |
+| `metadata.provenance.agent_class` | string (enum) | Always | One of: `KERNEL.syntactic`, `KERNEL.semantic`, `ADMIN`, `RESIDENT` |
+| `metadata.provenance.work_order_id` | string (`WO-*`) | When executing under a WO | The work order being executed |
+| `metadata.provenance.session_id` | string (`SES-*`) | Always | The session this entry belongs to |
+| `metadata.provenance.framework_id` | string (`FMWK-*`) | When applicable | The framework governing this action |
+
+### Context Fingerprint Fields
+
+For LLM-calling events (`LLM_CALL`), the following fields under `metadata.context_fingerprint` SHOULD be populated:
+
+| Field Path | Type | Description |
+|------------|------|-------------|
+| `metadata.context_fingerprint.context_hash` | string | SHA256 of the assembled context sent to the LLM |
+| `metadata.context_fingerprint.prompt_pack_id` | string (`PRM-*`) | The governed prompt pack used |
+| `metadata.context_fingerprint.tokens_used.input` | integer | Input tokens consumed |
+| `metadata.context_fingerprint.tokens_used.output` | integer | Output tokens consumed |
+| `metadata.context_fingerprint.model_id` | string | LLM model identifier |
+
+### Graph Traversal Patterns
+
+The relational fields enable the following traversal patterns, used by HO2 operational learning and KERNEL.semantic meta agent (v2 Section 9: Learning Model — Three Timescales):
+
+| Pattern | Query | Use Case |
+|---------|-------|----------|
+| Causal chain | Follow `parent_event_id` links upward | Trace a failure back to its root cause |
+| Chain scope | All entries sharing `root_event_id` | Get all events in a WO chain |
+| Artifact impact | All entries where `related_artifacts` contains artifact X | How many events touch a given spec/framework |
+| Agent history | All entries matching `provenance.agent_id` | Audit trail for a specific agent |
+| Framework failures | `provenance.framework_id` + `outcome.status = failure` | Which framework keeps failing (operational learning) |
+
+### Downstream Frameworks
+
+FMWK-009 (Tier Boundary), FMWK-010 (Cognitive Stack), and FMWK-011 (Prompt Contracts) adopt the metadata key standard defined in this section. Terminology and field paths defined here are authoritative for the batch.
 
 ---
 
@@ -287,11 +411,14 @@ A WO spawns sub-WOs via `parent_wo_id`. Recursive decomposition.
 
 - Reference implementation: `HOT/kernel/work_order.py` (PKG-WORK-ORDER-001)
 - Governing specs: SPEC-WO-001 (work order validation), SPEC-LEDGER-001 (ledger integrity)
-- Related frameworks: FMWK-002 (Ledger Protocol), FMWK-009 (Tier Boundary), FMWK-011 (Prompt Contracts)
+- Related frameworks: FMWK-002 (Ledger Protocol), FMWK-009 (Tier Boundary), FMWK-010 (Cognitive Stack), FMWK-011 (Prompt Contracts)
+- Design authority: `_staging/architecture/KERNEL_PHASE_2_v2.md` (2026-02-14)
 
 ## Status
 
-- Version: 1.0.0
+- Version: 1.1.0
 - State: draft
 - Owner: ray
 - Created: 2026-02-12
+- Updated: 2026-02-14
+- Changes in 1.1.0: Kitchener step alignment (Sections 2, 3), hash-anchored trace model (Section 5a), metadata key standard (Section 5b), relational metadata in ledger events (Section 5)
