@@ -261,6 +261,61 @@ Include expected answers after the prompt (visible to the reviewer, not to the a
 
 ---
 
+## Three Adversaries (Reversed Cadence)
+
+Every significant design decision in a handoff document SHOULD include a **three-adversary analysis**. This is the project's standard adversarial review pattern, used throughout the design process to stress-test choices before committing to them.
+
+The three adversaries speak in reversed cadence — they don't just object, they build on each other:
+
+### Adversary 1: Hurdles (Pragmatic)
+
+"What's actually hard about this? What breaks? What's missing?"
+
+Focus on:
+- Implementation blockers (dependencies, missing infrastructure, Layer 0 changes needed)
+- Operational risk (what if this fails at runtime?)
+- Existing code that has to change (blast radius)
+- Things we're assuming exist but don't
+
+### Adversary 2: Not Enough (Strategic)
+
+"What happens if we DON'T do this, or do too little? What's permanently lost?"
+
+Focus on:
+- Append-only consequences — data written without structure is permanently impoverished
+- Missing capabilities that downstream systems need (e.g., graph edges for attention)
+- Design debt that compounds (each WO written without relational fields is a missed connection)
+- The cost of adding this later vs. now
+
+### Adversary 3: Too Much (Restraint)
+
+"What happens if we over-build? What's wasted? What constrains future flexibility?"
+
+Focus on:
+- Premature abstraction (building for 0 consumers)
+- Scope creep (adding fields/features that no current code reads)
+- Opportunity cost (time spent here vs. building the actual system)
+- Over-specification (locking in schemas before patterns emerge)
+
+### How to Use
+
+In the **Architecture / Design** section (or **Design Principles** section) of a handoff, include a brief adversarial analysis for key design choices:
+
+```markdown
+### Adversarial Analysis: [Design Choice]
+
+**Hurdles**: [1-3 sentences]
+**Not Enough**: [1-3 sentences]
+**Too Much**: [1-3 sentences]
+**Synthesis**: [The decision, informed by all three]
+```
+
+The synthesis is where the actual decision lives. The adversaries inform it; they don't make it.
+
+**When to use**: Any design choice that affects data formats (especially append-only), architecture boundaries, or schema definitions. Not needed for straightforward implementation steps.
+
+---
+
 ## Governance Chain for New Packages
 
 All Layer 3+ packages use this pattern until framework auto-registration is built:
@@ -281,7 +336,7 @@ If the package introduces a NEW framework (e.g., FMWK-003), ship the framework m
 
 Three tiers: **HOT** (executive/kernel) > **HO2** (session/admin) > **HO1** (stateless/fast).
 
-HO3 does not exist. It was a prior agent mistake. If you see HO3 anywhere, flag it.
+HO3 IS the correct name for the executive/governance tier. HOT and HO3 are synonyms — both refer to the same tier. HOT = HO-Three (shorthand).
 
 Currently all packages target `plane_id: "hot"`. Multi-tier deployment is a future capability.
 
@@ -344,7 +399,7 @@ Every time a handoff is dispatched to an agent, the reviewer MUST add a row:
 1. **Wrong staging path.** `Control_Plane_v2/_staging/`, NOT `CP_2.1/_staging/`.
 2. **Tar `./` prefix.** NEVER `tar czf ... -C dir .` — always `tar czf ... -C dir $(ls dir)`.
 3. **Missing PKG-TOKEN-BUDGETER-001 dependency.** Router depends on budgeter.
-4. **HO3 references.** HO3 is dead. Flag and remove.
+4. **Tier naming.** HOT and HO3 are synonyms. Use HOT in filesystem paths, HO3 in architectural discussion. Both are valid.
 5. **Hardcoded thresholds.** Every number must come from config. No magic constants.
 6. **File replacement.** Packages never overwrite another package's files. Use state-gating.
 7. **Forgetting results file.** Agent MUST write RESULTS_<id>.md when finished.

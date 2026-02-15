@@ -49,7 +49,7 @@ This file is the entry point for any session (human or agent). Read in order.
 | HANDOFF-12 | Boot Materialize | VALIDATED | `handoffs/BUILDER_HANDOFF_12_boot_materialize.md` | `handoffs/AGENT_PROMPT_HANDOFF_12.md` | `handoffs/RESULTS_HANDOFF_12.md` |
 | HANDOFF-12A | Pristine fix | VALIDATED | `handoffs/BUILDER_HANDOFF_12A_pristine_fix.md` | `handoffs/AGENT_PROMPT_HANDOFF_12A.md` | `handoffs/RESULTS_HANDOFF_12A.md` |
 | CLEANUP-0 | Cleanup | DONE | — | — | `handoffs/RESULTS_CLEANUP_0.md` |
-| CLEANUP-1 | Flow Runner removal | NOT DISPATCHED | `handoffs/BUILDER_CLEANUP_1_flow_runner.md` | `handoffs/AGENT_PROMPT_CLEANUP_1.md` | — |
+| CLEANUP-1 | Flow Runner removal | VALIDATED | `handoffs/BUILDER_CLEANUP_1_flow_runner.md` | `handoffs/AGENT_PROMPT_CLEANUP_1.md` | `handoffs/RESULTS_CLEANUP_1.md` |
 
 ## 5. Directory Layout
 
@@ -71,9 +71,11 @@ _staging/
 ## 6. Critical Path
 
 ```
-DONE:  Full bootstrap → ADMIN first boot (17 packages, 8/8 gates)
+DONE:  Full bootstrap → ADMIN first boot (16 packages, 8/8 gates)
 DONE:  HANDOFF-12A → pristine bypass fix
-NOW:   FMWK-008 (Work Order Protocol) — draft, under review
+DONE:  CLEANUP-1 → PKG-FLOW-RUNNER-001 removed
+NOW:   Ledger metadata schema design (BLOCKING — must resolve before HANDOFF-13)
+       FMWK-008 Section 5 needs metadata key standard for relational/graph fields
 NEXT:  FMWK-009, 010, 011 → then HANDOFF-13 (PKG-WORK-ORDER-001)
        → HANDOFF-14/15 parallel (HO1 Executor + HO2 Supervisor)
        → HANDOFF-16 (Session Host rewire)
