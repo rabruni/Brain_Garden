@@ -20,7 +20,7 @@
     },
     {
       "path": "HOT/tests/test_boot_materialize.py",
-      "sha256": "sha256:b49f39e2914618e80c5d0da107b5d2a35048aa77da474c57ac1164ab715e763a",
+      "sha256": "sha256:83f04afe73b6ee3731f8e3953326cd409c30616bb74bbfa05af35f9ffdbe41f9",
       "classification": "test"
     }
   ]

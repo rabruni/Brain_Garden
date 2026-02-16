@@ -17,8 +17,8 @@ if _kernel.exists():
     sys.path.insert(0, str(_kernel))
     sys.path.insert(0, str(_kernel.parent))
 
-# Add PKG-PROMPT-ROUTER-001 for PromptRequest
-_pr = _staging / "PKG-PROMPT-ROUTER-001" / "HOT" / "kernel"
+# Add PKG-LLM-GATEWAY-001 for PromptRequest
+_pr = _staging / "PKG-LLM-GATEWAY-001" / "HOT" / "kernel"
 if _pr.exists():
     sys.path.insert(0, str(_pr))
 

@@ -36,7 +36,7 @@
     },
     {
       "path": "HOT/FMWK-005_Admin/manifest.yaml",
-      "sha256": "sha256:54bf77783e508c12716ebb100bf75fcb1449f78a4a914cdc3515e8d82b129e51",
+      "sha256": "sha256:cbbcc905b591aee74c4d2b8d111c0f8da3c977ab994cc29751c4256070b11059",
       "classification": "framework"
     },
     {
@@ -46,7 +46,7 @@
     },
     {
       "path": "HOT/tests/test_admin.py",
-      "sha256": "sha256:7ff7c2ee1a2d8ab2e71e7fa31ee8b5ebaae94e59f251e21d1c31b133438d6519",
+      "sha256": "sha256:ab5029c20dcd384b0b69fd12a5861e843d9b8da8d20da6c8df8c311af94f64a2",
       "classification": "test"
     }
   ]

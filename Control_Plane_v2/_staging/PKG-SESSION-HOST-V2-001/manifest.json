@@ -23,7 +23,7 @@
     },
     {
       "path": "HOT/tests/test_session_host_v2.py",
-      "sha256": "sha256:444be922892d811a8b157b3af63a0aeb271c64e0afdf17966ab42cc1fc997154",
+      "sha256": "sha256:befec2126adec9f6b1ac3a3e0cb2bf98a29e8f59bf39610a437aed12db479879",
       "classification": "test"
     }
   ]

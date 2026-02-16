@@ -29,6 +29,7 @@ EXPECTED_WIRING = {
                   "SPEC-REG-001", "SPEC-VER-001"],
     "FMWK-001": ["SPEC-SEC-001"],
     "FMWK-002": ["SPEC-LEDGER-001"],
+    "FMWK-005": [],
     "FMWK-007": ["SPEC-PKG-001"],
 }
 
@@ -85,12 +86,12 @@ class TestRemovedFrameworks:
         fmwk_100 = HOT_ROOT / "FMWK-100_Agent_Development"
         assert not fmwk_100.exists(), "FMWK-100 is dead (all specs removed) — must be deleted"
 
-    def test_exactly_four_frameworks(self):
-        """Exactly 4 framework dirs should exist."""
+    def test_exactly_five_frameworks(self):
+        """Exactly 5 framework dirs should exist."""
         fmwk_dirs = sorted(HOT_ROOT.glob("FMWK-*/"))
         fmwk_ids = [d.name.split("_")[0] for d in fmwk_dirs]
-        assert fmwk_ids == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-007"], \
-            f"Expected exactly 4 frameworks, got: {fmwk_ids}"
+        assert fmwk_ids == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-005", "FMWK-007"], \
+            f"Expected exactly 5 frameworks, got: {fmwk_ids}"
 
 
 class TestFrameworkManifestStructure:

@@ -11,8 +11,30 @@ from pathlib import Path
 
 import pytest
 
-_staging = Path(__file__).resolve().parent.parent.parent.parent
-sys.path.insert(0, str(_staging / "PKG-ADMIN-001" / "HOT" / "admin"))
+# Dual-context path detection: installed root vs staging packages
+# Probe: kernel/ledger_client.py exists ONLY in installed root (merged from PKG-KERNEL-001).
+# It does NOT exist in PKG-ADMIN-001's own HOT, so this probe is unambiguous.
+# NOTE: Do NOT use admin/main.py as probe — it exists in BOTH contexts (ambiguous).
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
+
+if (_HOT / "kernel" / "ledger_client.py").exists():
+    # Installed layout — all packages merged under HOT/
+    sys.path.insert(0, str(_HOT / "admin"))
+    for p in [_HOT / "kernel", _HOT / "scripts", _HOT]:
+        if str(p) not in sys.path:
+            sys.path.insert(0, str(p))
+else:
+    # Staging layout — admin code in sibling package
+    _STAGING_ROOT = _HERE.parents[2]
+    sys.path.insert(0, str(_STAGING_ROOT / "PKG-ADMIN-001" / "HOT" / "admin"))
+    for p in [
+        _STAGING_ROOT / "PKG-KERNEL-001" / "HOT" / "kernel",
+        _STAGING_ROOT / "PKG-KERNEL-001" / "HOT",
+        _STAGING_ROOT / "PKG-BOOT-MATERIALIZE-001" / "HOT" / "scripts",
+    ]:
+        if str(p) not in sys.path:
+            sys.path.insert(0, str(p))
 
 import main as admin_main  # noqa: E402
 from main import build_session_host_v2, load_admin_config, run_cli  # noqa: E402
@@ -67,7 +89,12 @@ def _write_admin_files(tmp_path: Path):
 
 
 def _write_layout_json(tmp_path: Path) -> Path:
-    layout_src = _staging / "PKG-LAYOUT-002" / "HOT" / "config" / "layout.json"
+    # Reuse the same dual-context detection as the module-level path setup.
+    # _HOT is already resolved at module level via kernel/ledger_client.py probe.
+    if (_HOT / "config" / "layout.json").exists():
+        layout_src = _HOT / "config" / "layout.json"
+    else:
+        layout_src = _HERE.parents[2] / "PKG-LAYOUT-002" / "HOT" / "config" / "layout.json"
     cfg_dir = tmp_path / "HOT" / "config"
     cfg_dir.mkdir(parents=True, exist_ok=True)
     dst = cfg_dir / "layout.json"
