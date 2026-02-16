@@ -21,7 +21,7 @@
   "assets": [
     {
       "path": "HOT/admin/main.py",
-      "sha256": "sha256:24fbb23d5b08ba2ffa4d8261b7a45375ecb2d29f092567ff5ef56e4093ce33bc",
+      "sha256": "sha256:978c0a5bfbabb31b515c229b8bb6a968e00b2edb942c6289314fe46ee0318f1b",
       "classification": "application"
     },
     {
@@ -46,7 +46,7 @@
     },
     {
       "path": "HOT/tests/test_admin.py",
-      "sha256": "sha256:ab5029c20dcd384b0b69fd12a5861e843d9b8da8d20da6c8df8c311af94f64a2",
+      "sha256": "sha256:37796344780af66d4ef11ede586bd5ed1fa1236c859e464a6d3f6fca90daee58",
       "classification": "test"
     }
   ]

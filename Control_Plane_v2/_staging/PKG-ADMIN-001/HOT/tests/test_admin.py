@@ -280,3 +280,14 @@ class TestBootMaterializeDevBypass:
         assert code == 0
         assert observations["during_boot_is_patched"] is True
         assert pristine_mod.assert_append_only is original
+
+
+# Tool-Use Wiring Test (1) — HANDOFF-21
+class TestToolUseWiring:
+    def test_ho2_config_receives_tool_ids(self, tmp_path: Path):
+        """build_session_host_v2() passes tool IDs from admin_config.json to HO2Config."""
+        cfg_path, _ = _write_admin_files(tmp_path)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        # Access HO2 supervisor through the shell chain: shell._host -> session_host._ho2
+        ho2 = shell._host._ho2
+        assert "list_packages" in ho2._config.tools_allowed

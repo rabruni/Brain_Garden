@@ -584,3 +584,90 @@ class TestTraceHash:
         gates = mock_ledger.events_of_type("WO_QUALITY_GATE")
         assert len(gates) >= 1
         assert gates[0].metadata.get("context_fingerprint", {}).get("context_hash")
+
+
+# ===========================================================================
+# Tool-Use Wiring Tests (7) — HANDOFF-21
+# ===========================================================================
+
+class TestToolUseWiring:
+    def test_ho2_config_tools_allowed_default_empty(self, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+        )
+        assert config.tools_allowed == []
+
+    def test_ho2_config_tools_allowed_set(self, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            tools_allowed=["gate_check", "list_packages"],
+        )
+        assert config.tools_allowed == ["gate_check", "list_packages"]
+
+    def test_synthesize_wo_includes_tools_allowed(self, tmp_path, mock_ho1, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            tools_allowed=["gate_check"],
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", mock_ho1, mock_ledger, mock_budgeter, config)
+        sv.handle_turn("hello")
+        synth_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert len(synth_wos) >= 1
+        assert synth_wos[0]["constraints"]["tools_allowed"] == ["gate_check"]
+
+    def test_synthesize_wo_turn_limit_raised_with_tools(self, tmp_path, mock_ho1, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            tools_allowed=["gate_check"],
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", mock_ho1, mock_ledger, mock_budgeter, config)
+        sv.handle_turn("hello")
+        synth_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert synth_wos[0]["constraints"]["turn_limit"] == 10
+
+    def test_classify_wo_excludes_tools_allowed(self, tmp_path, mock_ho1, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            tools_allowed=["gate_check"],
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", mock_ho1, mock_ledger, mock_budgeter, config)
+        sv.handle_turn("hello")
+        classify_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "classify"]
+        assert len(classify_wos) >= 1
+        assert "tools_allowed" not in classify_wos[0]["constraints"]
+
+    def test_retry_wo_includes_tools_allowed(self, tmp_path, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        failing_ho1 = MockHO1Executor(responses={
+            "classify": {"speech_act": "greeting", "ambiguity": "low"},
+            "synthesize": {"response_text": ""},  # triggers retry
+        })
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            tools_allowed=["gate_check"],
+            max_retries=1,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", failing_ho1, mock_ledger, mock_budgeter, config)
+        sv.handle_turn("hello")
+        synth_wos = [w for w in failing_ho1.executed_wos if w["wo_type"] == "synthesize"]
+        # At least 2 synthesize WOs (original + retry)
+        assert len(synth_wos) >= 2
+        # Retry WO should also have tools_allowed
+        assert synth_wos[-1]["constraints"]["tools_allowed"] == ["gate_check"]
+
+    def test_tools_allowed_empty_means_no_tools(self, supervisor, mock_ho1):
+        supervisor.handle_turn("hello")
+        synth_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert synth_wos[0]["constraints"]["tools_allowed"] == []
+        assert synth_wos[0]["constraints"]["turn_limit"] == 1

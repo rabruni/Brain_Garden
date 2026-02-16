@@ -170,20 +170,27 @@ class HO1Executor:
                     return self._fail_wo(wo, cost, start_time, str(error_code), str(error_msg))
 
                 # Check for tool_use blocks
-                tool_uses = self._extract_tool_uses(content)
+                tool_uses = self._extract_tool_uses(content, response)
                 if tool_uses and self.tool_dispatcher:
+                    cached_results = []
                     for tu in tool_uses:
                         tool_result = self.tool_dispatcher.execute(tu["tool_id"], tu.get("arguments", {}))
                         cost["tool_calls"] += 1
+                        result_output = getattr(tool_result, "output", None)
+                        cached_results.append({
+                            "tool_id": tu["tool_id"],
+                            "result": result_output,
+                        })
+                        args_str = json.dumps(tu.get("arguments", {}))[:200]
+                        result_str = json.dumps(result_output, default=str)[:500] if result_output is not None else ""
                         self._log_event("TOOL_CALL", wo,
                             tool_id=tu["tool_id"],
                             status=getattr(tool_result, "status", "unknown"),
+                            args_summary=args_str,
+                            result_summary=result_str,
                         )
-                    # Build follow-up request with tool results
-                    tool_results_text = json.dumps([{
-                        "tool_id": tu["tool_id"],
-                        "result": getattr(self.tool_dispatcher.execute(tu["tool_id"], tu.get("arguments", {})), "output", None)
-                    } for tu in tool_uses])
+                    # Build follow-up request with cached tool results
+                    tool_results_text = json.dumps(cached_results)
                     request = self._build_prompt_request(wo, contract,
                         additional_context=f"\nTool results: {tool_results_text}")
                     continue
@@ -261,8 +268,20 @@ class HO1Executor:
 
         return template_text + additional_context
 
+    def _resolve_tools(self, wo: dict) -> Optional[List[dict]]:
+        """Resolve tool definitions for the WO based on tools_allowed constraint."""
+        tools_allowed = wo.get("constraints", {}).get("tools_allowed", [])
+        if not tools_allowed or not self.tool_dispatcher:
+            return None
+        all_tools = self.tool_dispatcher.get_api_tools()
+        allowed_set = set(tools_allowed)
+        filtered = [t for t in all_tools if t.get("name") in allowed_set]
+        return filtered if filtered else None
+
     def _build_prompt_request(self, wo: dict, contract: dict, additional_context: str = "") -> object:
         """Build a PromptRequest-compatible object from WO + contract."""
+        tools = self._resolve_tools(wo)
+
         # Import PromptRequest - it's a value object, allowed by FMWK-009
         try:
             from llm_gateway import PromptRequest
@@ -287,6 +306,7 @@ class HO1Executor:
                 tier="ho1",
                 max_tokens=min(boundary.get("max_tokens", 4096), token_budget),
                 temperature=boundary.get("temperature", 0.0),
+                tools=tools,
             )
 
         boundary = contract.get("boundary", {})
@@ -308,22 +328,47 @@ class HO1Executor:
             tier="ho1",
             max_tokens=min(boundary.get("max_tokens", 4096), token_budget),
             temperature=boundary.get("temperature", 0.0),
-            structured_output=boundary.get("structured_output"),
+            structured_output=boundary.get("structured_output") if not tools else None,
             input_schema=contract.get("input_schema"),
             output_schema=contract.get("output_schema"),
             template_variables=input_ctx,
+            tools=tools,
         )
 
-    def _extract_tool_uses(self, content: str) -> list:
-        """Extract tool_use blocks from response content."""
-        try:
-            parsed = json.loads(content)
-            if isinstance(parsed, list):
-                return [item for item in parsed if isinstance(item, dict) and item.get("type") == "tool_use"]
-            if isinstance(parsed, dict) and parsed.get("type") == "tool_use":
-                return [parsed]
-        except (json.JSONDecodeError, TypeError):
-            pass
+    def _extract_tool_uses(self, content: str, response: object = None) -> list:
+        """Extract tool_use blocks from response content_blocks or content string.
+
+        Prefers content_blocks (populated by AnthropicProvider with full dicts
+        including type, id, name, input). Falls back to string parsing for
+        non-Anthropic providers.
+        """
+        # Fast signal: check finish_reason first
+        finish_reason = getattr(response, "finish_reason", None) if response else None
+
+        # Primary path: use content_blocks if available
+        content_blocks = getattr(response, "content_blocks", None) if response else None
+        if content_blocks:
+            tool_uses = []
+            for block in content_blocks:
+                if isinstance(block, dict) and block.get("type") == "tool_use":
+                    tool_uses.append({
+                        "tool_id": block.get("name", ""),
+                        "arguments": block.get("input", {}),
+                        "id": block.get("id", ""),
+                    })
+            if tool_uses:
+                return tool_uses
+
+        # Fallback: parse content string (for non-Anthropic providers)
+        if finish_reason == "tool_use" or content:
+            try:
+                parsed = json.loads(content)
+                if isinstance(parsed, list):
+                    return [item for item in parsed if isinstance(item, dict) and item.get("type") == "tool_use"]
+                if isinstance(parsed, dict) and parsed.get("type") == "tool_use":
+                    return [parsed]
+            except (json.JSONDecodeError, TypeError):
+                pass
         return []
 
     def _validate_schema(self, data: dict, schema: dict) -> tuple:

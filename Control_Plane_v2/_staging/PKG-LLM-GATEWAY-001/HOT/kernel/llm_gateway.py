@@ -468,6 +468,10 @@ class LLMGateway:
         """Write EXCHANGE record for successful round-trip."""
         from ledger_client import LedgerEntry
 
+        # Tool-use observability
+        tools_offered = len(request.tools) if request.tools else 0
+        tool_use_in_response = getattr(provider_response, "finish_reason", "") == "tool_use"
+
         entry = LedgerEntry(
             event_type="EXCHANGE",
             submission_id=request.contract_id,
@@ -497,6 +501,9 @@ class LLMGateway:
                 "finish_reason": provider_response.finish_reason,
                 # Timing
                 "latency_ms": latency_ms,
+                # Tool observability
+                "tools_offered": tools_offered,
+                "tool_use_in_response": tool_use_in_response,
             },
         )
         return self._ledger.write(entry)

@@ -173,3 +173,72 @@ class TestAPIUnchanged:
         assert "ledger_client" in params
         assert "budgeter" in params
         assert "config" in params
+
+
+# Tool-Use Observability Tests (2) — HANDOFF-21
+class TestToolUseObservability:
+    def test_exchange_logs_tools_offered_count(self, tmp_path):
+        from llm_gateway import LLMGateway, PromptRequest, RouteOutcome
+        from ledger_client import LedgerClient
+        from provider import MockProvider
+
+        ledger_path = tmp_path / "ledger" / "test.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        gw = LLMGateway(ledger_client=lc, dev_mode=True)
+        gw.register_provider("mock", MockProvider())
+
+        tools = [
+            {"name": "gate_check", "description": "Run gates", "input_schema": {"type": "object", "properties": {}}},
+            {"name": "list_packages", "description": "List pkgs", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        req = PromptRequest(
+            prompt="Hello", prompt_pack_id="PRM-TEST-001",
+            contract_id="CT-TEST-001", agent_id="test-agent",
+            agent_class="ADMIN", framework_id="FMWK-000",
+            package_id="PKG-TEST-001", work_order_id="WO-TEST-001",
+            session_id="SES-TEST0001", tier="hot",
+            tools=tools,
+        )
+        resp = gw.route(req)
+        assert resp.outcome == RouteOutcome.SUCCESS
+
+        entries = lc.read_all()
+        exchange = [e for e in entries if e.event_type == "EXCHANGE"]
+        assert len(exchange) >= 1
+        assert exchange[0].metadata.get("tools_offered") == 2
+
+    def test_exchange_logs_tool_use_in_response(self, tmp_path):
+        from llm_gateway import LLMGateway, PromptRequest, RouteOutcome
+        from ledger_client import LedgerClient
+        from provider import MockProvider, ProviderResponse
+
+        ledger_path = tmp_path / "ledger" / "test.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        gw = LLMGateway(ledger_client=lc, dev_mode=True)
+
+        # Use a MockProvider that returns finish_reason="tool_use"
+        mock_prov = MockProvider()
+        mock_prov._responses = [ProviderResponse(
+            content='{}', model="mock-model-1",
+            input_tokens=10, output_tokens=5,
+            request_id="req-test01", provider_id="mock",
+            finish_reason="tool_use",
+        )]
+        gw.register_provider("mock", mock_prov)
+
+        req = PromptRequest(
+            prompt="Hello", prompt_pack_id="PRM-TEST-001",
+            contract_id="CT-TEST-001", agent_id="test-agent",
+            agent_class="ADMIN", framework_id="FMWK-000",
+            package_id="PKG-TEST-001", work_order_id="WO-TEST-001",
+            session_id="SES-TEST0001", tier="hot",
+        )
+        resp = gw.route(req)
+        assert resp.outcome == RouteOutcome.SUCCESS
+
+        entries = lc.read_all()
+        exchange = [e for e in entries if e.event_type == "EXCHANGE"]
+        assert len(exchange) >= 1
+        assert exchange[0].metadata.get("tool_use_in_response") is True

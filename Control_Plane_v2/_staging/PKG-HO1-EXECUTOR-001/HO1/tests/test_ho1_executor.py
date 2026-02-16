@@ -633,3 +633,157 @@ class TestTemplateRendering:
         assert "{{prior_results}}" not in result
         assert "{{classification}}" not in result
         assert "{{assembled_context}}" not in result
+
+
+# Tool-Use Wiring Tests (9) — HANDOFF-21
+class TestToolUseWiring:
+    def test_prompt_request_includes_tools_when_allowed(self, executor, classify_wo):
+        """When WO has tools_allowed, PromptRequest.tools is populated."""
+        classify_wo["constraints"]["tools_allowed"] = ["read_file"]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "read_file", "description": "Read a file", "input_schema": {"type": "object", "properties": {}}},
+            {"name": "gate_check", "description": "Run gates", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        assert request.tools is not None
+        assert len(request.tools) == 1
+        assert request.tools[0]["name"] == "read_file"
+
+    def test_prompt_request_no_tools_when_empty(self, executor, classify_wo):
+        """When tools_allowed is empty, PromptRequest.tools is None."""
+        classify_wo["constraints"]["tools_allowed"] = []
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        assert request.tools is None
+
+    def test_prompt_request_no_tools_when_missing(self, executor, classify_wo):
+        """When tools_allowed is not in constraints, PromptRequest.tools is None."""
+        classify_wo["constraints"].pop("tools_allowed", None)
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        assert request.tools is None
+
+    def test_prompt_request_tools_filtered_to_allowed(self, executor, classify_wo):
+        """Only tools in tools_allowed appear in PromptRequest.tools."""
+        classify_wo["constraints"]["tools_allowed"] = ["gate_check"]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "read_file", "description": "Read", "input_schema": {"type": "object", "properties": {}}},
+            {"name": "gate_check", "description": "Gates", "input_schema": {"type": "object", "properties": {}}},
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        assert request.tools is not None
+        assert len(request.tools) == 1
+        assert request.tools[0]["name"] == "gate_check"
+
+    def test_tool_loop_no_double_execution(self, executor, classify_wo):
+        """Each tool executed exactly ONCE per loop iteration."""
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_01", "name": "read_file", "input": {"path": "test.py"}},
+        )
+        tool_resp = SimpleNamespace(
+            content='', outcome="SUCCESS",
+            input_tokens=100, output_tokens=50,
+            model_id="mock", provider_id="mock",
+            latency_ms=100, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act": "command", "ambiguity": "low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "read_file", "description": "Read a file", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        classify_wo["constraints"]["tools_allowed"] = ["read_file"]
+        executor.execute(classify_wo)
+        # Tool should be called exactly once (not twice from double-execution bug)
+        assert executor.tool_dispatcher.execute.call_count == 1
+
+    def test_tool_loop_uses_content_blocks(self, executor, classify_wo):
+        """When response has content_blocks with tool_use, extracts from blocks."""
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_01", "name": "list_packages", "input": {}},
+        )
+        tool_resp = SimpleNamespace(
+            content='{}', outcome="SUCCESS",
+            input_tokens=100, output_tokens=50,
+            model_id="mock", provider_id="mock",
+            latency_ms=100, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act": "command", "ambiguity": "low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List pkgs", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        classify_wo["constraints"]["tools_allowed"] = ["list_packages"]
+        executor.execute(classify_wo)
+        # Dispatcher should be called with the name from content_blocks
+        executor.tool_dispatcher.execute.assert_called_with("list_packages", {})
+
+    def test_tool_loop_fallback_to_string_parsing(self):
+        """When response has no content_blocks, falls back to string parsing."""
+        from ho1_executor import HO1Executor
+        exec_inst = HO1Executor.__new__(HO1Executor)
+        # Response with no content_blocks attribute
+        response = SimpleNamespace(finish_reason="stop")
+        content = '[{"type": "tool_use", "tool_id": "read_file", "arguments": {"path": "x"}}]'
+        result = exec_inst._extract_tool_uses(content, response)
+        assert len(result) == 1
+        assert result[0]["tool_id"] == "read_file"
+
+    def test_tool_call_event_has_args_summary(self, executor, classify_wo):
+        """TOOL_CALL ledger event includes args_summary."""
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_01", "name": "read_file", "input": {"path": "test.py"}},
+        )
+        tool_resp = SimpleNamespace(
+            content='', outcome="SUCCESS",
+            input_tokens=100, output_tokens=50,
+            model_id="mock", provider_id="mock",
+            latency_ms=100, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act": "command", "ambiguity": "low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "read_file", "description": "Read", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        classify_wo["constraints"]["tools_allowed"] = ["read_file"]
+        executor.execute(classify_wo)
+        tool_calls = [c for c in executor.ledger.write.call_args_list
+                      if c[0][0].event_type == "TOOL_CALL"]
+        assert len(tool_calls) >= 1
+        meta = tool_calls[0][0][0].metadata
+        assert "args_summary" in meta
+        assert "path" in meta["args_summary"]
+
+    def test_tool_call_event_has_result_summary(self, executor, classify_wo):
+        """TOOL_CALL ledger event includes result_summary."""
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_01", "name": "list_packages", "input": {}},
+        )
+        tool_resp = SimpleNamespace(
+            content='', outcome="SUCCESS",
+            input_tokens=100, output_tokens=50,
+            model_id="mock", provider_id="mock",
+            latency_ms=100, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act": "command", "ambiguity": "low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        classify_wo["constraints"]["tools_allowed"] = ["list_packages"]
+        executor.execute(classify_wo)
+        tool_calls = [c for c in executor.ledger.write.call_args_list
+                      if c[0][0].event_type == "TOOL_CALL"]
+        assert len(tool_calls) >= 1
+        meta = tool_calls[0][0][0].metadata
+        assert "result_summary" in meta

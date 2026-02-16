@@ -218,6 +218,7 @@ def build_session_host_v2(
         ho2m_path=root / "HO2" / "ledger" / "ho2m.jsonl",
         ho1m_path=root / "HO1" / "ledger" / "ho1m.jsonl",
         budget_ceiling=budget_cfg.get("session_token_limit", 200000),
+        tools_allowed=[t["tool_id"] for t in cfg_dict.get("tools", [])],
     )
     ho2 = HO2Supervisor(
         plane_root=root,

@@ -62,6 +62,7 @@ class HO2Config:
     attention_budget_tokens: int = 10000
     attention_budget_queries: int = 20
     attention_timeout_ms: int = 5000
+    tools_allowed: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -178,7 +179,8 @@ class HO2Supervisor:
                 constraints={
                     "prompt_contract_id": self._config.synthesize_contract_id,
                     "token_budget": 4000,
-                    "turn_limit": 1,
+                    "turn_limit": 10 if self._config.tools_allowed else 1,
+                    "tools_allowed": list(self._config.tools_allowed),
                 },
                 acceptance_criteria={
                     "requires_response_text": True,
@@ -215,7 +217,8 @@ class HO2Supervisor:
                     constraints={
                         "prompt_contract_id": self._config.synthesize_contract_id,
                         "token_budget": 4000,
-                        "turn_limit": 1,
+                        "turn_limit": 10 if self._config.tools_allowed else 1,
+                        "tools_allowed": list(self._config.tools_allowed),
                     },
                     acceptance_criteria={
                         "requires_response_text": True,
