@@ -2,7 +2,7 @@
   "package_id": "PKG-HO1-EXECUTOR-001",
   "package_type": "kernel",
   "title": "HO1 Executor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": "1.2",
   "spec_id": "SPEC-GATE-001",
   "framework_id": "FMWK-000",
@@ -21,27 +21,42 @@
     },
     {
       "path": "HO1/kernel/ho1_executor.py",
-      "sha256": "sha256:e44282b784faa34092e8cb49092f0e47d98e8d35abc8f76a98442133b43a7eea",
+      "sha256": "sha256:2d34f6b28c28eee51040a33cbea9aea1220ba7c34d955b7fe6cd6d084165cffa",
       "classification": "library"
     },
     {
       "path": "HO1/contracts/classify.json",
-      "sha256": "sha256:06180ed8284e69ec434f0a8afd87a82462ac632f8c9a531db018091f844315cf",
+      "sha256": "sha256:c71e74e1f5c051b97af13bf9befaaed584ea258f3754f19a72136e44a4f0db02",
       "classification": "contract"
     },
     {
       "path": "HO1/contracts/synthesize.json",
-      "sha256": "sha256:c245e639d91da9dd5d180fb3bc4dab6ca3b5431cae6df94f3c44dbd18159493d",
+      "sha256": "sha256:cf4c42afcdbd0aaa0b68f402a4ce4658cc1cc77e9849dacc4b536c3a654cfdca",
       "classification": "contract"
     },
     {
       "path": "HO1/contracts/execute.json",
-      "sha256": "sha256:c012f40610724b833795750d58f2da6d17c8d5262a2b7b90fc17eb46180fb958",
+      "sha256": "sha256:dd06cc2a155d6c9e4ec265c11e18ddd804dede103a53c9712bfab7f0b2491666",
       "classification": "contract"
     },
     {
+      "path": "HO1/prompt_packs/PRM-CLASSIFY-001.txt",
+      "sha256": "sha256:3da10407f898618791a2f8301d39938e2fea1183e687ee1fc8598d08e4cbab79",
+      "classification": "prompt_pack"
+    },
+    {
+      "path": "HO1/prompt_packs/PRM-SYNTHESIZE-001.txt",
+      "sha256": "sha256:789fb3305e6d0627c6f4824ab57fb95d2bb0d979009166c11037a065e700e38b",
+      "classification": "prompt_pack"
+    },
+    {
+      "path": "HO1/prompt_packs/PRM-EXECUTE-001.txt",
+      "sha256": "sha256:ac3698aadc0cfc24b38720b20171f0fc9f39a92caaf43c6ca37802e7cd01902a",
+      "classification": "prompt_pack"
+    },
+    {
       "path": "HO1/tests/test_ho1_executor.py",
-      "sha256": "sha256:89a944c0274c8fc42ffb31af8d898f07958caf9ad7a7ab6be3a196a4f766b277",
+      "sha256": "sha256:4de30dd41d52b72145d9b555e66c970f4976b45ce680a16a774941af90f49b72",
       "classification": "test"
     }
   ],

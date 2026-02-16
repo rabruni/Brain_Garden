@@ -1,6 +1,6 @@
 {
   "package_id": "PKG-ANTHROPIC-PROVIDER-001",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "schema_version": "1.2",
   "title": "Anthropic API Provider",
   "description": "Anthropic Messages API provider using official SDK, implementing LLMProvider Protocol",
@@ -17,12 +17,12 @@
   "assets": [
     {
       "path": "HOT/kernel/anthropic_provider.py",
-      "sha256": "sha256:0559a0a8a9e0030bd3c52f9ad6030fad91f16567a7619433ae058887ec4c8f02",
+      "sha256": "sha256:82fce4ecf15172398570a2efaf38ea883bb42d59761ae85595f7b149bb950bef",
       "classification": "kernel"
     },
     {
       "path": "HOT/tests/test_anthropic_provider.py",
-      "sha256": "sha256:1611816e7b76c97d87f28002a8ab0cd0e07544f6384659527f47332fc30619ce",
+      "sha256": "sha256:caf00f90736d48799a42697e1249cec2d8bcde3e047afaee3b259f828d9bb702",
       "classification": "test"
     }
   ]

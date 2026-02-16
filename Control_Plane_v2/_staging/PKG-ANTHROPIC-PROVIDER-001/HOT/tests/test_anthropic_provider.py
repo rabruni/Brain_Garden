@@ -19,7 +19,7 @@ from anthropic.types import Message, TextBlock, ToolUseBlock, Usage
 # Add kernel paths
 _staging = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(_staging / "PKG-KERNEL-001" / "HOT" / "kernel"))
-sys.path.insert(0, str(_staging / "PKG-PROMPT-ROUTER-001" / "HOT" / "kernel"))
+sys.path.insert(0, str(_staging / "PKG-LLM-GATEWAY-001" / "HOT" / "kernel"))
 sys.path.insert(0, str(_staging / "PKG-ANTHROPIC-PROVIDER-001" / "HOT" / "kernel"))
 
 from anthropic_provider import AnthropicProvider, AnthropicResponse  # noqa: E402
@@ -373,6 +373,52 @@ class TestStructuredOutput:
         assert "tools" in call_kwargs
         assert call_kwargs["tools"][0]["name"] == "output_json"
         assert call_kwargs["tool_choice"] == {"type": "tool", "name": "output_json"}
+
+    @patch("anthropic.Anthropic")
+    def test_structured_output_extracts_tool_use_content(self, MockClient):
+        """#32: tool_use block input extracted as content when text is empty."""
+        mock_client = MockClient.return_value
+        mock_client.messages.create.return_value = _mock_sdk_response(
+            stop_reason="tool_use",
+            content_blocks=[
+                ToolUseBlock(
+                    type="tool_use", id="toolu_1", name="output_json",
+                    input={"speech_act": "greeting", "ambiguity": "low"},
+                ),
+            ],
+        )
+        provider = _make_provider()
+        provider._client = mock_client
+        schema = {
+            "type": "object",
+            "required": ["speech_act", "ambiguity"],
+            "properties": {"speech_act": {"type": "string"}, "ambiguity": {"type": "string"}},
+        }
+        resp = provider.send(
+            model_id="claude-sonnet-4-5-20250929",
+            prompt="Classify this",
+            structured_output=schema,
+        )
+        import json
+        parsed = json.loads(resp.content)
+        assert parsed["speech_act"] == "greeting"
+        assert parsed["ambiguity"] == "low"
+
+    @patch("anthropic.Anthropic")
+    def test_structured_output_text_response_still_works(self, MockClient):
+        """#33: text response without tool_use still works (existing behavior)."""
+        mock_client = MockClient.return_value
+        mock_client.messages.create.return_value = _mock_sdk_response(
+            content="Hello world",
+            stop_reason="end_turn",
+        )
+        provider = _make_provider()
+        provider._client = mock_client
+        resp = provider.send(
+            model_id="claude-sonnet-4-5-20250929",
+            prompt="Say hello",
+        )
+        assert resp.content == "Hello world"
 
 
 # ── Error tests ──────────────────────────────────────────────────────

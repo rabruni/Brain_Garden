@@ -5,7 +5,15 @@
   "tier": "ho1",
   "boundary": {
     "max_tokens": 500,
-    "temperature": 0
+    "temperature": 0,
+    "structured_output": {
+      "type": "object",
+      "required": ["speech_act", "ambiguity"],
+      "properties": {
+        "speech_act": {"type": "string"},
+        "ambiguity": {"type": "string"}
+      }
+    }
   },
   "input_schema": {
     "type": "object",

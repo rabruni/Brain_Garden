@@ -87,7 +87,10 @@ def executor(tmp_path):
         "version": "1.0.0",
         "prompt_pack_id": "PRM-CLASSIFY-001",
         "tier": "ho1",
-        "boundary": {"max_tokens": 500, "temperature": 0},
+        "boundary": {"max_tokens": 500, "temperature": 0, "structured_output": {
+            "type": "object", "required": ["speech_act", "ambiguity"],
+            "properties": {"speech_act": {"type": "string"}, "ambiguity": {"type": "string"}},
+        }},
         "input_schema": {"type": "object", "required": ["user_input"], "properties": {"user_input": {"type": "string"}}},
         "output_schema": {"type": "object", "required": ["speech_act", "ambiguity"], "properties": {"speech_act": {"type": "string"}, "ambiguity": {"type": "string"}}},
     }))
@@ -96,7 +99,10 @@ def executor(tmp_path):
         "version": "1.0.0",
         "prompt_pack_id": "PRM-SYNTHESIZE-001",
         "tier": "ho1",
-        "boundary": {"max_tokens": 4096, "temperature": 0.3},
+        "boundary": {"max_tokens": 4096, "temperature": 0.3, "structured_output": {
+            "type": "object", "required": ["response_text"],
+            "properties": {"response_text": {"type": "string"}},
+        }},
         "input_schema": {"type": "object", "required": ["prior_results"], "properties": {"prior_results": {"type": "array"}}},
         "output_schema": {"type": "object", "required": ["response_text"], "properties": {"response_text": {"type": "string"}}},
     }))
@@ -105,10 +111,32 @@ def executor(tmp_path):
         "version": "1.0.0",
         "prompt_pack_id": "PRM-EXECUTE-001",
         "tier": "ho1",
-        "boundary": {"max_tokens": 4096, "temperature": 0.0},
+        "boundary": {"max_tokens": 4096, "temperature": 0.0, "structured_output": {
+            "type": "object", "required": ["result"],
+            "properties": {"result": {"type": "string"}},
+        }},
         "input_schema": {"type": "object", "required": ["user_input"], "properties": {"user_input": {"type": "string"}}},
         "output_schema": {"type": "object", "required": ["result"], "properties": {"result": {"type": "string"}}},
     }))
+
+    # Write prompt pack templates
+    prompt_packs_dir = tmp_path / "prompt_packs"
+    prompt_packs_dir.mkdir()
+    (prompt_packs_dir / "PRM-CLASSIFY-001.txt").write_text(
+        "You are a speech act classifier.\n\nUser input:\n{{user_input}}\n\n"
+        "Respond with valid JSON only matching the schema."
+    )
+    (prompt_packs_dir / "PRM-SYNTHESIZE-001.txt").write_text(
+        "You are a response synthesizer.\n\nPrior results:\n{{prior_results}}\n\n"
+        "User input:\n{{user_input}}\n\nClassification:\n{{classification}}\n\n"
+        "Assembled context:\n{{assembled_context}}\n\n"
+        "Respond with valid JSON only matching the schema."
+    )
+    (prompt_packs_dir / "PRM-EXECUTE-001.txt").write_text(
+        "You are a task executor.\n\nUser input:\n{{user_input}}\n\n"
+        "Assembled context:\n{{assembled_context}}\n\n"
+        "Respond with valid JSON only matching the schema."
+    )
 
     from contract_loader import ContractLoader
     from ho1_executor import HO1Executor
@@ -514,3 +542,94 @@ class TestBudgetReconciliation:
         result = executor.execute(classify_wo)
         assert result["state"] == "completed"
         assert result["output_result"] is not None
+
+
+# Template Rendering Tests (10) — FOLLOWUP-18C
+class TestTemplateRendering:
+    def test_render_template_substitutes_string_var(self, executor):
+        """#1: {{user_input}} replaced with string value."""
+        result = executor._render_template("PRM-CLASSIFY-001", {"user_input": "hello world"})
+        assert "hello world" in result
+        assert "{{user_input}}" not in result
+
+    def test_render_template_substitutes_dict_var(self, executor):
+        """#2: Dict value rendered as json.dumps, not Python repr."""
+        ctx = {"user_input": "test", "classification": {"speech_act": "greeting", "ambiguity": "low"}}
+        # Use a template that has {{classification}} — synthesize has it
+        result = executor._render_template("PRM-SYNTHESIZE-001", ctx)
+        assert '"speech_act": "greeting"' in result
+        # Must not contain Python repr format
+        assert "{'speech_act'" not in result
+
+    def test_render_template_substitutes_list_var(self, executor):
+        """#3: List value rendered as json.dumps."""
+        ctx = {"prior_results": [{"data": "test"}], "user_input": "hello"}
+        result = executor._render_template("PRM-SYNTHESIZE-001", ctx)
+        assert '"data": "test"' in result
+        assert "[{" not in result or '"data"' in result  # valid JSON array
+
+    def test_render_template_missing_file_falls_back(self, executor):
+        """#4: No template file -> json.dumps(input_ctx) behavior."""
+        ctx = {"user_input": "hello"}
+        result = executor._render_template("PRM-NONEXISTENT-001", ctx)
+        assert result == json.dumps(ctx)
+
+    def test_render_template_unknown_placeholder_preserved(self, executor):
+        """#5: {{unknown}} stays literal when not in input_ctx."""
+        ctx = {"user_input": "hello"}
+        # Classify template only has {{user_input}}, no {{unknown}}
+        # Use synthesize which has {{classification}} — pass without it
+        result = executor._render_template("PRM-SYNTHESIZE-001", {"prior_results": [{"x": 1}]})
+        # {{user_input}} is not in input_ctx, so it should remain literal
+        assert "{{user_input}}" in result
+
+    def test_render_template_appends_additional_context(self, executor):
+        """#6: additional_context appended after rendered template."""
+        ctx = {"user_input": "hello"}
+        extra = "\nTool results: [{\"tool_id\": \"t1\"}]"
+        result = executor._render_template("PRM-CLASSIFY-001", ctx, additional_context=extra)
+        assert result.endswith(extra)
+        assert "hello" in result
+
+    def test_build_prompt_request_uses_template(self, executor, classify_wo):
+        """#7: Full flow: contract with prompt_pack_id -> rendered prompt in PromptRequest."""
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        # Should contain rendered template text, not raw json.dumps
+        assert "speech act classifier" in request.prompt.lower() or "classifier" in request.prompt.lower()
+        assert "hello world" in request.prompt
+        # Should NOT be raw json.dumps
+        assert request.prompt != json.dumps(classify_wo["input_context"])
+
+    def test_build_prompt_request_fallback_uses_template(self, executor, classify_wo):
+        """#8: SimpleNamespace fallback path also renders template."""
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        # The executor uses SimpleNamespace path when PromptRequest import fails
+        # We test _render_template directly since both paths call it
+        prompt_pack_id = contract.get("prompt_pack_id", "")
+        input_ctx = classify_wo.get("input_context", {})
+        rendered = executor._render_template(prompt_pack_id, input_ctx)
+        assert "hello world" in rendered
+        assert "{{user_input}}" not in rendered
+
+    def test_classify_template_includes_json_instruction(self, executor):
+        """#9: PRM-CLASSIFY-001.txt in rendered prompt contains JSON instruction."""
+        ctx = {"user_input": "test input"}
+        result = executor._render_template("PRM-CLASSIFY-001", ctx)
+        assert "valid JSON" in result or "json" in result.lower()
+
+    def test_synthesize_template_renders_complex_context(self, executor):
+        """#10: Synthesize with dict + list variables renders all as JSON."""
+        ctx = {
+            "prior_results": [{"speech_act": "greeting", "ambiguity": "low"}],
+            "user_input": "hello",
+            "classification": {"speech_act": "greeting", "ambiguity": "low"},
+            "assembled_context": {"context_text": "prior session data", "fragment_count": 2},
+        }
+        result = executor._render_template("PRM-SYNTHESIZE-001", ctx)
+        assert "hello" in result
+        assert '"speech_act"' in result
+        assert '"context_text"' in result
+        assert "{{prior_results}}" not in result
+        assert "{{classification}}" not in result
+        assert "{{assembled_context}}" not in result

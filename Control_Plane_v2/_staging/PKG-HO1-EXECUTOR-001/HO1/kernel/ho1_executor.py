@@ -243,6 +243,24 @@ class HO1Executor:
                 self._log_event("TOOL_CALL", wo, tool_id=tool_id, status=getattr(result, "status", "unknown"))
         return results
 
+    def _render_template(self, prompt_pack_id: str, input_ctx: dict, additional_context: str = "") -> str:
+        """Load and render a prompt pack template. Falls back to json.dumps if template not found."""
+        template_dir = self.contract_loader.contracts_dir.parent / "prompt_packs"
+        template_path = template_dir / f"{prompt_pack_id}.txt"
+        if not template_path.exists():
+            return json.dumps(input_ctx) + additional_context
+
+        template_text = template_path.read_text()
+        for key, value in input_ctx.items():
+            placeholder = "{{" + key + "}}"
+            if isinstance(value, str):
+                rendered_value = value
+            else:
+                rendered_value = json.dumps(value, indent=2)
+            template_text = template_text.replace(placeholder, rendered_value)
+
+        return template_text + additional_context
+
     def _build_prompt_request(self, wo: dict, contract: dict, additional_context: str = "") -> object:
         """Build a PromptRequest-compatible object from WO + contract."""
         # Import PromptRequest - it's a value object, allowed by FMWK-009
@@ -254,10 +272,11 @@ class HO1Executor:
             boundary = contract.get("boundary", {})
             input_ctx = wo.get("input_context", {})
             token_budget = wo.get("constraints", {}).get("token_budget", 100000)
-            prompt_text = json.dumps(input_ctx) + additional_context
+            prompt_pack_id = contract.get("prompt_pack_id", "")
+            prompt_text = self._render_template(prompt_pack_id, input_ctx, additional_context)
             return SimpleNamespace(
                 prompt=prompt_text,
-                prompt_pack_id=contract.get("prompt_pack_id", ""),
+                prompt_pack_id=prompt_pack_id,
                 contract_id=contract.get("contract_id", ""),
                 agent_id=self.config.get("agent_id", ""),
                 agent_class=self.config.get("agent_class", "ADMIN"),
@@ -273,11 +292,12 @@ class HO1Executor:
         boundary = contract.get("boundary", {})
         input_ctx = wo.get("input_context", {})
         token_budget = wo.get("constraints", {}).get("token_budget", 100000)
-        prompt_text = json.dumps(input_ctx) + additional_context
+        prompt_pack_id = contract.get("prompt_pack_id", "")
+        prompt_text = self._render_template(prompt_pack_id, input_ctx, additional_context)
 
         return PromptRequest(
             prompt=prompt_text,
-            prompt_pack_id=contract.get("prompt_pack_id", ""),
+            prompt_pack_id=prompt_pack_id,
             contract_id=contract.get("contract_id", ""),
             agent_id=self.config.get("agent_id", ""),
             agent_class=self.config.get("agent_class", "ADMIN"),

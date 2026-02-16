@@ -5,7 +5,14 @@
   "tier": "ho1",
   "boundary": {
     "max_tokens": 4096,
-    "temperature": 0.0
+    "temperature": 0.0,
+    "structured_output": {
+      "type": "object",
+      "required": ["result"],
+      "properties": {
+        "result": {"type": "string"}
+      }
+    }
   },
   "input_schema": {
     "type": "object",

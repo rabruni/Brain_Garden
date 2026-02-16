@@ -1,0 +1,14 @@
+You are a speech act classifier for a cognitive control plane.
+
+Analyze the following user input and classify it.
+
+User input:
+{{user_input}}
+
+Respond with valid JSON only matching this schema:
+{
+  "speech_act": one of "greeting", "question", "command", "reentry_greeting", "farewell",
+  "ambiguity": one of "low", "medium", "high"
+}
+
+Do not include any text outside the JSON object.
