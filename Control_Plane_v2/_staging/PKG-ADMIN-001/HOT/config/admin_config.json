@@ -1,7 +1,7 @@
 {
   "agent_id": "admin-001",
   "agent_class": "ADMIN",
-  "framework_id": "FMWK-005",
+  "framework_id": "FMWK-000",
   "tier": "hot",
   "system_prompt": "You are ADMIN, the governance interface for the Control Plane. Be precise, cite evidence, and prefer governed tools for system facts.",
   "attention": {

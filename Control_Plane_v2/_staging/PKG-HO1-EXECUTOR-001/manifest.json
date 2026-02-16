@@ -1,0 +1,58 @@
+{
+  "package_id": "PKG-HO1-EXECUTOR-001",
+  "package_type": "kernel",
+  "title": "HO1 Executor",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "ho1",
+  "layer": 3,
+  "assets": [
+    {
+      "path": "HO1/kernel/tool_dispatch.py",
+      "sha256": "sha256:8c50b55ca76d90d3b18eb04089d09e46ffa64e422d9289066c64152ab4ff0b60",
+      "classification": "library"
+    },
+    {
+      "path": "HO1/kernel/contract_loader.py",
+      "sha256": "sha256:5e31f4f17dcc98fe14c822bbdf0497adadadd08e13f00fc435fab3575233644c",
+      "classification": "library"
+    },
+    {
+      "path": "HO1/kernel/ho1_executor.py",
+      "sha256": "sha256:8fbfdc7323b5ccc0e563ef887eb157240b80407bc7ec5be45bdbc118ba6f4ef2",
+      "classification": "library"
+    },
+    {
+      "path": "HO1/contracts/classify.json",
+      "sha256": "sha256:06180ed8284e69ec434f0a8afd87a82462ac632f8c9a531db018091f844315cf",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/contracts/synthesize.json",
+      "sha256": "sha256:c245e639d91da9dd5d180fb3bc4dab6ca3b5431cae6df94f3c44dbd18159493d",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/contracts/execute.json",
+      "sha256": "sha256:c012f40610724b833795750d58f2da6d17c8d5262a2b7b90fc17eb46180fb958",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/tests/test_ho1_executor.py",
+      "sha256": "sha256:936143def840f4ae5fb9e975ee3ec900d7d5f857e73de36f18fa39ed6d2ebb05",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-LLM-GATEWAY-001",
+    "PKG-TOKEN-BUDGETER-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-15T00:00:00+00:00",
+    "author": "builder",
+    "description": "HO1 Executor \u2014 canonical LLM execution point. First non-HOT package (plane_id: ho1)."
+  }
+}

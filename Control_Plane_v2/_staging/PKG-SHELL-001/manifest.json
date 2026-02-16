@@ -1,0 +1,27 @@
+{
+  "package_id": "PKG-SHELL-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Human-Facing Command Shell",
+  "description": "REPL command parser that routes cognitive turns to SessionHostV2 and handles admin commands",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 4,
+  "dependencies": [
+    "PKG-SESSION-HOST-V2-001",
+    "PKG-KERNEL-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/shell.py",
+      "sha256": "sha256:2714878aec4728a5c36855a858287e8f6d5e61d8cd2ee0401bf5878da9f0490a",
+      "classification": "module"
+    },
+    {
+      "path": "HOT/tests/test_shell.py",
+      "sha256": "sha256:8a6b60eef19b3aba62a98931e5d71fd6d859caa6970fd8b9fa4e569ad84950eb",
+      "classification": "test"
+    }
+  ]
+}

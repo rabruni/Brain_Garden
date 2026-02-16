@@ -10,20 +10,23 @@
   "layer": 3,
   "dependencies": [
     "PKG-KERNEL-001",
-    "PKG-SESSION-HOST-001",
-    "PKG-ATTENTION-001",
-    "PKG-PROMPT-ROUTER-001",
-    "PKG-ANTHROPIC-PROVIDER-001"
+    "PKG-ANTHROPIC-PROVIDER-001",
+    "PKG-WORK-ORDER-001",
+    "PKG-LLM-GATEWAY-001",
+    "PKG-HO1-EXECUTOR-001",
+    "PKG-HO2-SUPERVISOR-001",
+    "PKG-SESSION-HOST-V2-001",
+    "PKG-SHELL-001"
   ],
   "assets": [
     {
       "path": "HOT/admin/main.py",
-      "sha256": "sha256:5775f595bfd5edd80e820063a1e98c943169037b6a2f67fdf04a31ead27bcecd",
+      "sha256": "sha256:24fbb23d5b08ba2ffa4d8261b7a45375ecb2d29f092567ff5ef56e4093ce33bc",
       "classification": "application"
     },
     {
       "path": "HOT/config/admin_config.json",
-      "sha256": "sha256:c4f9cc69a8969c8ca7ba209c36ce70e03b8c3feb00b988e4031eb829e4c2c251",
+      "sha256": "sha256:053eaffa921570acef9f04aebe4955b1ad9664fe3a111f2228d23de483eb4eb7",
       "classification": "config"
     },
     {
@@ -43,7 +46,7 @@
     },
     {
       "path": "HOT/tests/test_admin.py",
-      "sha256": "sha256:26c0ac45df81454cc0a637fd8ecc6e11793a82e0b63d47fae36b070505170f0f",
+      "sha256": "sha256:7ff7c2ee1a2d8ab2e71e7fa31ee8b5ebaae94e59f251e21d1c31b133438d6519",
       "classification": "test"
     }
   ]

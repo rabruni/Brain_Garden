@@ -12,7 +12,6 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Callable
-import importlib
 from unittest.mock import patch
 
 
@@ -38,30 +37,28 @@ def _ensure_import_paths(root: Path | None = None) -> None:
     staging = _staging_root()
     add: list[Path] = [
         staging / "PKG-KERNEL-001" / "HOT" / "kernel",
-        staging / "PKG-PROMPT-ROUTER-001" / "HOT" / "kernel",
         staging / "PKG-ANTHROPIC-PROVIDER-001" / "HOT" / "kernel",
-        staging / "PKG-ATTENTION-001" / "HOT" / "kernel",
-        staging / "PKG-SESSION-HOST-001" / "HOT" / "kernel",
         staging / "PKG-BOOT-MATERIALIZE-001" / "HOT" / "scripts",
         staging / "PKG-LAYOUT-002" / "HOT" / "scripts",
         staging / "PKG-KERNEL-001" / "HOT",
-        staging / "PKG-ATTENTION-001" / "HOT",
+        # V2 Kitchener loop packages
+        staging / "PKG-WORK-ORDER-001" / "HOT" / "kernel",
+        staging / "PKG-LLM-GATEWAY-001" / "HOT" / "kernel",
+        staging / "PKG-HO1-EXECUTOR-001" / "HO1" / "kernel",
+        staging / "PKG-HO2-SUPERVISOR-001" / "HO2" / "kernel",
+        staging / "PKG-SESSION-HOST-V2-001" / "HOT" / "kernel",
+        staging / "PKG-SHELL-001" / "HOT" / "kernel",
+        staging / "PKG-TOKEN-BUDGETER-001" / "HOT" / "kernel",
     ]
     if root is not None:
-        add = [Path(root) / "HOT", Path(root) / "HOT" / "kernel", Path(root) / "HOT" / "scripts"] + add
+        add = [
+            Path(root) / "HOT", Path(root) / "HOT" / "kernel", Path(root) / "HOT" / "scripts",
+            Path(root) / "HO1" / "kernel", Path(root) / "HO2" / "kernel",
+        ] + add
     for path in add:
         p = str(path)
         if p not in sys.path:
             sys.path.insert(0, p)
-
-    # In source-tree tests, attention modules are not yet installed into
-    # kernel/. Alias them so attention_service can import kernel.attention_stages.
-    if "kernel.attention_stages" not in sys.modules:
-        try:
-            mod = importlib.import_module("attention_stages")
-            sys.modules["kernel.attention_stages"] = mod
-        except Exception:
-            pass
 
 
 def load_admin_config(config_path: Path) -> dict:
@@ -136,32 +133,49 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
     dispatcher.register_tool("list_packages", _list_packages)
 
 
-def build_session_host(root: Path, config_path: Path, dev_mode: bool = False):
-    """Compose dependencies and return a SessionHost instance."""
+def build_session_host_v2(
+    root: Path,
+    config_path: Path,
+    dev_mode: bool = False,
+    input_fn: Callable[[str], str] = input,
+    output_fn: Callable[[str], None] = print,
+):
+    """Compose the V2 Kitchener loop and return a Shell instance."""
     _ensure_import_paths(root=Path(root))
 
     from anthropic_provider import AnthropicProvider
-    from attention_service import AttentionService
+    from contract_loader import ContractLoader
+    from ho1_executor import HO1Executor
+    from ho2_supervisor import HO2Config, HO2Supervisor
     from ledger_client import LedgerClient
-    from prompt_router import PromptRouter, RouterConfig
-    from session_host import AgentConfig, SessionHost
+    from llm_gateway import LLMGateway, RouterConfig
+    from session_host_v2 import AgentConfig as V2AgentConfig, SessionHostV2
+    from shell import Shell
+    from token_budgeter import BudgetConfig, TokenBudgeter
     from tool_dispatch import ToolDispatcher
+    from work_order import WorkOrder  # verify import works
 
     root = Path(root)
     cfg_dict = load_admin_config(config_path)
 
-    agent_config = AgentConfig.from_file(config_path)
+    # 1. Ledger clients — three separate paths
+    (root / "HO2" / "ledger").mkdir(parents=True, exist_ok=True)
+    (root / "HO1" / "ledger").mkdir(parents=True, exist_ok=True)
+    ledger_gov = LedgerClient(ledger_path=root / "HOT" / "ledger" / "governance.jsonl")
+    ledger_ho2m = LedgerClient(ledger_path=root / "HO2" / "ledger" / "ho2m.jsonl")
+    ledger_ho1m = LedgerClient(ledger_path=root / "HO1" / "ledger" / "ho1m.jsonl")
 
-    ledger = LedgerClient(ledger_path=root / "HOT" / "ledger" / "governance.jsonl")
-    attention = AttentionService(plane_root=root)
-
-    router = PromptRouter(
-        ledger_client=ledger,
-        config=RouterConfig(default_provider="anthropic", default_model="claude-sonnet-4-5-20250929"),
-        dev_mode=dev_mode,
+    # 2. Token budgeter
+    budget_cfg = cfg_dict.get("budget", {})
+    budgeter = TokenBudgeter(
+        ledger_client=ledger_gov,
+        config=BudgetConfig(
+            session_token_limit=budget_cfg.get("session_token_limit", 200000),
+        ),
     )
-    router.register_provider("anthropic", AnthropicProvider())
 
+    # 3. Contract loader + Tool dispatcher
+    contract_loader = ContractLoader(contracts_dir=root / "HO1" / "contracts")
     dispatcher = ToolDispatcher(
         plane_root=root,
         tool_configs=cfg_dict.get("tools", []),
@@ -169,15 +183,74 @@ def build_session_host(root: Path, config_path: Path, dev_mode: bool = False):
     )
     _register_admin_tools(dispatcher, root=root)
 
-    return SessionHost(
-        plane_root=root,
-        agent_config=agent_config,
-        attention_service=attention,
-        router=router,
-        tool_dispatcher=dispatcher,
-        ledger_client=ledger,
+    # 4. LLM Gateway
+    gateway = LLMGateway(
+        ledger_client=ledger_gov,
+        budgeter=budgeter,
+        config=RouterConfig(
+            default_provider="anthropic",
+            default_model="claude-sonnet-4-5-20250929",
+        ),
         dev_mode=dev_mode,
     )
+    gateway.register_provider("anthropic", AnthropicProvider())
+
+    # 5. HO1 Executor
+    ho1_config = {
+        "agent_id": cfg_dict.get("agent_id", "admin-001") + ".ho1",
+        "agent_class": cfg_dict.get("agent_class", "ADMIN"),
+        "tier": "ho1",
+        "framework_id": cfg_dict.get("framework_id", "FMWK-000"),
+        "package_id": "PKG-HO1-EXECUTOR-001",
+    }
+    ho1 = HO1Executor(
+        gateway=gateway,
+        ledger=ledger_ho1m,
+        budgeter=budgeter,
+        tool_dispatcher=dispatcher,
+        contract_loader=contract_loader,
+        config=ho1_config,
+    )
+
+    # 6. HO2 Supervisor
+    ho2_config = HO2Config(
+        attention_templates=["ATT-ADMIN-001"],
+        ho2m_path=root / "HO2" / "ledger" / "ho2m.jsonl",
+        ho1m_path=root / "HO1" / "ledger" / "ho1m.jsonl",
+        budget_ceiling=budget_cfg.get("session_token_limit", 200000),
+    )
+    ho2 = HO2Supervisor(
+        plane_root=root,
+        agent_class=cfg_dict.get("agent_class", "ADMIN"),
+        ho1_executor=ho1,
+        ledger_client=ledger_ho2m,
+        token_budgeter=budgeter,
+        config=ho2_config,
+    )
+
+    # 7. V2 Agent Config
+    v2_agent_config = V2AgentConfig(
+        agent_id=cfg_dict["agent_id"],
+        agent_class=cfg_dict["agent_class"],
+        framework_id=cfg_dict["framework_id"],
+        tier=cfg_dict["tier"],
+        system_prompt=cfg_dict["system_prompt"],
+        attention=cfg_dict["attention"],
+        tools=cfg_dict["tools"],
+        budget=cfg_dict["budget"],
+        permissions=cfg_dict["permissions"],
+    )
+
+    # 8. Session Host V2
+    sh_v2 = SessionHostV2(
+        ho2_supervisor=ho2,
+        gateway=gateway,
+        agent_config=v2_agent_config,
+        ledger_client=ledger_gov,
+    )
+
+    # 9. Shell
+    return Shell(sh_v2, v2_agent_config, input_fn, output_fn)
 
 
 def run_cli(
@@ -202,25 +275,10 @@ def run_cli(
     if mat_result != 0:
         output_fn(f"WARNING: Boot materialization returned {mat_result} (non-fatal)")
 
-    host = build_session_host(root=root, config_path=config_path, dev_mode=dev_mode)
-    session_id = host.start_session()
-    output_fn(f"Session started: {session_id}")
-
-    try:
-        while True:
-            user = input_fn("admin> ").strip()
-            if not user:
-                continue
-            if user.lower() in {"exit", "quit"}:
-                break
-            result = host.process_turn(user)
-            output_fn(f"assistant: {result.response}")
-    finally:
-        host.end_session()
-        output_fn("Session ended")
-        if pristine_patch is not None:
-            pristine_patch.stop()
-
+    shell = build_session_host_v2(root, config_path, dev_mode, input_fn, output_fn)
+    shell.run()
+    if pristine_patch is not None:
+        pristine_patch.stop()
     return 0
 
 

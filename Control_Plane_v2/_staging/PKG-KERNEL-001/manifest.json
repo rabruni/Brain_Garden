@@ -108,12 +108,12 @@
     },
     {
       "path": "HOT/registries/specs_registry.csv",
-      "sha256": "sha256:daafbfabed876aae5329fd5b66675efe4acd9c934c9fb340ee83139154ec2d23",
+      "sha256": "sha256:bb32f1aa4852ea8a48a2dd54a96f17c84f13ea7ffcb74761618980bb69ddb5ea",
       "classification": "registry"
     },
     {
       "path": "HOT/registries/frameworks_registry.csv",
-      "sha256": "sha256:e2dea3c230de90c5c70e9bd0d7ed48c932289ced0def30af9a45b06e0c923edb",
+      "sha256": "sha256:7b52788b676a82f9e3fb6f479d21d73894f1eb74632e0999875fa5b33ade8e16",
       "classification": "registry"
     }
   ],

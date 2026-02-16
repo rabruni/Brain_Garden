@@ -9,7 +9,7 @@
   "plane_id": "hot",
   "layer": 3,
   "dependencies": [
-    "PKG-PROMPT-ROUTER-001"
+    "PKG-LLM-GATEWAY-001"
   ],
   "external_deps": [
     "anthropic>=0.40.0"

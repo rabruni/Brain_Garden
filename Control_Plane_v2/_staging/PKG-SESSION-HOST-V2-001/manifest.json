@@ -1,0 +1,30 @@
+{
+  "package_id": "PKG-SESSION-HOST-V2-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Session Host V2 \u2014 Thin Adapter",
+  "description": "Thin adapter delegating session turns to HO2 Supervisor with degradation fallback to direct LLM Gateway call",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "supersedes": "PKG-SESSION-HOST-001",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-HO2-SUPERVISOR-001",
+    "PKG-HO1-EXECUTOR-001",
+    "PKG-LLM-GATEWAY-001",
+    "PKG-KERNEL-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/session_host_v2.py",
+      "sha256": "sha256:0cb2e3be48fa56055f670cda33e33425fc0e3fb9f9b57422ac8a5bef07f2cc1e",
+      "classification": "kernel"
+    },
+    {
+      "path": "HOT/tests/test_session_host_v2.py",
+      "sha256": "sha256:444be922892d811a8b157b3af63a0aeb271c64e0afdf17966ab42cc1fc997154",
+      "classification": "test"
+    }
+  ]
+}

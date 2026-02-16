@@ -6,7 +6,7 @@
       "id": "PKG-KERNEL-001",
       "version": "1.0.0",
       "tier": "G0",
-      "digest": "sha256:e3373b6e24ff7c6ea7da9c66c98328b0685fe0053bef5ce48ecfac0fa5e9bcb2",
+      "digest": "sha256:d22b119c1cd124878281da4937730693d340e185449b1ccc140b48dd0c78d352",
       "description": "Kernel libs + package_install.py \u2014 unlocks the full install pipeline"
     }
   ]

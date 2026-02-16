@@ -1,0 +1,26 @@
+{
+  "contract_id": "PRC-CLASSIFY-001",
+  "version": "1.0.0",
+  "prompt_pack_id": "PRM-CLASSIFY-001",
+  "tier": "ho1",
+  "boundary": {
+    "max_tokens": 500,
+    "temperature": 0
+  },
+  "input_schema": {
+    "type": "object",
+    "required": ["user_input"],
+    "properties": {
+      "user_input": {"type": "string", "description": "Raw user utterance to classify"}
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["speech_act", "ambiguity"],
+    "properties": {
+      "speech_act": {"type": "string", "enum": ["greeting", "question", "command", "reentry_greeting", "farewell"]},
+      "ambiguity": {"type": "string", "enum": ["low", "medium", "high"]}
+    },
+    "additionalProperties": true
+  }
+}

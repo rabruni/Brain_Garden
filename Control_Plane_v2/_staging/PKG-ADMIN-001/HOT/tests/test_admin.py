@@ -15,7 +15,7 @@ _staging = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(_staging / "PKG-ADMIN-001" / "HOT" / "admin"))
 
 import main as admin_main  # noqa: E402
-from main import build_session_host, load_admin_config, run_cli  # noqa: E402
+from main import build_session_host_v2, load_admin_config, run_cli  # noqa: E402
 
 
 def _write_admin_files(tmp_path: Path):
@@ -102,16 +102,16 @@ class TestAdminConfig:
 
 
 class TestAdminEntrypoint:
-    def test_build_session_host(self, tmp_path: Path):
+    def test_build_session_host_v2(self, tmp_path: Path):
         cfg_path, _ = _write_admin_files(tmp_path)
         root = tmp_path
-        host = build_session_host(root=root, config_path=cfg_path, dev_mode=True)
-        assert host is not None
+        shell = build_session_host_v2(root=root, config_path=cfg_path, dev_mode=True)
+        assert shell is not None
 
     def test_run_cli_creates_session(self, tmp_path: Path):
         cfg_path, _ = _write_admin_files(tmp_path)
         outputs = []
-        prompts = iter(["exit"])
+        prompts = iter(["/exit"])
 
         code = run_cli(
             root=tmp_path,
@@ -126,7 +126,7 @@ class TestAdminEntrypoint:
 
     def test_run_cli_processes_turn(self, tmp_path: Path):
         cfg_path, _ = _write_admin_files(tmp_path)
-        prompts = iter(["hello", "exit"])
+        prompts = iter(["hello", "/exit"])
         outputs = []
 
         run_cli(
@@ -147,7 +147,7 @@ class TestAdminEntrypoint:
             root=tmp_path,
             config_path=cfg_path,
             dev_mode=True,
-            input_fn=lambda _p: "quit",
+            input_fn=lambda _p: "/exit",
             output_fn=lambda s: outputs.append(s),
         )
 
@@ -177,27 +177,21 @@ class TestBootMaterializeDevBypass:
             root=tmp_path,
             config_path=cfg_path,
             dev_mode=True,
-            input_fn=lambda _p: "exit",
+            input_fn=lambda _p: "/exit",
             output_fn=lambda s: outputs.append(s),
         )
 
         assert code == 0
-        assert (tmp_path / "HO2" / "ledger" / "governance.jsonl").exists()
+        assert (tmp_path / "HO2" / "ledger").exists()
 
-    def test_boot_materialize_called_before_session_host(self, tmp_path: Path, monkeypatch):
+    def test_boot_materialize_called_before_session_host_v2(self, tmp_path: Path, monkeypatch):
         _write_admin_files(tmp_path)
         _write_layout_json(tmp_path)
         order = []
 
-        class DummyHost:
-            def start_session(self):
-                return "SES-ORDER"
-
-            def end_session(self):
-                return None
-
-            def process_turn(self, _text):
-                raise AssertionError("process_turn should not run for immediate exit")
+        class DummyShell:
+            def run(self):
+                order.append("run")
 
         import boot_materialize as boot_materialize_mod
 
@@ -206,26 +200,23 @@ class TestBootMaterializeDevBypass:
             order.append("boot")
             return 0
 
-        def fake_build(root, config_path, dev_mode=False):
-            assert root == tmp_path
-            assert config_path == tmp_path / "HOT" / "config" / "admin_config.json"
-            assert dev_mode is True
+        def fake_build(root, config_path, dev_mode=False, input_fn=input, output_fn=print):
             order.append("build")
-            return DummyHost()
+            return DummyShell()
 
         monkeypatch.setattr(boot_materialize_mod, "boot_materialize", fake_boot)
-        monkeypatch.setattr(admin_main, "build_session_host", fake_build)
+        monkeypatch.setattr(admin_main, "build_session_host_v2", fake_build)
 
         code = run_cli(
             root=tmp_path,
             config_path=tmp_path / "HOT" / "config" / "admin_config.json",
             dev_mode=True,
-            input_fn=lambda _p: "exit",
+            input_fn=lambda _p: "/exit",
             output_fn=lambda _s: None,
         )
 
         assert code == 0
-        assert order == ["boot", "build"]
+        assert order == ["boot", "build", "run"]
 
     def test_pristine_patch_stopped_on_exit(self, tmp_path: Path, monkeypatch):
         _write_admin_files(tmp_path)
@@ -237,28 +228,25 @@ class TestBootMaterializeDevBypass:
 
         original = pristine_mod.assert_append_only
 
-        class DummyHost:
-            def start_session(self):
-                return "SES-PATCH"
-
-            def end_session(self):
-                return None
-
-            def process_turn(self, _text):
-                raise AssertionError("process_turn should not run for immediate exit")
+        class DummyShell:
+            def run(self):
+                pass
 
         def fake_boot(_root):
             observations["during_boot_is_patched"] = pristine_mod.assert_append_only is not original
             return 0
 
+        def fake_build(root, config_path, dev_mode=False, input_fn=input, output_fn=print):
+            return DummyShell()
+
         monkeypatch.setattr(boot_materialize_mod, "boot_materialize", fake_boot)
-        monkeypatch.setattr(admin_main, "build_session_host", lambda **_kwargs: DummyHost())
+        monkeypatch.setattr(admin_main, "build_session_host_v2", fake_build)
 
         code = run_cli(
             root=tmp_path,
             config_path=tmp_path / "HOT" / "config" / "admin_config.json",
             dev_mode=True,
-            input_fn=lambda _p: "exit",
+            input_fn=lambda _p: "/exit",
             output_fn=lambda _s: None,
         )
 

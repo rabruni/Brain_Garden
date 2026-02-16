@@ -1,0 +1,26 @@
+{
+  "contract_id": "PRC-SYNTHESIZE-001",
+  "version": "1.0.0",
+  "prompt_pack_id": "PRM-SYNTHESIZE-001",
+  "tier": "ho1",
+  "boundary": {
+    "max_tokens": 4096,
+    "temperature": 0.3
+  },
+  "input_schema": {
+    "type": "object",
+    "required": ["prior_results"],
+    "properties": {
+      "prior_results": {"type": "array", "items": {"type": "object"}, "description": "Results from prior WOs"},
+      "user_input": {"type": "string", "description": "Original user input"}
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["response_text"],
+    "properties": {
+      "response_text": {"type": "string", "description": "User-facing synthesized response"}
+    },
+    "additionalProperties": true
+  }
+}

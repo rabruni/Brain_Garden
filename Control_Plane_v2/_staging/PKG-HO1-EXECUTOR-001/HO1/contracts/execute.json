@@ -1,0 +1,26 @@
+{
+  "contract_id": "PRC-EXECUTE-001",
+  "version": "1.0.0",
+  "prompt_pack_id": "PRM-EXECUTE-001",
+  "tier": "ho1",
+  "boundary": {
+    "max_tokens": 4096,
+    "temperature": 0.0
+  },
+  "input_schema": {
+    "type": "object",
+    "required": ["user_input"],
+    "properties": {
+      "user_input": {"type": "string", "description": "User input or instruction"},
+      "assembled_context": {"type": "object", "description": "Context assembled by HO2 attention"}
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["result"],
+    "properties": {
+      "result": {"type": "string", "description": "Execution result"}
+    },
+    "additionalProperties": true
+  }
+}

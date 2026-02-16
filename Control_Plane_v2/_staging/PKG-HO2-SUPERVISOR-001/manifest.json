@@ -1,0 +1,49 @@
+{
+  "package_id": "PKG-HO2-SUPERVISOR-001",
+  "package_type": "kernel",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "supersedes": "PKG-ATTENTION-001",
+  "title": "HO2 Supervisor \u2014 Modified Kitchener Loop",
+  "description": "HO2 Supervisor \u2014 Modified Kitchener cognitive dispatch loop (Steps 2-4). Classify, attention, synthesize, quality gate. Factory pattern per FMWK-010.",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "ho2",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-WORK-ORDER-001"
+  ],
+  "assets": [
+    {
+      "path": "HO2/kernel/ho2_supervisor.py",
+      "sha256": "sha256:39a45582c03d3a627e816c8c45456d4d6cc01d77bd83f3f157c7c85b7211821f",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/attention.py",
+      "sha256": "sha256:5ee59fe4b4f31668917b77dc6c8030da9df456d4ebddd0f75b9fd3dc929f4324",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/quality_gate.py",
+      "sha256": "sha256:28e9daa7d7856cf44af20de5243e09b22de082189f1f52e721183537a139132b",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/session_manager.py",
+      "sha256": "sha256:e4eaacb8f99192009b159159b74c3a37506ae46dfcbfa31ed255d04f8562ae46",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/attention_templates/ATT-ADMIN-001.json",
+      "sha256": "sha256:c3bac722029a742ecaf52b382c79406bdbf2d91f34ef040fb220548f3d68e9ba",
+      "classification": "template"
+    },
+    {
+      "path": "HO2/tests/test_ho2_supervisor.py",
+      "sha256": "sha256:c0b93be82c1a33b0e7c0731a0df5548c645161d0b5b7bd92b2ae2c30116e56aa",
+      "classification": "test"
+    }
+  ]
+}
