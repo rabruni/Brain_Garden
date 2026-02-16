@@ -86,6 +86,98 @@ pytest Control_Plane_v2/HO3/tests/ -v
 
 ---
 
+## #0 PROTOCOL: `GR` — Ground Read (MANDATORY PRE-ACTION GATE)
+
+**This protocol is not optional. It is a pre-condition for Control Plane v2 work. Skipping it invalidates the output.**
+
+### Triggers
+
+GR fires in two ways: **automatically** (before specific actions) and **manually** (user command).
+
+#### Automatic triggers — GR fires before:
+
+| Trigger | What it means |
+|---------|---------------|
+| About to **write or edit** any file under `Control_Plane_v2/` | Any file modification |
+| About to **write a handoff spec** | Creating a BUILDER_HANDOFF document |
+| About to **answer a design question** about the system | Architecture, tiers, dispatch, agents |
+| About to **claim status** of a handoff or the system | "HANDOFF-N is done", "the system has X" |
+| About to **advise on build sequence or dependencies** | What to build next, install order |
+| **Starting a new task** after completing a previous one | Task boundary = re-ground |
+| **Post-compaction** (conversation summary detected) | Context degraded = re-ground |
+
+If the action doesn't match any trigger, GR does NOT fire. GR is for Control Plane v2 governance work, not for general conversation, HRM_Test work, or git operations.
+
+#### Manual triggers — user commands:
+
+| Input | Behavior |
+|-------|----------|
+| `GR` | Re-ground now. Read the document matching current context. |
+| `GR <doc>` | Re-ground on a specific document (e.g., `GR FMWK-009`). |
+| "follow the standard" | Alias for `GR`. Re-read the governing doc for the current action. |
+| "stay grounded" | Alias for `GR`. Re-read the governing doc for the current action. |
+
+When a manual trigger fires, **STOP current work**, read the required doc, emit the proof line, then resume.
+
+### Rule
+
+**The first tool call after a trigger MUST be a Read of the required document(s). No exceptions. No "I already know what it says." Read it.**
+
+### Action-to-Document Map
+
+| Action | Required Read | Path |
+|--------|--------------|------|
+| **Design question** | Architecture reference | `_staging/architecture/KERNEL_PHASE_2_v2.md` |
+| **Write a handoff** | Handoff standard + Architecture | `_staging/handoffs/BUILDER_HANDOFF_STANDARD.md` AND `KERNEL_PHASE_2_v2.md` |
+| **Build sequence / dependency** | Build roadmap | `_staging/BUILD_ROADMAP.md` |
+| **Claim handoff status** | Results file | `_staging/handoffs/RESULTS_HANDOFF_<N>.md` |
+| **Work order / dispatch** | WO protocol | `_staging/FMWK-008_Work_Order_Protocol/work_order_protocol.md` |
+| **Tier boundary** | Tier boundary | `_staging/FMWK-009_Tier_Boundary/tier_boundary.md` |
+| **Cognitive stack** | Cognitive stack | `_staging/FMWK-010_Cognitive_Stack/cognitive_stack.md` |
+| **Prompt / contract** | Prompt contracts | `_staging/FMWK-011_Prompt_Contracts/prompt_contracts.md` |
+| **Package governance** (hash, pack, install) | Architecture S14 + kernel source | `KERNEL_PHASE_2_v2.md` S14, then `packages.py` / `hashing.py` |
+| **Bootstrap / install** | Architecture + installer | `KERNEL_PHASE_2_v2.md` + `_staging/install.sh` |
+| **Ambiguous / unclear** | Architecture (default) | `KERNEL_PHASE_2_v2.md` |
+
+All paths are relative to `Control_Plane_v2/`. Multiple categories = read ALL applicable docs.
+
+### Context lifetime
+
+A single GR read is effective for **one focused task**. Re-ground when:
+- Starting a **new task** (different handoff, different question, different scope)
+- The conversation has been **compacted** (summary markers visible)
+- The user signals **"follow the standard"** or **"stay grounded"**
+- You are **unsure** whether your last read is still in context
+
+When in doubt, re-read. A 500-line doc costs ~4-5k tokens. Drifting from the standard costs trust.
+
+### Proof of read
+
+After reading, emit a one-line grounding statement before proceeding:
+
+```
+GR: Read KERNEL_PHASE_2_v2.md (19 sections, last: Meta-Learning). Proceeding.
+```
+
+Format: `GR: Read <filename> (<summary>). Proceeding.`
+
+This is not prose. It is a checkpoint. It proves the read happened and anchors the response to the document. If multiple docs are read, emit one line per doc.
+
+### Fail-closed rules
+
+| Condition | Behavior |
+|-----------|----------|
+| Document not found at expected path | STOP. Report missing doc. Do not proceed from memory. |
+| Action doesn't match any map row | Read `KERNEL_PHASE_2_v2.md`. When in doubt, read the architecture. |
+| Post-compaction | Read the doc AGAIN. Summaries are not the document. |
+| "I already read it earlier" | Irrelevant. Read it again. Context degrades. Documents don't. |
+
+### Why this exists
+
+MEMORY.md is a summary. Conversation context degrades through compaction. The governing documents are the source of truth. This protocol ensures every action is grounded in the actual document, not in a degraded memory of it.
+
+---
+
 ## #1 COMMAND: `LP` — Logic Path (HIGHEST PRIORITY)
 
 **This is the most important instruction in this file. It overrides all other formatting defaults.**
