@@ -18,7 +18,7 @@ import pytest
 _staging = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(_staging / "PKG-KERNEL-001" / "HOT" / "kernel"))
 sys.path.insert(0, str(_staging / "PKG-KERNEL-001" / "HOT"))
-sys.path.insert(0, str(_staging / "PKG-PROMPT-ROUTER-001" / "HOT" / "kernel"))
+sys.path.insert(0, str(_staging / "PKG-LLM-GATEWAY-001" / "HOT" / "kernel"))
 sys.path.insert(0, str(_staging / "PKG-TOKEN-BUDGETER-001" / "HOT" / "kernel"))
 sys.path.insert(0, str(_staging / "PKG-HO1-EXECUTOR-001" / "HO1" / "kernel"))
 
@@ -434,3 +434,83 @@ class TestErrorHandling:
         result = executor.execute(classify_wo)
         assert result["state"] == "failed"
         assert "budget_exhausted" in result.get("error", "")
+
+
+# Budget Reconciliation Tests (5) — FOLLOWUP-18B
+class TestBudgetReconciliation:
+    def test_max_tokens_capped_to_budget(self, executor):
+        """When token_budget < contract max_tokens, PromptRequest uses budget."""
+        executor.gateway.route.return_value = _mock_response('{"response_text": "ok"}')
+        wo = {
+            "wo_id": "WO-SES-TEST0001-CAP1", "session_id": "SES-TEST0001",
+            "wo_type": "synthesize", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"prior_results": [{"data": "test"}]},
+            "constraints": {
+                "prompt_contract_id": "PRC-SYNTHESIZE-001",
+                "token_budget": 1000,  # < contract's 4096
+                "turn_limit": 3,
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        executor.execute(wo)
+        request = executor.gateway.route.call_args[0][0]
+        assert request.max_tokens == 1000  # capped to budget, not 4096
+
+    def test_max_tokens_uses_contract_when_budget_larger(self, executor):
+        """When token_budget > contract max_tokens, PromptRequest uses contract."""
+        executor.gateway.route.return_value = _mock_response('{"speech_act": "greeting", "ambiguity": "low"}')
+        wo = {
+            "wo_id": "WO-SES-TEST0001-CAP2", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "hello"},
+            "constraints": {
+                "prompt_contract_id": "PRC-CLASSIFY-001",
+                "token_budget": 10000,  # > contract's 500
+                "turn_limit": 3,
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        executor.execute(wo)
+        request = executor.gateway.route.call_args[0][0]
+        assert request.max_tokens == 500  # uses contract value, not 10000
+
+    def test_gateway_rejection_fails_wo(self, executor, classify_wo):
+        """Gateway returning REJECTED outcome must fail the WO."""
+        executor.gateway.route.return_value = SimpleNamespace(
+            content="", outcome="REJECTED",
+            error_code="BUDGET_EXHAUSTED",
+            error_message="Token budget exceeded",
+            input_tokens=0, output_tokens=0,
+            model_id="mock", provider_id="mock",
+            latency_ms=0, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-rej001",
+        )
+        result = executor.execute(classify_wo)
+        assert result["state"] == "failed"
+        assert "BUDGET_EXHAUSTED" in result.get("error", "")
+
+    def test_gateway_error_fails_wo(self, executor, classify_wo):
+        """Gateway returning ERROR outcome must fail the WO."""
+        executor.gateway.route.return_value = SimpleNamespace(
+            content="", outcome="ERROR",
+            error_code="PROVIDER_ERROR",
+            error_message="Provider unavailable",
+            input_tokens=0, output_tokens=0,
+            model_id="mock", provider_id="mock",
+            latency_ms=0, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-err001",
+        )
+        result = executor.execute(classify_wo)
+        assert result["state"] == "failed"
+        assert "PROVIDER_ERROR" in result.get("error", "")
+
+    def test_gateway_success_completes_wo(self, executor, classify_wo):
+        """Gateway returning SUCCESS outcome completes the WO normally."""
+        executor.gateway.route.return_value = _mock_response()
+        result = executor.execute(classify_wo)
+        assert result["state"] == "completed"
+        assert result["output_result"] is not None

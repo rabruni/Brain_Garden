@@ -162,6 +162,13 @@ class HO1Executor:
 
                 content = getattr(response, "content", "")
 
+                # Check for gateway rejection/error
+                outcome = getattr(response, "outcome", None)
+                if outcome is not None and str(outcome) not in ("SUCCESS", "RouteOutcome.SUCCESS"):
+                    error_code = getattr(response, "error_code", "gateway_rejected")
+                    error_msg = getattr(response, "error_message", f"Gateway returned {outcome}")
+                    return self._fail_wo(wo, cost, start_time, str(error_code), str(error_msg))
+
                 # Check for tool_use blocks
                 tool_uses = self._extract_tool_uses(content)
                 if tool_uses and self.tool_dispatcher:
@@ -246,6 +253,7 @@ class HO1Executor:
             from types import SimpleNamespace
             boundary = contract.get("boundary", {})
             input_ctx = wo.get("input_context", {})
+            token_budget = wo.get("constraints", {}).get("token_budget", 100000)
             prompt_text = json.dumps(input_ctx) + additional_context
             return SimpleNamespace(
                 prompt=prompt_text,
@@ -258,12 +266,13 @@ class HO1Executor:
                 work_order_id=wo.get("wo_id", ""),
                 session_id=wo.get("session_id", ""),
                 tier="ho1",
-                max_tokens=boundary.get("max_tokens", 4096),
+                max_tokens=min(boundary.get("max_tokens", 4096), token_budget),
                 temperature=boundary.get("temperature", 0.0),
             )
 
         boundary = contract.get("boundary", {})
         input_ctx = wo.get("input_context", {})
+        token_budget = wo.get("constraints", {}).get("token_budget", 100000)
         prompt_text = json.dumps(input_ctx) + additional_context
 
         return PromptRequest(
@@ -277,7 +286,7 @@ class HO1Executor:
             work_order_id=wo.get("wo_id", ""),
             session_id=wo.get("session_id", ""),
             tier="ho1",
-            max_tokens=boundary.get("max_tokens", 4096),
+            max_tokens=min(boundary.get("max_tokens", 4096), token_budget),
             temperature=boundary.get("temperature", 0.0),
             structured_output=boundary.get("structured_output"),
             input_schema=contract.get("input_schema"),
