@@ -297,8 +297,9 @@ Some gates pass trivially when their dependencies don't exist yet. G1-COMPLETE p
 | **Spec content validation** | A spec pack declares "this service exports X, Y, Z." Nothing verifies the installed code actually exports X, Y, Z. | A package can claim to implement a spec without actually implementing it. |
 | **Framework rule enforcement** | A framework declares "all services must log to the ledger." Nothing verifies the installed code calls the ledger. | Frameworks are governance rules that aren't enforced at install time. |
 | **Contract conformance** | A spec declares input/output schemas. Nothing verifies the code's actual function signatures match. | The spec is the architecture, but the code can diverge silently. |
+| **Behavioral smoke test** | Gates verify structure (hashes, ownership, chains). Nothing verifies the system actually responds to a user prompt. Every integration bug that has shipped passed all 8 gates and all unit tests — and was caught by typing "hello." | A system can be structurally perfect and behaviorally broken. |
 
-When these gaps are closed, G1 validates MEANING, not just NAMES. The chain isn't just "this package references this spec" — it's "this package delivers what this spec describes." This is core to how the system is supposed to work.
+When these gaps are closed, G1 validates MEANING, not just NAMES. The chain isn't just "this package references this spec" — it's "this package delivers what this spec describes." And a behavioral gate ensures the system actually works, not just that it's internally consistent. This is core to how the system is supposed to work.
 
 ### Append-Only Is Intentional
 
@@ -378,6 +379,26 @@ Before anything else, builders must internalize the TDD cycle. This is not a sug
 
 Builders work in **per-behavior cycles**, not all-tests-then-all-code. Each cycle produces one tested, clean behavior. The full feature emerges from the accumulation of cycles.
 
+### The Mock Boundary
+
+Mocks are permitted ONLY during the red-green-refactor cycle — when you are building one behavior at a time and need to isolate your unit under test. Once the behavior is green:
+
+**Mocks stop. Real components start.**
+
+| Test Level | Mocks Allowed? | What It Proves |
+|------------|---------------|----------------|
+| **Unit test** (red-green-refactor) | Yes — mock the layer below | This function does what its contract says |
+| **Integration test** (per-package) | No — wire real components | This package works with its real dependencies |
+| **E2E smoke test** (full system) | No — real Kitchener loop | The system responds to a user prompt |
+
+Every package that touches the dispatch path (HO2, HO1, Gateway, Provider, Admin) MUST include at least one integration test that wires real components from the layer below. MockProvider is a red-green fixture, not an integration answer.
+
+**The pattern that keeps shipping bugs:** HO2 tests mock HO1. HO1 tests mock Gateway. Gateway tests mock Provider. Every mock returns what the developer expects, not what the real system produces. All 487 tests pass. The user types "hello" and gets an error. This pattern is not allowed.
+
+### The Staging Constraint
+
+All building happens in `_staging/`. Every file edit, every test run during development, every package source — it lives in `_staging/` and only reaches the installed root through `install.sh`. Builders never create or modify files outside `_staging/`.
+
 ### Phase 1: Understand
 
 | Step | Action | Produces |
@@ -417,7 +438,9 @@ For each behavior in the spec:
 | 16 | Clean-room install from CP_BOOTSTRAP | `install.sh --root <tmpdir> --dev` |
 | 17 | Run gate checks | `gate_check.py --all --enforce` → 8/8 PASS |
 | 18 | Run full regression from installed root | `pytest` with correct PYTHONPATH |
-| 19 | Run E2E smoke test (if applicable) | System-specific |
+| 19 | **E2E smoke test — MANDATORY** | Send a real prompt through the Kitchener loop, verify a real response |
+
+**Step 19 is not optional.** If the handoff touches any package in the dispatch path (HO2, HO1, Gateway, Provider, Shell, Admin), a real prompt must enter the system and a real response must come back. "All tests pass" and "all gates pass" is necessary but NOT sufficient. The system must actually work.
 
 ### Phase 5: Report
 
@@ -430,13 +453,16 @@ For each behavior in the spec:
 
 A package is done when ALL of the following are true:
 1. Every behavior was built through red-green-refactor cycles
-2. Tests pass in isolation AND in full regression (0 new failures)
-3. Gates pass (8/8 from `gate_check.py --all --enforce`)
-4. Clean-room install succeeds (from CP_BOOTSTRAP for bootstrap-scope packages, or via `package_install.py` for post-bootstrap packages)
-5. Manifests are current (SHA256 hashes match actual files)
-6. Archives are built with `pack()` (deterministic, reproducible)
-7. Framework chain is valid (G1 + G1-COMPLETE pass)
-8. RESULTS file is complete (all required sections, baseline snapshot)
+2. Integration tests use real components (not mocks) for cross-package boundaries
+3. Tests pass in isolation AND in full regression (0 new failures)
+4. Gates pass (8/8 from `gate_check.py --all --enforce`)
+5. Clean-room install succeeds (from CP_BOOTSTRAP for bootstrap-scope packages, or via `package_install.py` for post-bootstrap packages)
+6. E2E smoke test passes — a real prompt enters the system, a real response comes back
+7. Manifests are current (SHA256 hashes match actual files)
+8. Archives are built with `pack()` (deterministic, reproducible)
+9. Framework chain is valid (G1 + G1-COMPLETE pass)
+10. RESULTS file is complete (all required sections, baseline snapshot)
+11. All work was done in `_staging/` — no files created or modified outside it
 
 If any of these are missing, the package is not done. It doesn't matter how good the code is.
 
@@ -557,13 +583,15 @@ These are patterns that look reasonable but violate the philosophy:
 
 | Trap | Why It's Wrong | Correct Approach |
 |------|---------------|------------------|
+| "All tests pass, so it works" | Every integration bug that shipped passed all tests. Mocks return what you expect, not what the system produces. | Run E2E: send a real prompt, get a real response. |
+| "I'll use MockProvider for integration tests" | MockProvider is a red-green fixture. It hides every real API behavior: content format, tool_use responses, error shapes. | Mock only during unit red-green cycles. Integration tests use real (or realistic) components. |
 | "I'll add framework alignment later" | A package without a framework is ungoverned. | Declare framework in manifest.json from the start. |
 | "I'll test from staging, it's faster" | Staging paths differ from installed paths. | Always verify from installed root. |
+| "I'll build outside _staging/" | Files outside _staging/ bypass the package system entirely. | All building happens in `_staging/`. Only `install.sh` moves files to the installed root. |
 | "I'll compute the hash myself" | Manual hashes produce bare hex. | Use `compute_sha256()`. |
 | "I'll install by copying files" | Bypasses gates, ledger, and ownership tracking. | Use `install.sh`. |
 | "My package needs to read HO3 state directly" | Lower tiers cannot read higher tier state. | Use syscalls (call HOT services). |
 | "I'll put three features in one package" | Violates single responsibility. | Split into three packages. |
-| "The tests passed so I'm done" | Tests are necessary but not sufficient. | Follow the full Build Lifecycle (Section 8). |
-| "I don't need a spec pack, I'll just write code" | Code without a spec is unarchitected. No agent can reproduce or extend it. | Write the spec pack first. |
 | "The governance chain passes so the code is correct" | G1 validates NAMES, not MEANING. | Until content validation exists, spec conformance is manual. |
+| "I don't need a spec pack, I'll just write code" | Code without a spec is unarchitected. No agent can reproduce or extend it. | Write the spec pack first. |
 | "I'll put this utility outside the package system" | Ungoverned code can't be verified or owned. | Everything installs through the package system. |
