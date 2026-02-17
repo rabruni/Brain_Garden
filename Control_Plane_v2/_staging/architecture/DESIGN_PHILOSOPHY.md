@@ -350,6 +350,34 @@ A builder agent is not exempt from the system's rules. The same principles that 
 
 This is the complete sequence a builder agent follows, from receiving a handoff to delivering results. Every step is mandatory.
 
+### The Core Discipline: Red-Green-Refactor
+
+Before anything else, builders must internalize the TDD cycle. This is not a suggestion — it is the method.
+
+```
+┌─────────┐     ┌─────────┐     ┌───────────┐
+│   RED   │────▶│  GREEN  │────▶│ REFACTOR  │──┐
+│         │     │         │     │           │  │
+│ Write a │     │ Write   │     │ Clean up. │  │
+│ failing │     │ minimum │     │ Tests     │  │
+│ test.   │     │ code to │     │ must stay │  │
+│         │     │ pass it.│     │ green.    │  │
+└─────────┘     └─────────┘     └───────────┘  │
+     ▲                                          │
+     └──────────────────────────────────────────┘
+                  Next behavior
+```
+
+**Red:** Write a test for one behavior. Run it. It must FAIL. If it passes without implementation, the test is vacuous — delete it and write a real one.
+
+**Green:** Write the minimum code to make the test pass. Not elegant code. Not complete code. Just enough to go green. Resist the urge to implement the next behavior.
+
+**Refactor:** Now clean up. Extract helpers, remove duplication, tighten interfaces. Run the tests after every change — if anything goes red, you broke something. Fix it before moving on.
+
+**Repeat:** Pick the next behavior. Write a failing test. Go green. Refactor. Continue until all behaviors are covered.
+
+Builders work in **per-behavior cycles**, not all-tests-then-all-code. Each cycle produces one tested, clean behavior. The full feature emerges from the accumulation of cycles.
+
 ### Phase 1: Understand
 
 | Step | Action | Produces |
@@ -360,50 +388,55 @@ This is the complete sequence a builder agent follows, from receiving a handoff 
 | 4 | Answer the 10-question gate | Proof of understanding |
 | 5 | **STOP. Wait for approval.** | — |
 
-### Phase 2: Build (DTT)
+### Phase 2: Build (Red-Green-Refactor)
+
+For each behavior in the spec:
 
 | Step | Action | Produces |
 |------|--------|----------|
-| 6 | Write tests FIRST (Design → Test) | Test files with all planned test methods |
-| 7 | Run tests — they should FAIL (no implementation yet) | Confirmation that tests are real, not vacuous |
-| 8 | Implement code (→ Then implement) | Source files |
-| 9 | Run package-local tests — they should PASS | Confidence in the implementation |
+| 6 | **RED:** Write test(s) for one behavior | Failing test(s) that define the contract |
+| 7 | Run tests — they must FAIL | Proof the test is real, not vacuous |
+| 8 | **GREEN:** Write minimum code to pass | Implementation of that behavior |
+| 9 | Run tests — they must PASS | Confidence in the implementation |
+| 10 | **REFACTOR:** Clean up code, tests stay green | Tighter, cleaner implementation |
+| 11 | Repeat steps 6-10 for the next behavior | — |
 
 ### Phase 3: Govern
 
 | Step | Action | Tool |
 |------|--------|------|
-| 10 | Compute SHA256 hashes for all modified files | `hashing.py:compute_sha256()` |
-| 11 | Update manifest.json with new hashes | Manual edit (hashes from step 10) |
-| 12 | Rebuild package archive | `packages.py:pack()` |
-| 13 | Rebuild CP_BOOTSTRAP.tar.gz (if package is in bootstrap) | `packages.py:pack()` |
+| 12 | Compute SHA256 hashes for all modified files | `hashing.py:compute_sha256()` |
+| 13 | Update manifest.json with new hashes | Manual edit (hashes from step 12) |
+| 14 | Rebuild package archive | `packages.py:pack()` |
+| 15 | Rebuild CP_BOOTSTRAP (if package is in bootstrap scope) | `packages.py:pack()` |
 
 ### Phase 4: Verify
 
 | Step | Action | Tool |
 |------|--------|------|
-| 14 | Clean-room install from CP_BOOTSTRAP.tar.gz | `install.sh --root <tmpdir> --dev` |
-| 15 | Run gate checks | `gate_check.py --all --enforce` → 8/8 PASS |
-| 16 | Run full regression from installed root | `pytest` with correct PYTHONPATH |
-| 17 | Run E2E smoke test (if applicable) | System-specific |
+| 16 | Clean-room install from CP_BOOTSTRAP | `install.sh --root <tmpdir> --dev` |
+| 17 | Run gate checks | `gate_check.py --all --enforce` → 8/8 PASS |
+| 18 | Run full regression from installed root | `pytest` with correct PYTHONPATH |
+| 19 | Run E2E smoke test (if applicable) | System-specific |
 
 ### Phase 5: Report
 
 | Step | Action | Produces |
 |------|--------|----------|
-| 18 | Write RESULTS file following the full template | RESULTS_HANDOFF_N.md |
-| 19 | **STOP. Report completion.** | — |
+| 20 | Write RESULTS file following the full template | RESULTS_HANDOFF_N.md |
+| 21 | **STOP. Report completion.** | — |
 
 ### What "Done" Means
 
 A package is done when ALL of the following are true:
-1. Tests pass in isolation AND in full regression (0 new failures)
-2. Gates pass (8/8 from `gate_check.py --all --enforce`)
-3. Clean-room install succeeds from CP_BOOTSTRAP.tar.gz
-4. Manifests are current (SHA256 hashes match actual files)
-5. Archives are built with `pack()` (deterministic, reproducible)
-6. Framework chain is valid (G1 + G1-COMPLETE pass)
-7. RESULTS file is complete (all required sections, baseline snapshot)
+1. Every behavior was built through red-green-refactor cycles
+2. Tests pass in isolation AND in full regression (0 new failures)
+3. Gates pass (8/8 from `gate_check.py --all --enforce`)
+4. Clean-room install succeeds (from CP_BOOTSTRAP for bootstrap-scope packages, or via `package_install.py` for post-bootstrap packages)
+5. Manifests are current (SHA256 hashes match actual files)
+6. Archives are built with `pack()` (deterministic, reproducible)
+7. Framework chain is valid (G1 + G1-COMPLETE pass)
+8. RESULTS file is complete (all required sections, baseline snapshot)
 
 If any of these are missing, the package is not done. It doesn't matter how good the code is.
 
@@ -411,25 +444,96 @@ If any of these are missing, the package is not done. It doesn't matter how good
 
 ## 9. The Bootstrap Contract
 
-CP_BOOTSTRAP.tar.gz is a self-contained deliverable. Any agent or human should be able to install the system by:
+### What the Bootstrap Is
+
+CP_BOOTSTRAP is the OS installer. It installs the operating system — kernel, governance, infrastructure, and the ADMIN agent. After bootstrap, the OS is running and can manage itself.
+
+Any agent or human should be able to install the system by:
 
 1. Extracting the archive to a directory
 2. Running `./install.sh --root <target> --dev`
 
 That's it. No guidance needed. No external documentation. No manual steps.
 
+### Bootstrap Scope
+
+The bootstrap contains everything needed to bring the OS up. Nothing more.
+
+```
+CP_BOOTSTRAP scope:
+│
+├── Layer 0: Bootstrap Axioms
+│   PKG-GENESIS-000        — seed (trusted root)
+│   PKG-KERNEL-001         — governed installer, gates, ledger, hashing
+│
+├── Layer 1: Governance Infrastructure
+│   PKG-REG-001            — registries
+│   PKG-VOCABULARY-001     — gate_check.py, resolve_install_order.py
+│   PKG-GOVERNANCE-UPGRADE-001
+│   PKG-FRAMEWORK-WIRING-001
+│   PKG-SPEC-CONFORMANCE-001
+│   PKG-LAYOUT-001, PKG-LAYOUT-002
+│   PKG-PHASE2-SCHEMAS-001
+│
+├── Layer 2: Cognitive Infrastructure (KERNEL.syntactic)
+│   PKG-TOKEN-BUDGETER-001 — budget enforcement
+│   PKG-WORK-ORDER-001     — the WO atom
+│   PKG-LLM-GATEWAY-001    — deterministic LLM pipe
+│   PKG-ANTHROPIC-PROVIDER-001 — LLM provider
+│   PKG-BOOT-MATERIALIZE-001  — directory materialization
+│
+├── Layer 3: Cognitive Processes
+│   PKG-HO1-EXECUTOR-001   — worker (LLM execution + tool loops)
+│   PKG-HO2-SUPERVISOR-001 — critic (Kitchener dispatch)
+│   PKG-SESSION-HOST-V2-001 — session adapter
+│   PKG-SHELL-001          — REPL presentation
+│
+├── Layer 4: ADMIN Agent
+│   PKG-ADMIN-001          — system keeper entrypoint
+│
+└── Layer 5: Verification
+    PKG-VERIFY-001         — verification harness
+```
+
+**After bootstrap, the OS is up.** ADMIN can query, inspect, and manage the system. Builders can create frameworks, write spec packs, and deliver packages through the running system's own `package_install.py`.
+
+**RESIDENT agents install AFTER bootstrap.** They are capabilities that run ON the OS, not part of the OS itself. A resident agent's framework, spec packs, and packages install through governed work orders — the same way any new capability is added to a running OS. The bootstrap is NOT rebuilt for every new resident.
+
 ### What the Bootstrap Contains
 
 - `install.sh` — the orchestrator (handles genesis, kernel, then delegates to governed tools)
+- `BOOTSTRAP_MANIFEST.json` — version, date, package list, changelog
 - `packages/` — all package archives, each with manifest.json and governed assets
 
-### What the Bootstrap Must NOT Require
+### Versioning
 
-- Knowledge of install order (the kernel's `resolve_install_order.py` handles it)
-- Knowledge of gate commands (`install.sh` runs them)
-- Manual file copying (`package_install.py` handles it)
-- External documentation (`install.sh --help` provides usage)
-- Prior system state (clean-room install from empty directory)
+The bootstrap is versioned with semantic versioning: **MAJOR.MINOR.PATCH**.
+
+| Bump | When |
+|------|------|
+| **MAJOR** | Breaking changes — layout restructure, removed packages, gate changes |
+| **MINOR** | New packages or capabilities added (e.g., new handoff integrated) |
+| **PATCH** | Bugfixes, test cleanup, governance-only changes |
+
+Version bumps are **manual** — not every rebuild is a meaningful release. The version is tracked in `BOOTSTRAP_MANIFEST.json` inside the archive:
+
+```json
+{
+  "version": "2.1.0",
+  "created": "2026-02-16T00:00:00Z",
+  "package_count": 21,
+  "packages": [
+    {"id": "PKG-GENESIS-000", "version": "1.0.0"},
+    {"id": "PKG-KERNEL-001", "version": "1.2.0"}
+  ],
+  "changelog": [
+    "2.1.0 — HANDOFF-21: Tool-use wiring (487 tests, 8/8 gates)",
+    "2.0.0 — Initial bootstrap (468 tests, 8/8 gates)"
+  ]
+}
+```
+
+`install.sh` prints the version at the start of every install. The filename includes the version: `CP_BOOTSTRAP-2.1.0.tar.gz`. Git tags anchor each release: `bootstrap-v2.1.0`.
 
 ### How the Bootstrap Sequence Works
 
@@ -443,7 +547,7 @@ Every tool used after Step 2 is a governed kernel tool — owned by a package, t
 
 ### The Test
 
-If you hand CP_BOOTSTRAP.tar.gz to an agent that has never seen the system before, and that agent can install it and get 8/8 gates PASS by reading only what's inside the archive — the bootstrap contract is met.
+If you hand the bootstrap to an agent that has never seen the system before, and that agent can install it and get 8/8 gates PASS by reading only what's inside the archive — the bootstrap contract is met.
 
 ---
 
