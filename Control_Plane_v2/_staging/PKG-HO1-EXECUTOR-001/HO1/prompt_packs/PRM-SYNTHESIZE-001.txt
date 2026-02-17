@@ -14,9 +14,5 @@ Classification:
 Assembled context:
 {{assembled_context}}
 
-Respond with valid JSON only matching this schema:
-{
-  "response_text": "your synthesized response string"
-}
-
-Do not include any text outside the JSON object.
+Respond with a clear, helpful answer in natural language.
+Do not wrap your response in JSON or code fences.

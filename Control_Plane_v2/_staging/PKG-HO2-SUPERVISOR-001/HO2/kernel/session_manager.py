@@ -93,10 +93,29 @@ class SessionManager:
         )
 
     def add_turn(self, user_message: str, response: str) -> None:
-        """Track turn in in-memory history."""
+        """Track turn in history and persist it in the ledger."""
         self._history.append(TurnMessage(role="user", content=user_message))
         self._history.append(TurnMessage(role="assistant", content=response))
         self._turn_count += 1
+        session_id = self._session_id or "unknown"
+        self._ledger.write(
+            LedgerEntry(
+                event_type="TURN_RECORDED",
+                submission_id=session_id,
+                decision="RECORDED",
+                reason=f"Turn {self._turn_count} recorded",
+                metadata={
+                    "provenance": {
+                        "agent_id": self._agent_id,
+                        "agent_class": self._agent_class,
+                        "session_id": session_id,
+                    },
+                    "turn_number": self._turn_count,
+                    "user_message": user_message,
+                    "response": response,
+                },
+            )
+        )
 
     @property
     def history(self) -> List[TurnMessage]:

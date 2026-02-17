@@ -595,3 +595,16 @@ These are patterns that look reasonable but violate the philosophy:
 | "The governance chain passes so the code is correct" | G1 validates NAMES, not MEANING. | Until content validation exists, spec conformance is manual. |
 | "I don't need a spec pack, I'll just write code" | Code without a spec is unarchitected. No agent can reproduce or extend it. | Write the spec pack first. |
 | "I'll put this utility outside the package system" | Ungoverned code can't be verified or owned. | Everything installs through the package system. |
+
+### SECTION X: LEXICON OF PRECISION (ANTI-HALLUCINATION)
+All agents must adhere to strict terminological mapping. Vague "narrative" claims are considered a failure of the Control Plane protocol.
+
+| Forbidden Ambiguous Term | Required Precise Replacement |
+| :--- | :--- |
+| "I updated all files" | "I modified files (see SHA256 list below)." |
+| "We log everything" | "I implemented logging for specific state transitions." |
+| "It's fully tested" | "The `pytest` result for [Package Name] shows Passes / 0 Fails." |
+| "The code is optimized" | "The logic was refactored to reduce [Specific Metric/Complexity]." |
+| "Integrated successfully" | "The G1-COMPLETE gate check passed with 0 undeclared files." |
+
+**INVARIANT:** If an agent uses a forbidden term without the precise replacement, the HO2 Critic must trigger an immediate REJECTION.

@@ -407,6 +407,37 @@ class TestSessionManagement:
         seq2 = int(id2.split("-")[-1])
         assert seq2 > seq1
 
+    def test_add_turn_writes_turn_recorded_event(self, supervisor, mock_ledger):
+        supervisor.start_session()
+        supervisor._session_mgr.add_turn("hello", "hi")
+        turns = mock_ledger.events_of_type("TURN_RECORDED")
+        assert len(turns) == 1
+
+    def test_turn_recorded_contains_user_message(self, supervisor, mock_ledger):
+        supervisor.start_session()
+        supervisor._session_mgr.add_turn("what frameworks are installed?", "Installed packages are ...")
+        turn = mock_ledger.events_of_type("TURN_RECORDED")[0]
+        assert turn.metadata["user_message"] == "what frameworks are installed?"
+
+    def test_turn_recorded_contains_response(self, supervisor, mock_ledger):
+        supervisor.start_session()
+        supervisor._session_mgr.add_turn("hello", "Hello! How can I assist?")
+        turn = mock_ledger.events_of_type("TURN_RECORDED")[0]
+        assert turn.metadata["response"] == "Hello! How can I assist?"
+
+    def test_turn_recorded_has_turn_number(self, supervisor, mock_ledger):
+        supervisor.start_session()
+        supervisor._session_mgr.add_turn("first", "one")
+        supervisor._session_mgr.add_turn("second", "two")
+        turns = mock_ledger.events_of_type("TURN_RECORDED")
+        assert turns[-1].metadata["turn_number"] == 2
+
+    def test_turn_recorded_has_session_id(self, supervisor, mock_ledger):
+        session_id = supervisor.start_session()
+        supervisor._session_mgr.add_turn("hello", "hi")
+        turn = mock_ledger.events_of_type("TURN_RECORDED")[0]
+        assert turn.submission_id == session_id
+
 
 # ===========================================================================
 # Factory Pattern Tests (3)
@@ -671,3 +702,225 @@ class TestToolUseWiring:
         synth_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "synthesize"]
         assert synth_wos[0]["constraints"]["tools_allowed"] == []
         assert synth_wos[0]["constraints"]["turn_limit"] == 1
+
+
+class TestAdminShellHotfix:
+    def test_synthesize_budget_from_config(self, tmp_path, mock_ho1, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            synthesize_budget=16000,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", mock_ho1, mock_ledger, mock_budgeter, config)
+        sv.handle_turn("hello")
+        synth_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert len(synth_wos) >= 1
+        assert synth_wos[0]["constraints"]["token_budget"] == 16000
+
+    def test_retry_budget_from_config(self, tmp_path, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        failing_ho1 = MockHO1Executor(responses={
+            "classify": {"speech_act": "greeting", "ambiguity": "low"},
+            "synthesize": {"response_text": ""},
+        })
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            max_retries=1,
+            synthesize_budget=16000,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", failing_ho1, mock_ledger, mock_budgeter, config)
+        sv.handle_turn("hello")
+        synth_wos = [w for w in failing_ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert len(synth_wos) >= 2
+        assert synth_wos[0]["constraints"]["token_budget"] == 16000
+        assert synth_wos[-1]["constraints"]["token_budget"] == 16000
+
+    def test_wo_error_surfaced_before_quality_gate(self, tmp_path, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        class FailFirstSynthesizeHO1:
+            def __init__(self):
+                self.executed_wos = []
+
+            def execute(self, work_order: dict) -> dict:
+                wo = dict(work_order)
+                self.executed_wos.append(wo)
+                wo_type = wo.get("wo_type", "classify")
+                if wo_type == "classify":
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"speech_act": "greeting", "ambiguity": "low"}
+                else:
+                    wo["state"] = "failed"
+                    wo["error"] = "budget_exhausted: Token budget exhausted"
+                    wo["output_result"] = None
+                wo["cost"] = {
+                    "input_tokens": 100, "output_tokens": 50, "total_tokens": 150,
+                    "llm_calls": 1, "tool_calls": 0, "elapsed_ms": 100,
+                }
+                return wo
+
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            max_retries=0,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", FailFirstSynthesizeHO1(), mock_ledger, mock_budgeter, config)
+        result = sv.handle_turn("what frameworks are installed?")
+        assert result.response.startswith("[Error: budget_exhausted:")
+        assert "[Quality gate failed:" not in result.response
+
+    def test_retry_failed_wo_error_surfaced_before_quality_gate(self, tmp_path, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        class RetryThenFailHO1:
+            def __init__(self):
+                self.executed_wos = []
+                self._synth_calls = 0
+
+            def execute(self, work_order: dict) -> dict:
+                wo = dict(work_order)
+                self.executed_wos.append(wo)
+                wo_type = wo.get("wo_type", "classify")
+                if wo_type == "classify":
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"speech_act": "greeting", "ambiguity": "low"}
+                else:
+                    self._synth_calls += 1
+                    if self._synth_calls == 1:
+                        wo["state"] = "completed"
+                        wo["output_result"] = {"response_text": ""}
+                    else:
+                        wo["state"] = "failed"
+                        wo["error"] = "budget_exhausted: Only 300 tokens remain after tool calls"
+                        wo["output_result"] = None
+                wo["cost"] = {
+                    "input_tokens": 100, "output_tokens": 50, "total_tokens": 150,
+                    "llm_calls": 1, "tool_calls": 0, "elapsed_ms": 100,
+                }
+                return wo
+
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            max_retries=1,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", RetryThenFailHO1(), mock_ledger, mock_budgeter, config)
+        result = sv.handle_turn("what frameworks are installed?")
+        assert result.response.startswith("[Error: budget_exhausted:")
+        assert "[Quality gate failed: output_result is empty]" not in result.response
+
+
+class TestPristineMemoryBudgetModes:
+    def test_turn_recorded_on_degradation(self, supervisor, mock_ledger):
+        failing_ho1 = MagicMock()
+        failing_ho1.execute = MagicMock(side_effect=Exception("boom"))
+        supervisor._ho1 = failing_ho1
+
+        result = supervisor.handle_turn("hello")
+
+        assert "[Degradation:" in result.response
+        turns = mock_ledger.events_of_type("TURN_RECORDED")
+        assert len(turns) == 1
+        assert turns[0].metadata["user_message"] == "hello"
+        assert "[Degradation:" in turns[0].metadata["response"]
+
+    def test_turn_recorded_on_quality_gate_reject(self, tmp_path, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        class EmptySynthesizeHO1:
+            def __init__(self):
+                self.executed_wos = []
+
+            def execute(self, work_order: dict) -> dict:
+                wo = dict(work_order)
+                self.executed_wos.append(wo)
+                if wo.get("wo_type") == "classify":
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"speech_act": "greeting", "ambiguity": "low"}
+                else:
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"response_text": ""}
+                wo["cost"] = {
+                    "input_tokens": 10, "output_tokens": 10, "total_tokens": 20,
+                    "llm_calls": 1, "tool_calls": 0, "elapsed_ms": 1,
+                }
+                return wo
+
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            max_retries=0,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", EmptySynthesizeHO1(), mock_ledger, mock_budgeter, config)
+
+        result = sv.handle_turn("hello")
+
+        assert result.quality_gate_passed is False
+        turns = mock_ledger.events_of_type("TURN_RECORDED")
+        assert len(turns) == 1
+        assert "[Quality gate failed:" in turns[0].metadata["response"]
+
+    def test_turn_recorded_on_retry_exhausted(self, tmp_path, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        class AlwaysEmptyHO1:
+            def __init__(self):
+                self.executed_wos = []
+
+            def execute(self, work_order: dict) -> dict:
+                wo = dict(work_order)
+                self.executed_wos.append(wo)
+                if wo.get("wo_type") == "classify":
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"speech_act": "greeting", "ambiguity": "low"}
+                else:
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"response_text": ""}
+                wo["cost"] = {
+                    "input_tokens": 10, "output_tokens": 10, "total_tokens": 20,
+                    "llm_calls": 1, "tool_calls": 0, "elapsed_ms": 1,
+                }
+                return wo
+
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            max_retries=1,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", AlwaysEmptyHO1(), mock_ledger, mock_budgeter, config)
+
+        result = sv.handle_turn("hello")
+
+        assert result.quality_gate_passed is False
+        turns = mock_ledger.events_of_type("TURN_RECORDED")
+        assert len(turns) == 1
+        assert turns[0].metadata["turn_number"] == 1
+
+    def test_classify_budget_from_config(self, tmp_path, mock_ho1, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            classify_budget=4321,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", mock_ho1, mock_ledger, mock_budgeter, config)
+
+        sv.handle_turn("hello")
+
+        classify_wos = [w for w in mock_ho1.executed_wos if w["wo_type"] == "classify"]
+        assert classify_wos[0]["constraints"]["token_budget"] == 4321
+
+    def test_budget_mode_propagated_to_wo(self, tmp_path, mock_ho1, mock_ledger, mock_budgeter, tmp_ho2m, tmp_ho1m):
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=tmp_ho2m,
+            ho1m_path=tmp_ho1m,
+            budget_mode="warn",
+            followup_min_remaining=777,
+        )
+        sv = HO2Supervisor(tmp_path, "ADMIN", mock_ho1, mock_ledger, mock_budgeter, config)
+
+        sv.handle_turn("hello")
+
+        assert len(mock_ho1.executed_wos) >= 2
+        for wo in mock_ho1.executed_wos[:2]:
+            assert wo["constraints"]["budget_mode"] == "warn"
+            assert wo["constraints"]["followup_min_remaining"] == 777

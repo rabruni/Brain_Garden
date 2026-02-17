@@ -261,6 +261,12 @@ Every agent prompt MUST include 10 verification questions:
 - Questions 7-8: Packaging and archives (tar format, manifest hashes, dependencies)
 - Question 9: Test count or verification criteria
 - Question 10: Integration concern (how does this connect to existing components)
+Bonus questions (Advesarial) 
+#### 11. THE ADVERSARIAL SIMULATION (PRE-FLIGHT)
+Before executing the first command, the builder must answer these three Bonus "Pressure Tests":
+1. **The Failure Mode:** "If this build fails at Gate G3 (Package Integrity), which specific file/hash in my current scope is the most likely culprit?"
+2. **The Shortcut Check:** "Is there a Kernel tool (e.g., `hashing.py`) I am tempted to skip in favor of a standard shell command? (If yes, explain why you will NOT do that)."
+3. **The Semantic Audit:** "Identify one word in my current plan that is 'ambiguous' according to the Lexicon of Precision and redefine it now."
 
 Include expected answers after the prompt (visible to the reviewer, not to the agent).
 

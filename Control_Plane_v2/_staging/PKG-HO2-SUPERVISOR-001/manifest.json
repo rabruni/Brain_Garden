@@ -17,7 +17,7 @@
   "assets": [
     {
       "path": "HO2/kernel/ho2_supervisor.py",
-      "sha256": "sha256:f71be94713520c6c85461ed27239baf91b1350a4f63afd6302ade9e0add86eda",
+      "sha256": "sha256:f714038b22933935eedbe7ec25296524f8de592437c4d5ee32de3802701426a8",
       "classification": "library"
     },
     {
@@ -32,7 +32,7 @@
     },
     {
       "path": "HO2/kernel/session_manager.py",
-      "sha256": "sha256:e4eaacb8f99192009b159159b74c3a37506ae46dfcbfa31ed255d04f8562ae46",
+      "sha256": "sha256:3fd0aa69a95914e90bd51ca6ca26e30aec2cf60ce046cbdc3f6042654a92fdc9",
       "classification": "library"
     },
     {
@@ -42,7 +42,7 @@
     },
     {
       "path": "HO2/tests/test_ho2_supervisor.py",
-      "sha256": "sha256:ea820e6fda599e39b9e583675f368eafa99bd799ec95beebb59f253e5cf5c062",
+      "sha256": "sha256:d2269e171c3a8a556555687cc242762e446a72df03d12c3c7c3c7642107bb53c",
       "classification": "test"
     }
   ]

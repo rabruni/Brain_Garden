@@ -82,6 +82,17 @@ class HO1Executor:
 
             wo_type = wo.get("wo_type", "")
             constraints = wo.get("constraints", {})
+            budget_mode = str(
+                constraints.get("budget_mode", self.config.get("budget_mode", "enforce"))
+            ).lower()
+            if budget_mode not in {"enforce", "warn", "off"}:
+                budget_mode = "enforce"
+            followup_min = int(
+                constraints.get(
+                    "followup_min_remaining",
+                    self.config.get("followup_min_remaining", 500),
+                )
+            )
 
             # Step 2: Handle tool_call type specially (no LLM)
             if wo_type == "tool_call":
@@ -131,10 +142,18 @@ class HO1Executor:
             final_content = None
             for turn in range(turn_limit):
                 # Check budget before each call
-                if self.budgeter:
+                if self.budgeter and budget_mode != "off":
                     check = self.budgeter.check(self._make_budget_scope(wo, token_budget - cost.get("total_tokens", 0)))
                     if not check.allowed:
-                        return self._fail_wo(wo, cost, start_time, "budget_exhausted", "Token budget exhausted")
+                        if budget_mode == "enforce":
+                            return self._fail_wo(wo, cost, start_time, "budget_exhausted", "Token budget exhausted")
+                        self._log_event(
+                            "BUDGET_WARNING",
+                            wo,
+                            remaining=getattr(check, "remaining", 0),
+                            reason=str(getattr(check, "reason", "budget_exhausted")),
+                            message="Budget check failed, continuing in warn mode",
+                        )
 
                 # Call gateway
                 try:
@@ -156,10 +175,6 @@ class HO1Executor:
                     latency_ms=getattr(response, "latency_ms", 0),
                 )
 
-                # Debit budget
-                if self.budgeter:
-                    self._debit_budget(wo, response)
-
                 content = getattr(response, "content", "")
 
                 # Check for gateway rejection/error
@@ -169,8 +184,25 @@ class HO1Executor:
                     error_msg = getattr(response, "error_message", f"Gateway returned {outcome}")
                     return self._fail_wo(wo, cost, start_time, str(error_code), str(error_msg))
 
-                # Check for tool_use blocks
-                tool_uses = self._extract_tool_uses(content, response)
+                # Check for tool_use blocks (filtered to tools_allowed)
+                tools_allowed = wo.get("constraints", {}).get("tools_allowed", [])
+                raw_tool_uses = self._extract_tool_uses(content, response)
+
+                # Anthropic structured_output may return a pseudo-tool "output_json".
+                # Treat it as structured output payload, not a dispatchable tool,
+                # unless explicitly allowlisted.
+                output_json_blocks = [tu for tu in raw_tool_uses if tu.get("tool_id") == "output_json"]
+                if output_json_blocks and "output_json" not in (tools_allowed or []):
+                    final_content = json.dumps(output_json_blocks[0].get("arguments", {}))
+                    raw_tool_uses = [tu for tu in raw_tool_uses if tu.get("tool_id") != "output_json"]
+
+                # Restore allowlist filtering (H-22 behavior).
+                if tools_allowed:
+                    allowed_set = set(tools_allowed)
+                    tool_uses = [tu for tu in raw_tool_uses if tu.get("tool_id") in allowed_set]
+                else:
+                    tool_uses = []
+
                 if tool_uses and self.tool_dispatcher:
                     cached_results = []
                     for tu in tool_uses:
@@ -181,36 +213,66 @@ class HO1Executor:
                             "tool_id": tu["tool_id"],
                             "result": result_output,
                         })
-                        args_str = json.dumps(tu.get("arguments", {}))[:200]
-                        result_str = json.dumps(result_output, default=str)[:500] if result_output is not None else ""
+                        args_obj = tu.get("arguments", {})
+                        args_str = json.dumps(args_obj, default=str)
+                        result_str = json.dumps(result_output, default=str) if result_output is not None else ""
+                        tool_error = getattr(tool_result, "error", None)
                         self._log_event("TOOL_CALL", wo,
                             tool_id=tu["tool_id"],
                             status=getattr(tool_result, "status", "unknown"),
+                            arguments=args_obj,
+                            result=result_output,
+                            args_bytes=len(args_str),
+                            result_bytes=len(result_str),
+                            tool_error=tool_error,
                             args_summary=args_str,
                             result_summary=result_str,
                         )
+                    # Check remaining budget before follow-up call
+                    remaining_budget = token_budget - cost.get("total_tokens", 0)
+                    if remaining_budget < followup_min:
+                        if budget_mode == "enforce":
+                            return self._fail_wo(
+                                wo,
+                                cost,
+                                start_time,
+                                "budget_exhausted",
+                                f"Only {remaining_budget} tokens remain after tool calls",
+                            )
+                        if budget_mode == "warn":
+                            self._log_event(
+                                "BUDGET_WARNING",
+                                wo,
+                                remaining=remaining_budget,
+                                followup_min=followup_min,
+                                message=f"Budget low: {remaining_budget} < {followup_min}, continuing in warn mode",
+                            )
+                    # Reconcile follow-up max_tokens to remaining budget.
+                    wo.setdefault("constraints", {})["token_budget"] = max(0, remaining_budget)
                     # Build follow-up request with cached tool results
                     tool_results_text = json.dumps(cached_results)
                     request = self._build_prompt_request(wo, contract,
                         additional_context=f"\nTool results: {tool_results_text}")
                     continue
                 else:
-                    final_content = content
+                    if final_content is None:
+                        final_content = content
                     break
             else:
                 # Turn limit exceeded
                 return self._fail_wo(wo, cost, start_time, "turn_limit_exceeded", f"Exceeded turn limit of {turn_limit}")
 
-            # Step 7: Validate output
+            # Step 7: Validate output (skip when tools present — structured_output disabled)
             output_schema = contract.get("output_schema", {})
-            if output_schema and final_content:
+            if output_schema and final_content and not constraints.get("tools_allowed"):
                 valid, errors = self._validate_output(final_content, output_schema)
                 if not valid:
                     return self._fail_wo(wo, cost, start_time, "output_schema_invalid", "; ".join(errors))
 
-            # Step 8: Set output
+            # Step 8: Set output -- strip fences, parse JSON, fallback to plain text
+            cleaned = self._strip_code_fences(final_content) if final_content else ""
             try:
-                wo["output_result"] = json.loads(final_content) if final_content else {"response_text": ""}
+                wo["output_result"] = json.loads(cleaned) if cleaned else {"response_text": ""}
             except (json.JSONDecodeError, TypeError):
                 wo["output_result"] = {"response_text": final_content}
 
@@ -246,8 +308,23 @@ class HO1Executor:
             if self.tool_dispatcher:
                 result = self.tool_dispatcher.execute(tool_id, input_context)
                 cost["tool_calls"] += 1
-                results[tool_id] = getattr(result, "output", None)
-                self._log_event("TOOL_CALL", wo, tool_id=tool_id, status=getattr(result, "status", "unknown"))
+                result_output = getattr(result, "output", None)
+                results[tool_id] = result_output
+                args_str = json.dumps(input_context, default=str)
+                result_str = json.dumps(result_output, default=str) if result_output is not None else ""
+                self._log_event(
+                    "TOOL_CALL",
+                    wo,
+                    tool_id=tool_id,
+                    status=getattr(result, "status", "unknown"),
+                    arguments=input_context,
+                    result=result_output,
+                    args_bytes=len(args_str),
+                    result_bytes=len(result_str),
+                    tool_error=getattr(result, "error", None),
+                    args_summary=args_str,
+                    result_summary=result_str,
+                )
         return results
 
     def _render_template(self, prompt_pack_id: str, input_ctx: dict, additional_context: str = "") -> str:
@@ -267,6 +344,15 @@ class HO1Executor:
             template_text = template_text.replace(placeholder, rendered_value)
 
         return template_text + additional_context
+
+    def _strip_code_fences(self, content: str) -> str:
+        """Strip markdown code fences (with or without language tag) if present."""
+        stripped = content.strip()
+        if stripped.startswith("```"):
+            lines = stripped.split("\n")
+            if lines[-1].strip() == "```":
+                return "\n".join(lines[1:-1]).strip()
+        return content
 
     def _resolve_tools(self, wo: dict) -> Optional[List[dict]]:
         """Resolve tool definitions for the WO based on tools_allowed constraint."""
@@ -387,11 +473,22 @@ class HO1Executor:
         return self._validate_schema(parsed, schema)
 
     def _log_event(self, event_type: str, wo: dict, **metadata):
+        prompt_contract_id = wo.get("constraints", {}).get("prompt_contract_id", "")
+        prompt_pack_id = ""
+        if prompt_contract_id:
+            try:
+                contract = self.contract_loader.load(prompt_contract_id)
+                prompt_pack_id = contract.get("prompt_pack_id", "")
+            except Exception:
+                prompt_pack_id = ""
+        prompts = [prompt_pack_id] if prompt_pack_id else []
+
         entry = LedgerEntry(
             event_type=event_type,
             submission_id=wo.get("wo_id", ""),
             decision=event_type,
             reason=f"{event_type} for {wo.get('wo_id', '')}",
+            prompts_used=prompts,
             metadata={
                 "provenance": {
                     "agent_id": self.config.get("agent_id", ""),

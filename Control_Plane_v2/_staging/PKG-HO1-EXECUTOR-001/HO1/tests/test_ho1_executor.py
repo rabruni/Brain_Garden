@@ -43,6 +43,58 @@ def _mock_response(content='{"speech_act": "greeting", "ambiguity": "low"}', inp
     )
 
 
+def _mock_tool_use_response(
+    tool_id="list_packages",
+    arguments=None,
+    input_tokens=100,
+    output_tokens=50,
+):
+    if arguments is None:
+        arguments = {}
+    return SimpleNamespace(
+        content="{}",
+        outcome="SUCCESS",
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        model_id="mock-model",
+        provider_id="mock",
+        latency_ms=100.0,
+        timestamp="2026-02-15T00:00:00Z",
+        exchange_entry_id="LED-mock001",
+        finish_reason="tool_use",
+        content_blocks=(
+            {"type": "tool_use", "id": "toolu_01", "name": tool_id, "input": arguments},
+        ),
+    )
+
+
+def _mock_output_json_response(
+    payload=None,
+    extra_blocks=None,
+    content="",
+    input_tokens=100,
+    output_tokens=50,
+):
+    if payload is None:
+        payload = {"speech_act": "greeting", "ambiguity": "low"}
+    blocks = [{"type": "tool_use", "id": "toolu_outjson", "name": "output_json", "input": payload}]
+    if extra_blocks:
+        blocks.extend(extra_blocks)
+    return SimpleNamespace(
+        content=content,
+        outcome="SUCCESS",
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        model_id="mock-model",
+        provider_id="mock",
+        latency_ms=100.0,
+        timestamp="2026-02-15T00:00:00Z",
+        exchange_entry_id="LED-mock001",
+        finish_reason="tool_use",
+        content_blocks=tuple(blocks),
+    )
+
+
 def _mock_budget_check(allowed=True, remaining=10000):
     return SimpleNamespace(allowed=allowed, remaining=remaining, reason=None)
 
@@ -153,6 +205,13 @@ def executor(tmp_path):
 
     mock_tool_dispatcher = Mock()
     mock_tool_dispatcher.execute.return_value = SimpleNamespace(tool_id="test", status="ok", output="result")
+    mock_tool_dispatcher.get_api_tools.return_value = [
+        {"name": "read_file", "description": "Read file", "input_schema": {"type": "object", "properties": {}}},
+        {"name": "t1", "description": "Tool 1", "input_schema": {"type": "object", "properties": {}}},
+        {"name": "t2", "description": "Tool 2", "input_schema": {"type": "object", "properties": {}}},
+        {"name": "list_packages", "description": "List packages", "input_schema": {"type": "object", "properties": {}}},
+        {"name": "list_files", "description": "List files", "input_schema": {"type": "object", "properties": {}}},
+    ]
 
     loader = ContractLoader(contracts_dir=contracts_dir, schema_path=None)
 
@@ -281,6 +340,7 @@ class TestContractLoading:
 # Tool Loop Tests (5)
 class TestToolLoop:
     def test_tool_loop_single_tool_call(self, executor, classify_wo):
+        classify_wo["constraints"]["tools_allowed"] = ["read_file"]
         tool_use_response = _mock_response('[{"type": "tool_use", "tool_id": "read_file", "arguments": {"path": "test.py"}}]')
         text_response = _mock_response('{"speech_act": "command", "ambiguity": "low"}')
         executor.gateway.route.side_effect = [tool_use_response, text_response]
@@ -289,6 +349,7 @@ class TestToolLoop:
         assert result["cost"]["llm_calls"] == 2
 
     def test_tool_loop_multi_round(self, executor, classify_wo):
+        classify_wo["constraints"]["tools_allowed"] = ["t1", "t2"]
         tool_resp1 = _mock_response('[{"type": "tool_use", "tool_id": "t1", "arguments": {}}]')
         tool_resp2 = _mock_response('[{"type": "tool_use", "tool_id": "t2", "arguments": {}}]')
         text_resp = _mock_response('{"speech_act": "greeting", "ambiguity": "low"}')
@@ -298,6 +359,7 @@ class TestToolLoop:
         assert result["cost"]["llm_calls"] == 3
 
     def test_tool_loop_budget_exhausted_mid_loop(self, executor, classify_wo):
+        classify_wo["constraints"]["tools_allowed"] = ["t1"]
         tool_resp = _mock_response('[{"type": "tool_use", "tool_id": "t1", "arguments": {}}]')
         executor.gateway.route.return_value = tool_resp
         executor.budgeter.check.side_effect = [
@@ -315,7 +377,7 @@ class TestToolLoop:
             "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
             "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
             "input_context": {"user_input": "test"},
-            "constraints": {"prompt_contract_id": "PRC-CLASSIFY-001", "token_budget": 2000, "turn_limit": 2},
+            "constraints": {"prompt_contract_id": "PRC-CLASSIFY-001", "token_budget": 2000, "turn_limit": 2, "tools_allowed": ["t1"]},
             "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
         }
         result = executor.execute(wo)
@@ -333,9 +395,9 @@ class TestToolLoop:
 
 # Budget Enforcement Tests (3)
 class TestBudgetEnforcement:
-    def test_budget_debit_after_each_call(self, executor, classify_wo):
+    def test_no_double_debit_from_ho1(self, executor, classify_wo):
         executor.execute(classify_wo)
-        assert executor.budgeter.debit.call_count >= 1
+        assert executor.budgeter.debit.call_count == 0
 
     def test_budget_exhausted_fails_wo(self, executor, classify_wo):
         executor.budgeter.check.return_value = _mock_budget_check(False)
@@ -345,8 +407,8 @@ class TestBudgetEnforcement:
 
     def test_budget_scope_uses_wo_fields(self, executor, classify_wo):
         executor.execute(classify_wo)
-        debit_call = executor.budgeter.debit.call_args
-        scope = debit_call[0][0]
+        check_call = executor.budgeter.check.call_args
+        scope = check_call[0][0]
         assert scope.session_id == "SES-TEST0001"
 
 
@@ -384,7 +446,7 @@ class TestTraceWriting:
             "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
             "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
             "input_context": {"user_input": "test"},
-            "constraints": {"prompt_contract_id": "PRC-CLASSIFY-001", "token_budget": 2000, "turn_limit": 5},
+            "constraints": {"prompt_contract_id": "PRC-CLASSIFY-001", "token_budget": 2000, "turn_limit": 5, "tools_allowed": ["t1"]},
             "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
         }
         executor.execute(wo)
@@ -404,6 +466,30 @@ class TestTraceWriting:
         calls = [c for c in executor.ledger.write.call_args_list
                  if c[0][0].event_type == "WO_FAILED"]
         assert len(calls) == 1
+
+    def test_llm_call_entry_has_prompts_used(self, executor, classify_wo):
+        executor.execute(classify_wo)
+        llm_calls = [c[0][0] for c in executor.ledger.write.call_args_list if c[0][0].event_type == "LLM_CALL"]
+        assert len(llm_calls) >= 1
+        assert len(llm_calls[0].prompts_used) >= 1
+
+    def test_prompts_used_contains_prompt_pack_id(self, executor, classify_wo):
+        executor.execute(classify_wo)
+        llm_calls = [c[0][0] for c in executor.ledger.write.call_args_list if c[0][0].event_type == "LLM_CALL"]
+        assert "PRM-CLASSIFY-001" in llm_calls[0].prompts_used
+
+    def test_prompts_used_empty_for_tool_call_wo(self, executor):
+        wo = {
+            "wo_id": "WO-SES-TEST0001-009", "session_id": "SES-TEST0001",
+            "wo_type": "tool_call", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {},
+            "constraints": {"tools_allowed": ["list_packages"], "token_budget": 500},
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        executor.execute(wo)
+        trace_entries = [c[0][0] for c in executor.ledger.write.call_args_list]
+        assert all(entry.prompts_used == [] for entry in trace_entries)
 
 
 # Input/Output Validation Tests (4)
@@ -542,6 +628,34 @@ class TestBudgetReconciliation:
         result = executor.execute(classify_wo)
         assert result["state"] == "completed"
         assert result["output_result"] is not None
+
+    def test_followup_request_max_tokens_uses_remaining_budget(self, executor):
+        """Tool-loop follow-up request should use remaining budget, not original budget."""
+        executor.gateway.route.side_effect = [
+            _mock_tool_use_response(input_tokens=1000, output_tokens=1000),
+            _mock_response('{"response_text":"final"}', input_tokens=10, output_tokens=10),
+        ]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-REMAIN", "session_id": "SES-TEST0001",
+            "wo_type": "synthesize", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"prior_results": [{"data": "test"}]},
+            "constraints": {
+                "prompt_contract_id": "PRC-SYNTHESIZE-001",
+                "token_budget": 5000,
+                "turn_limit": 3,
+                "tools_allowed": ["list_packages"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        followup_request = executor.gateway.route.call_args_list[1][0][0]
+        assert followup_request.max_tokens == 3000
 
 
 # Template Rendering Tests (10) — FOLLOWUP-18C
@@ -787,3 +901,387 @@ class TestToolUseWiring:
         assert len(tool_calls) >= 1
         meta = tool_calls[0][0][0].metadata
         assert "result_summary" in meta
+
+
+class TestOutputJsonNormalization:
+    def test_output_json_intercepted_as_structured_output(self, executor):
+        executor.gateway.route.return_value = _mock_output_json_response()
+        wo = {
+            "wo_id": "WO-SES-TEST0001-OJ1", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "hello"},
+            "constraints": {"prompt_contract_id": "PRC-CLASSIFY-001", "token_budget": 2000, "turn_limit": 1},
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        assert result["output_result"]["speech_act"] == "greeting"
+
+    def test_output_json_payload_becomes_output_result(self, executor):
+        payload = {"speech_act": "question", "ambiguity": "high"}
+        executor.gateway.route.return_value = _mock_output_json_response(payload=payload)
+        wo = {
+            "wo_id": "WO-SES-TEST0001-OJ2", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "what is this"},
+            "constraints": {"prompt_contract_id": "PRC-CLASSIFY-001", "token_budget": 2000, "turn_limit": 1},
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["output_result"] == payload
+
+    def test_output_json_ignored_when_in_tools_allowed(self, executor):
+        executor.gateway.route.side_effect = [
+            _mock_output_json_response(payload={"x": 1}),
+            _mock_response('{"speech_act":"greeting","ambiguity":"low"}'),
+        ]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "output_json", "description": "Pseudo tool", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-OJ3", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "hello"},
+            "constraints": {
+                "prompt_contract_id": "PRC-CLASSIFY-001",
+                "token_budget": 2000,
+                "turn_limit": 2,
+                "tools_allowed": ["output_json"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        executor.execute(wo)
+        dispatched = [c[0][0] for c in executor.tool_dispatcher.execute.call_args_list]
+        assert "output_json" in dispatched
+
+    def test_output_json_with_real_tools_coexist(self, executor):
+        mixed = _mock_output_json_response(
+            payload={"speech_act": "command", "ambiguity": "low"},
+            extra_blocks=[{"type": "tool_use", "id": "toolu_real", "name": "list_packages", "input": {}}],
+        )
+        executor.gateway.route.side_effect = [
+            mixed,
+            _mock_response('{"speech_act":"command","ambiguity":"low"}'),
+        ]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-OJ4", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "show packages"},
+            "constraints": {
+                "prompt_contract_id": "PRC-CLASSIFY-001",
+                "token_budget": 2000,
+                "turn_limit": 2,
+                "tools_allowed": ["list_packages"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        dispatched = [c[0][0] for c in executor.tool_dispatcher.execute.call_args_list]
+        assert dispatched.count("list_packages") == 1
+        assert "output_json" not in dispatched
+
+    def test_tools_allowed_filter_restored(self, executor):
+        mixed = _mock_output_json_response(
+            payload={"speech_act": "command", "ambiguity": "low"},
+            extra_blocks=[
+                {"type": "tool_use", "id": "toolu_t1", "name": "t1", "input": {}},
+                {"type": "tool_use", "id": "toolu_t2", "name": "t2", "input": {}},
+            ],
+        )
+        executor.gateway.route.side_effect = [mixed, _mock_response('{"speech_act":"command","ambiguity":"low"}')]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "t1", "description": "T1", "input_schema": {"type": "object", "properties": {}}},
+            {"name": "t2", "description": "T2", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-OJ5", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "run"},
+            "constraints": {
+                "prompt_contract_id": "PRC-CLASSIFY-001",
+                "token_budget": 2000,
+                "turn_limit": 2,
+                "tools_allowed": ["t1"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        executor.execute(wo)
+        dispatched = [c[0][0] for c in executor.tool_dispatcher.execute.call_args_list]
+        assert dispatched == ["t1"]
+
+    def test_empty_tools_allowed_blocks_all_dispatch(self, executor):
+        executor.gateway.route.return_value = _mock_output_json_response(
+            extra_blocks=[{"type": "tool_use", "id": "toolu_t1", "name": "t1", "input": {}}]
+        )
+        wo = {
+            "wo_id": "WO-SES-TEST0001-OJ6", "session_id": "SES-TEST0001",
+            "wo_type": "classify", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"user_input": "hello"},
+            "constraints": {
+                "prompt_contract_id": "PRC-CLASSIFY-001",
+                "token_budget": 2000,
+                "turn_limit": 1,
+                "tools_allowed": [],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        assert executor.tool_dispatcher.execute.call_count == 0
+
+
+class TestAdminShellHotfix:
+    def test_strip_code_fences_json(self, executor):
+        content = "```json\n{\"response_text\":\"hi\"}\n```"
+        assert executor._strip_code_fences(content) == "{\"response_text\":\"hi\"}"
+
+    def test_strip_code_fences_language_tag(self, executor):
+        content = "```python\nprint('ok')\n```"
+        assert executor._strip_code_fences(content) == "print('ok')"
+
+    def test_strip_code_fences_passthrough(self, executor):
+        content = "plain text"
+        assert executor._strip_code_fences(content) == "plain text"
+
+    def test_fenced_json_normalized(self, executor):
+        executor.gateway.route.return_value = _mock_response(
+            "```json\n{\"response_text\":\"normalized\"}\n```"
+        )
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-FENCE", "session_id": "SES-TEST0001",
+            "wo_type": "synthesize", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"prior_results": [{"data": "test"}]},
+            "constraints": {
+                "prompt_contract_id": "PRC-SYNTHESIZE-001",
+                "token_budget": 5000,
+                "turn_limit": 1,
+                "tools_allowed": ["list_packages"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        assert result["output_result"]["response_text"] == "normalized"
+
+    def test_natural_language_output_wrapped(self, executor):
+        executor.gateway.route.side_effect = [
+            _mock_tool_use_response(),
+            _mock_response("Natural language final answer", input_tokens=20, output_tokens=20),
+        ]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-NAT", "session_id": "SES-TEST0001",
+            "wo_type": "synthesize", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"prior_results": [{"data": "test"}]},
+            "constraints": {
+                "prompt_contract_id": "PRC-SYNTHESIZE-001",
+                "token_budget": 5000,
+                "turn_limit": 3,
+                "tools_allowed": ["list_packages"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        assert result["output_result"] == {"response_text": "Natural language final answer"}
+
+    def test_budget_guard_tool_loop(self, executor):
+        executor.gateway.route.side_effect = [
+            _mock_tool_use_response(input_tokens=900, output_tokens=700),
+            _mock_response('{"response_text":"should_not_run"}'),
+        ]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-BUDGET", "session_id": "SES-TEST0001",
+            "wo_type": "synthesize", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"prior_results": [{"data": "test"}]},
+            "constraints": {
+                "prompt_contract_id": "PRC-SYNTHESIZE-001",
+                "token_budget": 2000,
+                "turn_limit": 3,
+                "tools_allowed": ["list_packages"],
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+        result = executor.execute(wo)
+        assert result["state"] == "failed"
+        assert "budget_exhausted" in result.get("error", "")
+        assert executor.gateway.route.call_count == 1
+
+
+class TestBudgetModesAndPristineLogging:
+    def test_budget_mode_warn_continues_on_exhaustion(self, executor, classify_wo):
+        executor.config["budget_mode"] = "warn"
+        executor.budgeter.check.return_value = _mock_budget_check(False, remaining=0)
+        executor.gateway.route.return_value = _mock_response('{"speech_act":"greeting","ambiguity":"low"}')
+
+        result = executor.execute(classify_wo)
+
+        assert result["state"] == "completed"
+        warnings = [
+            c[0][0] for c in executor.ledger.write.call_args_list
+            if c[0][0].event_type == "BUDGET_WARNING"
+        ]
+        assert len(warnings) >= 1
+
+    def test_budget_mode_off_skips_check(self, executor, classify_wo):
+        executor.config["budget_mode"] = "off"
+        executor.budgeter.check.side_effect = AssertionError("check should be skipped in off mode")
+        executor.gateway.route.return_value = _mock_response('{"speech_act":"greeting","ambiguity":"low"}')
+
+        result = executor.execute(classify_wo)
+
+        assert result["state"] == "completed"
+        assert executor.budgeter.check.call_count == 0
+
+    def test_budget_mode_enforce_fails(self, executor, classify_wo):
+        executor.config["budget_mode"] = "enforce"
+        executor.budgeter.check.return_value = _mock_budget_check(False, remaining=0)
+
+        result = executor.execute(classify_wo)
+
+        assert result["state"] == "failed"
+        assert "budget_exhausted" in result.get("error", "")
+
+    def test_followup_min_from_config(self, executor):
+        executor.config["budget_mode"] = "warn"
+        executor.config["followup_min_remaining"] = 3500
+        executor.gateway.route.side_effect = [
+            _mock_tool_use_response(input_tokens=1100, output_tokens=1100),
+            _mock_response('{"response_text":"continued"}', input_tokens=10, output_tokens=10),
+        ]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        wo = {
+            "wo_id": "WO-SES-TEST0001-MINCFG", "session_id": "SES-TEST0001",
+            "wo_type": "synthesize", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"prior_results": [{"data": "test"}]},
+            "constraints": {
+                "prompt_contract_id": "PRC-SYNTHESIZE-001",
+                "token_budget": 5000,
+                "turn_limit": 3,
+                "tools_allowed": ["list_packages"],
+                "budget_mode": "warn",
+                "followup_min_remaining": 3500,
+            },
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
+                     "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+
+        result = executor.execute(wo)
+
+        assert result["state"] == "completed"
+        warnings = [
+            c[0][0] for c in executor.ledger.write.call_args_list
+            if c[0][0].event_type == "BUDGET_WARNING"
+        ]
+        assert len(warnings) >= 1
+        assert any("followup_min" in w.metadata for w in warnings)
+
+    def test_tool_call_logs_full_arguments(self, executor, classify_wo):
+        big_text = "x" * 600
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_01", "name": "read_file", "input": {"path": "f.py", "blob": big_text}},
+        )
+        tool_resp = SimpleNamespace(
+            content="", outcome="SUCCESS",
+            input_tokens=100, output_tokens=50,
+            model_id="mock", provider_id="mock",
+            latency_ms=100, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act":"command","ambiguity":"low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "read_file", "description": "Read", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        executor.tool_dispatcher.execute.return_value = SimpleNamespace(
+            tool_id="read_file", status="ok", output={"ok": True, "blob": big_text}, error=None
+        )
+        classify_wo["constraints"]["tools_allowed"] = ["read_file"]
+
+        executor.execute(classify_wo)
+
+        tool_calls = [c[0][0] for c in executor.ledger.write.call_args_list if c[0][0].event_type == "TOOL_CALL"]
+        assert len(tool_calls) >= 1
+        meta = tool_calls[0].metadata
+        assert meta["arguments"]["blob"] == big_text
+        assert meta["args_bytes"] > 200
+        assert meta["result_bytes"] > 500
+
+    def test_tool_call_logs_error_detail(self, executor, classify_wo):
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_02", "name": "read_file", "input": {"path": "missing.py"}},
+        )
+        tool_resp = SimpleNamespace(
+            content="", outcome="SUCCESS",
+            input_tokens=10, output_tokens=10,
+            model_id="mock", provider_id="mock",
+            latency_ms=10, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act":"command","ambiguity":"low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "read_file", "description": "Read", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        executor.tool_dispatcher.execute.return_value = SimpleNamespace(
+            tool_id="read_file", status="error", output=None, error="file_not_found"
+        )
+        classify_wo["constraints"]["tools_allowed"] = ["read_file"]
+
+        executor.execute(classify_wo)
+
+        tool_calls = [c[0][0] for c in executor.ledger.write.call_args_list if c[0][0].event_type == "TOOL_CALL"]
+        assert len(tool_calls) >= 1
+        meta = tool_calls[0].metadata
+        assert meta["tool_error"] == "file_not_found"
+
+    def test_handle_tool_call_logs_full_metadata(self, executor):
+        executor.tool_dispatcher.execute.return_value = SimpleNamespace(
+            tool_id="list_files", status="ok", output={"files": ["a.py"]}, error=None
+        )
+        wo = {
+            "wo_id": "WO-SES-TEST0001-TOOLMETA", "session_id": "SES-TEST0001",
+            "wo_type": "tool_call", "tier_target": "HO1", "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z", "created_by": "ADMIN.ho2",
+            "input_context": {"path": "HOT/kernel"},
+            "constraints": {"tools_allowed": ["list_files"], "token_budget": 500},
+            "cost": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0},
+        }
+
+        result = executor.execute(wo)
+
+        assert result["state"] == "completed"
+        tool_calls = [c[0][0] for c in executor.ledger.write.call_args_list if c[0][0].event_type == "TOOL_CALL"]
+        assert len(tool_calls) == 1
+        meta = tool_calls[0].metadata
+        assert meta["arguments"] == {"path": "HOT/kernel"}
+        assert meta["result"] == {"files": ["a.py"]}

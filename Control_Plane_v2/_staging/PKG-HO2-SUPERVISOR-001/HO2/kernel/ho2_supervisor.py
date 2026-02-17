@@ -59,6 +59,10 @@ class HO2Config:
     classify_contract_id: str = "PRC-CLASSIFY-001"
     synthesize_contract_id: str = "PRC-SYNTHESIZE-001"
     verify_contract_id: str = "PRC-VERIFY-001"
+    classify_budget: int = 2000
+    synthesize_budget: int = 16000
+    followup_min_remaining: int = 500
+    budget_mode: str = "enforce"
     attention_budget_tokens: int = 10000
     attention_budget_queries: int = 20
     attention_timeout_ms: int = 5000
@@ -149,7 +153,9 @@ class HO2Supervisor:
                 input_context={"user_input": user_message},
                 constraints={
                     "prompt_contract_id": self._config.classify_contract_id,
-                    "token_budget": 2000,
+                    "token_budget": self._config.classify_budget,
+                    "followup_min_remaining": self._config.followup_min_remaining,
+                    "budget_mode": self._config.budget_mode,
                     "turn_limit": 1,
                 },
             )
@@ -178,7 +184,9 @@ class HO2Supervisor:
                 },
                 constraints={
                     "prompt_contract_id": self._config.synthesize_contract_id,
-                    "token_budget": 4000,
+                    "token_budget": self._config.synthesize_budget,
+                    "followup_min_remaining": self._config.followup_min_remaining,
+                    "budget_mode": self._config.budget_mode,
                     "turn_limit": 10 if self._config.tools_allowed else 1,
                     "tools_allowed": list(self._config.tools_allowed),
                 },
@@ -194,6 +202,11 @@ class HO2Supervisor:
 
             # ------ Step 4: Quality gate ------
             output_result = synth_result.get("output_result", {}) or {}
+            if synth_result.get("state") == "failed" and synth_result.get("error"):
+                wo_error = synth_result["error"]
+                error_result = {"response_text": f"[Error: {wo_error}]", "error": wo_error}
+                output_result = error_result
+                synth_result["output_result"] = error_result
             gate_result = self._quality_gate.verify(
                 output_result=output_result,
                 acceptance_criteria=synthesize_wo.get("acceptance_criteria", {}),
@@ -216,7 +229,9 @@ class HO2Supervisor:
                     },
                     constraints={
                         "prompt_contract_id": self._config.synthesize_contract_id,
-                        "token_budget": 4000,
+                        "token_budget": self._config.synthesize_budget,
+                        "followup_min_remaining": self._config.followup_min_remaining,
+                        "budget_mode": self._config.budget_mode,
                         "turn_limit": 10 if self._config.tools_allowed else 1,
                         "tools_allowed": list(self._config.tools_allowed),
                     },
@@ -231,6 +246,11 @@ class HO2Supervisor:
                 self._accumulate_cost(chain_cost, retry_result.get("cost", {}))
 
                 output_result = retry_result.get("output_result", {}) or {}
+                if retry_result.get("state") == "failed" and retry_result.get("error"):
+                    wo_error = retry_result["error"]
+                    error_result = {"response_text": f"[Error: {wo_error}]", "error": wo_error}
+                    output_result = error_result
+                    retry_result["output_result"] = error_result
                 gate_result = self._quality_gate.verify(
                     output_result=output_result,
                     acceptance_criteria=retry_wo.get("acceptance_criteria", {}),
@@ -275,8 +295,10 @@ class HO2Supervisor:
         except Exception as exc:
             # Degradation path: log governance violation
             self._log_degradation(session_id, str(exc))
+            degradation_response = f"[Degradation: {exc}]"
+            self._session_mgr.add_turn(user_message, degradation_response)
             return TurnResult(
-                response=f"[Degradation: {exc}]",
+                response=degradation_response,
                 wo_chain_summary=[{
                     "wo_id": w.get("wo_id", ""),
                     "wo_type": w.get("wo_type", ""),

@@ -80,6 +80,8 @@ class PromptResponse:
     error_message: Optional[str] = None
     cost_incurred: float = 0.0
     budget_remaining: Optional[int] = None
+    finish_reason: str = "stop"
+    content_blocks: Optional[tuple] = None
 
 
 @dataclass
@@ -160,12 +162,16 @@ class LLMGateway:
         config: Optional[RouterConfig] = None,
         auth_provider: Any = None,
         dev_mode: bool = False,
+        budget_mode: str = "enforce",
     ):
         self._ledger = ledger_client
         self._budgeter = budgeter
         self._config = config or RouterConfig()
         self._auth_provider = auth_provider
         self._dev_mode = dev_mode
+        self._budget_mode = str(budget_mode).lower()
+        if self._budget_mode not in {"enforce", "warn", "off"}:
+            self._budget_mode = "enforce"
         self._providers: dict[str, Any] = {}
         self._circuit_breaker = CircuitBreaker(
             self._config.circuit_breaker or CircuitBreakerConfig()
@@ -234,7 +240,7 @@ class LLMGateway:
                 )
 
         # Step 3: Check budget
-        if self._budgeter:
+        if self._budgeter and self._budget_mode != "off":
             budget_error = self._check_budget(request, model_id)
             if budget_error:
                 return self._reject(
@@ -398,6 +404,8 @@ class LLMGateway:
             context_hash=context_hash,
             cost_incurred=cost_incurred,
             budget_remaining=budget_remaining,
+            finish_reason=getattr(provider_response, "finish_reason", "stop"),
+            content_blocks=getattr(provider_response, "content_blocks", None),
         )
 
     # ── Internal pipeline steps ──
@@ -422,6 +430,9 @@ class LLMGateway:
         """Step 3: Check budget. Returns error string or None."""
         from token_budgeter import BudgetScope
 
+        if self._budget_mode == "off":
+            return None
+
         scope = BudgetScope(
             session_id=request.session_id,
             work_order_id=request.work_order_id,
@@ -431,8 +442,40 @@ class LLMGateway:
         )
         result = self._budgeter.check(scope)
         if not result.allowed:
-            return f"Budget check failed: {result.reason}"
+            reason = f"Budget check failed: {result.reason}"
+            if self._budget_mode == "enforce":
+                return reason
+            if self._budget_mode == "warn":
+                self._write_budget_warning(request, reason, getattr(result, "remaining", None), model_id)
+                return None
         return None
+
+    def _write_budget_warning(
+        self,
+        request: PromptRequest,
+        reason: str,
+        remaining: Optional[int],
+        model_id: str,
+    ) -> str:
+        from ledger_client import LedgerEntry
+
+        entry = LedgerEntry(
+            event_type="BUDGET_WARNING",
+            submission_id=request.contract_id,
+            decision="WARNING",
+            reason=reason,
+            metadata={
+                "agent_id": request.agent_id,
+                "session_id": request.session_id,
+                "work_order_id": request.work_order_id,
+                "contract_id": request.contract_id,
+                "model_id": model_id,
+                "requested_tokens": request.max_tokens,
+                "remaining": remaining,
+                "budget_mode": self._budget_mode,
+            },
+        )
+        return self._ledger.write(entry)
 
     def _write_dispatch_marker(
         self,
