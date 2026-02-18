@@ -1,7 +1,7 @@
 {
   "package_id": "PKG-HO2-SUPERVISOR-001",
   "package_type": "kernel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": "1.2",
   "supersedes": "PKG-ATTENTION-001",
   "title": "HO2 Supervisor \u2014 Modified Kitchener Loop",
@@ -17,7 +17,7 @@
   "assets": [
     {
       "path": "HO2/kernel/ho2_supervisor.py",
-      "sha256": "sha256:f714038b22933935eedbe7ec25296524f8de592437c4d5ee32de3802701426a8",
+      "sha256": "sha256:1e133421fc18932508d2b0cab09489fb034c1418f3983caf1c84c62745f02a36",
       "classification": "library"
     },
     {
@@ -42,7 +42,7 @@
     },
     {
       "path": "HO2/tests/test_ho2_supervisor.py",
-      "sha256": "sha256:d2269e171c3a8a556555687cc242762e446a72df03d12c3c7c3c7642107bb53c",
+      "sha256": "sha256:34186c603ba76e67cbd0e562ebb0687a50a621723a22bd681d68ac515ce3c6fc",
       "classification": "test"
     }
   ]

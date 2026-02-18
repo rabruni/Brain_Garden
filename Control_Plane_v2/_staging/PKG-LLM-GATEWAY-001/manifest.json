@@ -1,9 +1,9 @@
 {
   "package_id": "PKG-LLM-GATEWAY-001",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": "1.2",
   "title": "LLM Gateway",
-  "description": "LLM Gateway (renamed from PromptRouter). Deterministic send-log-count pipe for all LLM calls. Zero functionality change from PKG-PROMPT-ROUTER-001.",
+  "description": "LLM Gateway (renamed from PromptRouter). Deterministic send-log-count pipe for all LLM calls. Domain-tag provider routing added in 29C.",
   "spec_id": "SPEC-GATE-001",
   "framework_id": "FMWK-000",
   "plane_id": "hot",
@@ -16,12 +16,12 @@
   "assets": [
     {
       "path": "HOT/tests/test_llm_gateway.py",
-      "sha256": "sha256:d5a49fc84510279e239cd4f7589c216b8e177566760d2b04d196a781cf19bff1",
+      "sha256": "sha256:c6917ec8daa7a0d2fefe803b2b6dbb562f9d3259469e81cc7d47ca004d998dbc",
       "classification": "test"
     },
     {
       "path": "HOT/kernel/llm_gateway.py",
-      "sha256": "sha256:8dfd88f6d48c2729d552872275f4e151495bd9ef410ad23646481f4198104256",
+      "sha256": "sha256:dd5fcdf3082958614971fb27239d6e6ac463c89351bc73d7333511bdc6126c2d",
       "classification": "library"
     },
     {

@@ -37,6 +37,12 @@ from session_manager import SessionManager, TurnMessage
 from attention import AttentionRetriever, ContextProvider, AttentionContext
 from quality_gate import QualityGate, QualityGateResult
 
+# Optional HO3 memory integration (PKG-HO3-MEMORY-001)
+try:
+    from ho3_memory import HO3Memory
+except ImportError:
+    HO3Memory = None
+
 
 # ---------------------------------------------------------------------------
 # Protocols and Data Classes
@@ -67,6 +73,15 @@ class HO2Config:
     attention_budget_queries: int = 20
     attention_timeout_ms: int = 5000
     tools_allowed: List[str] = field(default_factory=list)
+    # HO3 memory integration (all optional, all defaulted to off)
+    ho3_enabled: bool = False
+    ho3_memory_dir: Optional[Path] = None
+    ho3_gate_count_threshold: int = 5
+    ho3_gate_session_threshold: int = 3
+    ho3_gate_window_hours: int = 168
+    # Consolidation config (29C)
+    consolidation_budget: int = 4000
+    consolidation_contract_id: str = "PRC-CONSOLIDATE-001"
 
 
 @dataclass
@@ -77,6 +92,7 @@ class TurnResult:
     cost_summary: Dict[str, Any]
     session_id: str
     quality_gate_passed: bool
+    consolidation_candidates: List[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +114,7 @@ class HO2Supervisor:
         ledger_client: LedgerClient,
         token_budgeter: Any,
         config: HO2Config,
+        ho3_memory=None,
     ):
         self._plane_root = plane_root
         self._agent_class = agent_class
@@ -105,6 +122,7 @@ class HO2Supervisor:
         self._ledger = ledger_client
         self._budgeter = token_budgeter
         self._config = config
+        self._ho3_memory = ho3_memory
 
         agent_id = f"{agent_class}.ho2"
         self._session_mgr = SessionManager(ledger_client, agent_class, agent_id)
@@ -170,10 +188,17 @@ class HO2Supervisor:
             horizontal = self._attention.horizontal_scan(session_id)
             priority = self._attention.priority_probe()
 
+            # ------ Step 2b+: HO3 bias injection (29B) ------
+            ho3_biases = []
+            if self._ho3_memory and self._config.ho3_enabled:
+                ho3_biases = self._ho3_memory.read_active_biases()
+
             # ------ Step 2c: Assemble context for synthesize WO ------
             assembled_context = self._attention.assemble_wo_context(
                 horizontal, priority, user_message, classification,
             )
+            if ho3_biases:
+                assembled_context["ho3_biases"] = ho3_biases
 
             # ------ Step 3: Dispatch synthesize WO to HO1 ------
             synthesize_wo = self._create_wo(
@@ -279,6 +304,35 @@ class HO2Supervisor:
             )
             self._session_mgr.add_turn(user_message, response_text)
 
+            # ------ Post-turn: HO3 signal accumulation (29B) ------
+            consolidation_candidates: List[str] = []
+            if self._ho3_memory and self._config.ho3_enabled:
+                # Extract deterministic signals from the turn
+                signals_this_turn: List[str] = []
+
+                # Intent signal from classify WO result
+                classification_type = classification.get("speech_act")
+                if classification_type:
+                    sig_id = f"intent:{classification_type}"
+                    evt_id = f"EVT-{hashlib.sha256(f'{session_id}:{sig_id}:{time.time()}'.encode()).hexdigest()[:8]}"
+                    self._ho3_memory.log_signal(sig_id, session_id, evt_id)
+                    signals_this_turn.append(sig_id)
+
+                # Tool signals from WO chain cost.tool_ids_used (29C)
+                for wo_result in wo_chain:
+                    for tid in wo_result.get("cost", {}).get("tool_ids_used", []):
+                        sig_id = f"tool:{tid}"
+                        evt_id = f"EVT-{hashlib.sha256(f'{session_id}:{sig_id}:{time.time()}'.encode()).hexdigest()[:8]}"
+                        self._ho3_memory.log_signal(sig_id, session_id, evt_id)
+                        if sig_id not in signals_this_turn:
+                            signals_this_turn.append(sig_id)
+
+                # Gate check for each signal logged this turn
+                for sig_id in signals_this_turn:
+                    gate = self._ho3_memory.check_gate(sig_id)
+                    if gate.crossed:
+                        consolidation_candidates.append(sig_id)
+
             return TurnResult(
                 response=response_text,
                 wo_chain_summary=[{
@@ -290,6 +344,7 @@ class HO2Supervisor:
                 cost_summary=dict(chain_cost),
                 session_id=session_id,
                 quality_gate_passed=quality_passed,
+                consolidation_candidates=consolidation_candidates,
             )
 
         except Exception as exc:
@@ -308,6 +363,7 @@ class HO2Supervisor:
                 cost_summary=dict(chain_cost),
                 session_id=session_id,
                 quality_gate_passed=False,
+                consolidation_candidates=[],
             )
 
     # -----------------------------------------------------------------------
@@ -473,3 +529,75 @@ class HO2Supervisor:
                 "wo_id": gate_result.wo_id,
             },
         ))
+
+    # -----------------------------------------------------------------------
+    # Consolidation (29C)
+    # -----------------------------------------------------------------------
+
+    def run_consolidation(self, signal_ids: List[str]) -> List[Dict[str, Any]]:
+        """Dispatch bounded consolidation WOs for gate-crossing signals.
+
+        Called AFTER the user response is delivered. Out-of-band.
+        Single-shot per signal_id. Idempotent within the gate window.
+
+        Returns list of completed consolidation WO dicts.
+        """
+        if not signal_ids or not self._ho3_memory or not self._config.ho3_enabled:
+            return []
+
+        completed = []
+        session_id = self._session_mgr.session_id
+
+        for sig_id in signal_ids:
+            # Re-check gate (idempotency)
+            gate = self._ho3_memory.check_gate(sig_id)
+            if not gate.crossed:
+                continue
+
+            # Read signal accumulator
+            accumulators = self._ho3_memory.read_signals(signal_id=sig_id)
+            if not accumulators:
+                continue
+            acc = accumulators[0]
+
+            # Create consolidation WO
+            consolidation_wo = self._create_wo(
+                wo_type="consolidate",
+                input_context={
+                    "signal_id": sig_id,
+                    "count": acc.count,
+                    "session_count": len(acc.session_ids),
+                    "recent_events": json.dumps(acc.event_ids[-10:]),
+                },
+                constraints={
+                    "prompt_contract_id": self._config.consolidation_contract_id,
+                    "token_budget": self._config.consolidation_budget,
+                    "followup_min_remaining": self._config.followup_min_remaining,
+                    "budget_mode": self._config.budget_mode,
+                    "turn_limit": 1,
+                    "domain_tags": ["consolidation"],
+                },
+            )
+            self._log_wo_event("WO_PLANNED", consolidation_wo)
+            result = self._dispatch_wo(consolidation_wo)
+
+            # On success: write overlay with source_event_ids
+            if result.get("state") == "completed":
+                output = result.get("output_result", {}) or {}
+                now_iso = datetime.now(timezone.utc).isoformat()
+                overlay = {
+                    "signal_id": sig_id,
+                    "salience_weight": output.get("salience_weight", 0.5),
+                    "decay_modifier": output.get("decay_modifier", 0.95),
+                    "source_event_ids": acc.event_ids,
+                    "content": {
+                        "bias": output.get("bias", ""),
+                        "category": output.get("category", ""),
+                    },
+                    "window_start": acc.last_seen if acc.event_ids else now_iso,
+                    "window_end": now_iso,
+                }
+                self._ho3_memory.log_overlay(overlay)
+                completed.append(result)
+
+        return completed

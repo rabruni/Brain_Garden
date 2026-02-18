@@ -924,3 +924,370 @@ class TestPristineMemoryBudgetModes:
         for wo in mock_ho1.executed_wos[:2]:
             assert wo["constraints"]["budget_mode"] == "warn"
             assert wo["constraints"]["followup_min_remaining"] == 777
+
+
+# ===========================================================================
+# HO3 Signal Wiring Tests (10) -- HANDOFF-29B
+# ===========================================================================
+
+class MockHO3Memory:
+    """Mock HO3Memory for testing signal wiring.
+
+    Tracks all log_signal and check_gate calls without touching disk.
+    """
+
+    def __init__(self, enabled=True, biases=None, gate_crossed=False):
+        self.config = MagicMock()
+        self.config.enabled = enabled
+        self.logged_signals: List[Dict[str, Any]] = []
+        self.gate_checks: List[str] = []
+        self._biases = biases or []
+        self._gate_crossed = gate_crossed
+
+    def log_signal(self, signal_id: str, session_id: str, event_id: str, metadata=None) -> str:
+        self.logged_signals.append({
+            "signal_id": signal_id,
+            "session_id": session_id,
+            "event_id": event_id,
+            "metadata": metadata,
+        })
+        return event_id
+
+    def read_active_biases(self) -> list:
+        return list(self._biases)
+
+    def check_gate(self, signal_id: str):
+        self.gate_checks.append(signal_id)
+        result = MagicMock()
+        result.crossed = self._gate_crossed
+        result.signal_id = signal_id
+        return result
+
+
+class TestHO3SignalWiring:
+    """10 tests for HANDOFF-29B: HO3 signal wiring into HO2 supervisor."""
+
+    def _make_supervisor(self, tmp_path, ho3_memory=None, ho3_enabled=False,
+                         classify_response=None, tools_allowed=None):
+        ho2m = tmp_path / "ho2m"
+        ho2m.mkdir(exist_ok=True)
+        ho1m = tmp_path / "ho1m"
+        ho1m.mkdir(exist_ok=True)
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=ho2m,
+            ho1m_path=ho1m,
+            ho3_enabled=ho3_enabled,
+            tools_allowed=tools_allowed or [],
+        )
+        responses = {
+            "classify": classify_response or {"speech_act": "greeting", "ambiguity": "low"},
+            "synthesize": {"response_text": "Hello! How can I help you?"},
+        }
+        ho1 = MockHO1Executor(responses=responses)
+        ledger = MockLedgerClient()
+        budgeter = MockTokenBudgeter()
+        sv = HO2Supervisor(
+            plane_root=tmp_path,
+            agent_class="ADMIN",
+            ho1_executor=ho1,
+            ledger_client=ledger,
+            token_budgeter=budgeter,
+            config=config,
+            ho3_memory=ho3_memory,
+        )
+        return sv, ho1, ledger
+
+    def test_ho3_disabled_skips_all(self, tmp_path):
+        """ho3_memory=None -> no signal logging, no gate check, no biases."""
+        sv, ho1, ledger = self._make_supervisor(tmp_path, ho3_memory=None, ho3_enabled=False)
+        result = sv.handle_turn("hello")
+        assert isinstance(result, TurnResult)
+        assert result.response  # Normal response still works
+        assert result.consolidation_candidates == []
+
+    def test_ho3_enabled_flag_false_skips(self, tmp_path):
+        """ho3_memory provided but config.ho3_enabled=False -> skipped."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(tmp_path, ho3_memory=ho3, ho3_enabled=False)
+        result = sv.handle_turn("hello")
+        assert len(ho3.logged_signals) == 0
+        assert len(ho3.gate_checks) == 0
+        assert result.consolidation_candidates == []
+
+    def test_signal_from_classification(self, tmp_path):
+        """Classify returns speech_act='tool_query' -> log_signal('intent:tool_query') called."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "tool_query", "ambiguity": "low"},
+        )
+        result = sv.handle_turn("check gates")
+        # Should have logged intent:tool_query
+        intent_signals = [s for s in ho3.logged_signals if s["signal_id"] == "intent:tool_query"]
+        assert len(intent_signals) == 1
+        assert intent_signals[0]["session_id"] == result.session_id
+
+    def test_intent_signal_missing_classification(self, tmp_path):
+        """Classify returns empty/no speech_act field -> no signal logged, no error."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"ambiguity": "high"},  # No speech_act
+        )
+        result = sv.handle_turn("hello")
+        # No intent signal should be logged
+        intent_signals = [s for s in ho3.logged_signals if s["signal_id"].startswith("intent:")]
+        assert len(intent_signals) == 0
+        # But the turn should still complete normally
+        assert result.response
+
+    def test_signal_logging_does_not_affect_response(self, tmp_path):
+        """Response text identical with and without ho3_enabled (same LLM mock)."""
+        # Without HO3
+        sv_off, ho1_off, _ = self._make_supervisor(tmp_path, ho3_memory=None, ho3_enabled=False)
+        result_off = sv_off.handle_turn("hello")
+
+        # With HO3
+        ho3 = MockHO3Memory(enabled=True)
+        sv_on, ho1_on, _ = self._make_supervisor(tmp_path, ho3_memory=ho3, ho3_enabled=True)
+        result_on = sv_on.handle_turn("hello")
+
+        assert result_off.response == result_on.response
+
+    def test_ho3_read_injects_biases(self, tmp_path):
+        """Active biases exist -> added to synthesize WO input_context."""
+        biases = [{"bias": "User prefers tool queries", "category": "tool_preference", "salience_weight": 0.8}]
+        ho3 = MockHO3Memory(enabled=True, biases=biases)
+        sv, ho1, ledger = self._make_supervisor(tmp_path, ho3_memory=ho3, ho3_enabled=True)
+        sv.handle_turn("hello")
+        # The synthesize WO should have ho3_biases in its input_context
+        synth_wos = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert len(synth_wos) >= 1
+        assert "ho3_biases" in synth_wos[0]["input_context"]
+        assert synth_wos[0]["input_context"]["ho3_biases"] == biases
+
+    def test_gate_check_runs_post_turn(self, tmp_path):
+        """Signals logged -> check_gate called for each."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "greeting", "ambiguity": "low"},
+        )
+        sv.handle_turn("hello")
+        # At least one gate check should have been called for the intent signal
+        assert len(ho3.gate_checks) >= 1
+        assert "intent:greeting" in ho3.gate_checks
+
+    def test_gate_false_empty_candidates(self, tmp_path):
+        """Gate not crossed -> consolidation_candidates is empty list."""
+        ho3 = MockHO3Memory(enabled=True, gate_crossed=False)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "greeting", "ambiguity": "low"},
+        )
+        result = sv.handle_turn("hello")
+        assert result.consolidation_candidates == []
+
+    def test_gate_true_populates_candidates(self, tmp_path):
+        """Gate crossed for signal_id X -> X in consolidation_candidates."""
+        ho3 = MockHO3Memory(enabled=True, gate_crossed=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "admin_command", "ambiguity": "low"},
+        )
+        result = sv.handle_turn("check gates")
+        assert "intent:admin_command" in result.consolidation_candidates
+
+    def test_turn_result_has_field(self, tmp_path):
+        """TurnResult has consolidation_candidates field."""
+        sv, ho1, ledger = self._make_supervisor(tmp_path, ho3_memory=None, ho3_enabled=False)
+        result = sv.handle_turn("hello")
+        assert hasattr(result, "consolidation_candidates")
+        assert isinstance(result.consolidation_candidates, list)
+
+
+# ===========================================================================
+# HO3 Consolidation Tests (4) -- HANDOFF-29C
+# ===========================================================================
+
+class MockHO3MemoryForConsolidation:
+    """Extended mock for consolidation testing with gate re-check."""
+
+    def __init__(self, enabled=True, gate_crossed=True, event_ids=None):
+        self.config = MagicMock()
+        self.config.enabled = enabled
+        self.logged_signals: List[Dict[str, Any]] = []
+        self.gate_checks: List[str] = []
+        self.logged_overlays: List[Dict[str, Any]] = []
+        self._gate_crossed = gate_crossed
+        self._gate_check_count = 0
+        self._event_ids = event_ids or ["EVT-001", "EVT-002", "EVT-003"]
+
+    def log_signal(self, signal_id, session_id, event_id, metadata=None):
+        self.logged_signals.append({"signal_id": signal_id, "session_id": session_id, "event_id": event_id})
+        return event_id
+
+    def read_active_biases(self):
+        return []
+
+    def check_gate(self, signal_id):
+        self.gate_checks.append(signal_id)
+        self._gate_check_count += 1
+        result = MagicMock()
+        result.crossed = self._gate_crossed
+        result.signal_id = signal_id
+        return result
+
+    def read_signals(self, signal_id=None, min_count=0):
+        acc = MagicMock()
+        acc.signal_id = signal_id or "intent:test"
+        acc.count = 5
+        acc.session_ids = ["SES-1", "SES-2", "SES-3"]
+        acc.event_ids = list(self._event_ids)
+        acc.last_seen = "2026-02-17T10:00:00+00:00"
+        acc.decay = 1.0
+        return [acc]
+
+    def log_overlay(self, overlay):
+        source_ids = overlay.get("source_event_ids", [])
+        if not source_ids:
+            raise ValueError("source_event_ids must be non-empty")
+        self.logged_overlays.append(overlay)
+        return f"OVL-test{len(self.logged_overlays)}"
+
+
+class TestConsolidationDispatch:
+    """4 tests for HANDOFF-29C: consolidation dispatch + tool signal extraction."""
+
+    def _make_supervisor_with_consolidation(self, tmp_path, ho3_memory, classify_response=None):
+        ho2m = tmp_path / "ho2m_consol"
+        ho2m.mkdir(exist_ok=True)
+        ho1m = tmp_path / "ho1m_consol"
+        ho1m.mkdir(exist_ok=True)
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=ho2m,
+            ho1m_path=ho1m,
+            ho3_enabled=True,
+            consolidation_budget=4000,
+            consolidation_contract_id="PRC-CONSOLIDATE-001",
+        )
+        consolidation_response = {
+            "bias": "User frequently uses tool queries",
+            "category": "tool_preference",
+            "salience_weight": 0.8,
+            "decay_modifier": 0.95,
+        }
+        responses = {
+            "classify": classify_response or {"speech_act": "greeting", "ambiguity": "low"},
+            "synthesize": {"response_text": "Hello!"},
+            "consolidate": consolidation_response,
+        }
+        ho1 = MockHO1Executor(responses=responses)
+        ledger = MockLedgerClient()
+        budgeter = MockTokenBudgeter()
+        sv = HO2Supervisor(
+            plane_root=tmp_path,
+            agent_class="ADMIN",
+            ho1_executor=ho1,
+            ledger_client=ledger,
+            token_budgeter=budgeter,
+            config=config,
+            ho3_memory=ho3_memory,
+        )
+        return sv, ho1, ledger
+
+    def test_consolidation_dispatches_wo(self, tmp_path):
+        """run_consolidation(['sig1']) -> dispatches WO with wo_type='consolidate'."""
+        ho3 = MockHO3MemoryForConsolidation(enabled=True, gate_crossed=True)
+        sv, ho1, ledger = self._make_supervisor_with_consolidation(tmp_path, ho3)
+        sv.start_session()
+        results = sv.run_consolidation(["intent:test"])
+        # Should have dispatched a consolidation WO
+        consolidate_wos = [w for w in ho1.executed_wos if w["wo_type"] == "consolidate"]
+        assert len(consolidate_wos) == 1
+        assert consolidate_wos[0]["constraints"]["prompt_contract_id"] == "PRC-CONSOLIDATE-001"
+        assert consolidate_wos[0]["constraints"]["domain_tags"] == ["consolidation"]
+
+    def test_consolidation_idempotent(self, tmp_path):
+        """run_consolidation twice for same signal+window -> second is no-op."""
+        ho3 = MockHO3MemoryForConsolidation(enabled=True, gate_crossed=True)
+        sv, ho1, ledger = self._make_supervisor_with_consolidation(tmp_path, ho3)
+        sv.start_session()
+        # First call: gate crossed, consolidation runs
+        results1 = sv.run_consolidation(["intent:test"])
+        assert len(results1) == 1
+
+        # After first consolidation, gate should return False
+        ho3._gate_crossed = False
+        results2 = sv.run_consolidation(["intent:test"])
+        assert len(results2) == 0
+
+    def test_consolidation_overlay_has_source_ids(self, tmp_path):
+        """Consolidation writes overlay -> source_event_ids populated."""
+        ho3 = MockHO3MemoryForConsolidation(
+            enabled=True, gate_crossed=True,
+            event_ids=["EVT-a01", "EVT-a02", "EVT-a03"],
+        )
+        sv, ho1, ledger = self._make_supervisor_with_consolidation(tmp_path, ho3)
+        sv.start_session()
+        sv.run_consolidation(["intent:test"])
+        # Overlay should have been written
+        assert len(ho3.logged_overlays) == 1
+        overlay = ho3.logged_overlays[0]
+        assert len(overlay["source_event_ids"]) > 0
+        assert "EVT-a01" in overlay["source_event_ids"]
+
+    def test_tool_signal_from_wo_chain(self, tmp_path):
+        """WO chain has cost.tool_ids_used=['gate_check'] -> log_signal('tool:gate_check') called."""
+        ho3 = MockHO3MemoryForConsolidation(enabled=True, gate_crossed=False)
+        ho2m = tmp_path / "ho2m_tool"
+        ho2m.mkdir(exist_ok=True)
+        ho1m = tmp_path / "ho1m_tool"
+        ho1m.mkdir(exist_ok=True)
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=ho2m,
+            ho1m_path=ho1m,
+            ho3_enabled=True,
+            tools_allowed=["gate_check"],
+        )
+        # Mock HO1 that includes tool_ids_used in cost
+        class ToolTrackingHO1:
+            def __init__(self):
+                self.executed_wos = []
+
+            def execute(self, work_order):
+                wo = dict(work_order)
+                self.executed_wos.append(wo)
+                wo_type = wo.get("wo_type", "classify")
+                if wo_type == "classify":
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"speech_act": "greeting", "ambiguity": "low"}
+                    wo["cost"] = {"input_tokens": 100, "output_tokens": 50, "total_tokens": 150,
+                                  "llm_calls": 1, "tool_calls": 0, "elapsed_ms": 100}
+                else:
+                    wo["state"] = "completed"
+                    wo["output_result"] = {"response_text": "Hello!"}
+                    wo["cost"] = {"input_tokens": 100, "output_tokens": 50, "total_tokens": 150,
+                                  "llm_calls": 1, "tool_calls": 1, "elapsed_ms": 100,
+                                  "tool_ids_used": ["gate_check"]}
+                return wo
+
+        ho1 = ToolTrackingHO1()
+        ledger = MockLedgerClient()
+        budgeter = MockTokenBudgeter()
+        sv = HO2Supervisor(
+            plane_root=tmp_path,
+            agent_class="ADMIN",
+            ho1_executor=ho1,
+            ledger_client=ledger,
+            token_budgeter=budgeter,
+            config=config,
+            ho3_memory=ho3,
+        )
+        sv.handle_turn("hello")
+        # Should have logged tool:gate_check signal
+        tool_signals = [s for s in ho3.logged_signals if s["signal_id"] == "tool:gate_check"]
+        assert len(tool_signals) == 1

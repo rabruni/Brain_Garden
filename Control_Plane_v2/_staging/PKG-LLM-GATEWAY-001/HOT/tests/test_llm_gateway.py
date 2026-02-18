@@ -346,6 +346,113 @@ class TestToolUsePassthrough:
         assert resp.content_blocks[0]["name"] == "list_packages"
 
 
+# ===========================================================================
+# Domain Tag Routing Tests (3) -- HANDOFF-29C
+# ===========================================================================
+
+class TestDomainTagRouting:
+    def test_domain_tag_routes_local(self, tmp_path):
+        """PromptRequest with domain_tags=["consolidation"], map routes to "local" -> provider_id="local"."""
+        from llm_gateway import LLMGateway, PromptRequest, RouteOutcome, RouterConfig
+        from ledger_client import LedgerClient
+        from provider import MockProvider
+
+        ledger_path = tmp_path / "ledger" / "test.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        config = RouterConfig(
+            default_provider="anthropic",
+            domain_tag_routes={"consolidation": {"provider_id": "local", "model_id": "llama-3-8b"}},
+        )
+        gw = LLMGateway(ledger_client=lc, config=config, dev_mode=True)
+        gw.register_provider("local", MockProvider())
+        gw.register_provider("anthropic", MockProvider())
+
+        req = PromptRequest(
+            prompt="Analyze signals",
+            prompt_pack_id="PRM-CONSOLIDATE-001",
+            contract_id="PRC-CONSOLIDATE-001",
+            agent_id="test-agent",
+            agent_class="ADMIN",
+            framework_id="FMWK-000",
+            package_id="PKG-TEST-001",
+            work_order_id="WO-TEST-001",
+            session_id="SES-TEST0001",
+            tier="hot",
+            domain_tags=["consolidation"],
+        )
+        resp = gw.route(req)
+        assert resp.outcome == RouteOutcome.SUCCESS
+        assert resp.provider_id == "local"
+
+    def test_no_tag_routes_default(self, tmp_path):
+        """PromptRequest with no domain_tags -> default provider used."""
+        from llm_gateway import LLMGateway, PromptRequest, RouteOutcome, RouterConfig
+        from ledger_client import LedgerClient
+        from provider import MockProvider
+
+        ledger_path = tmp_path / "ledger" / "test.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        config = RouterConfig(
+            default_provider="anthropic",
+            domain_tag_routes={"consolidation": {"provider_id": "local"}},
+        )
+        gw = LLMGateway(ledger_client=lc, config=config, dev_mode=True)
+        gw.register_provider("anthropic", MockProvider())
+
+        req = PromptRequest(
+            prompt="Hello",
+            prompt_pack_id="PRM-TEST-001",
+            contract_id="CT-TEST-001",
+            agent_id="test-agent",
+            agent_class="ADMIN",
+            framework_id="FMWK-000",
+            package_id="PKG-TEST-001",
+            work_order_id="WO-TEST-001",
+            session_id="SES-TEST0001",
+            tier="hot",
+        )
+        resp = gw.route(req)
+        assert resp.outcome == RouteOutcome.SUCCESS
+        assert resp.provider_id == "anthropic"
+
+    def test_explicit_provider_overrides_tags(self, tmp_path):
+        """request.provider_id='anthropic' + domain_tags=['consolidation'] -> 'anthropic' wins."""
+        from llm_gateway import LLMGateway, PromptRequest, RouteOutcome, RouterConfig
+        from ledger_client import LedgerClient
+        from provider import MockProvider
+
+        ledger_path = tmp_path / "ledger" / "test.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        config = RouterConfig(
+            default_provider="mock",
+            domain_tag_routes={"consolidation": {"provider_id": "local"}},
+        )
+        gw = LLMGateway(ledger_client=lc, config=config, dev_mode=True)
+        gw.register_provider("local", MockProvider())
+        gw.register_provider("anthropic", MockProvider())
+
+        req = PromptRequest(
+            prompt="Hello",
+            prompt_pack_id="PRM-TEST-001",
+            contract_id="CT-TEST-001",
+            agent_id="test-agent",
+            agent_class="ADMIN",
+            framework_id="FMWK-000",
+            package_id="PKG-TEST-001",
+            work_order_id="WO-TEST-001",
+            session_id="SES-TEST0001",
+            tier="hot",
+            provider_id="anthropic",
+            domain_tags=["consolidation"],
+        )
+        resp = gw.route(req)
+        assert resp.outcome == RouteOutcome.SUCCESS
+        assert resp.provider_id == "anthropic"
+
+
 class TestBudgetModes:
     def _request(self):
         from llm_gateway import PromptRequest

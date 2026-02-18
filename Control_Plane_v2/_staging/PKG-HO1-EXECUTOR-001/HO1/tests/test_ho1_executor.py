@@ -1285,3 +1285,86 @@ class TestBudgetModesAndPristineLogging:
         meta = tool_calls[0].metadata
         assert meta["arguments"] == {"path": "HOT/kernel"}
         assert meta["result"] == {"files": ["a.py"]}
+
+
+# ===========================================================================
+# 29C Tests: domain_tags passthrough + tool_ids_used + consolidation assets
+# ===========================================================================
+
+class TestDomainTagsPassthrough:
+    def test_ho1_passes_domain_tags(self, executor, classify_wo):
+        """WO with constraints.domain_tags=["x"] -> PromptRequest.domain_tags==["x"]."""
+        classify_wo["constraints"]["domain_tags"] = ["consolidation"]
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        assert request.domain_tags == ["consolidation"]
+
+    def test_ho1_passes_empty_domain_tags(self, executor, classify_wo):
+        """WO without domain_tags -> PromptRequest.domain_tags==[]."""
+        classify_wo["constraints"].pop("domain_tags", None)
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        request = executor._build_prompt_request(classify_wo, contract)
+        assert request.domain_tags == []
+
+    def test_ho1_exposes_tool_ids_used(self, executor, classify_wo):
+        """HO1 tool loop populates cost['tool_ids_used'] with actual tool_id strings."""
+        content_blocks = (
+            {"type": "tool_use", "id": "toolu_01", "name": "list_packages", "input": {}},
+        )
+        tool_resp = SimpleNamespace(
+            content='{}', outcome="SUCCESS",
+            input_tokens=100, output_tokens=50,
+            model_id="mock", provider_id="mock",
+            latency_ms=100, timestamp="2026-02-15T00:00:00Z",
+            exchange_entry_id="LED-mock", finish_reason="tool_use",
+            content_blocks=content_blocks,
+        )
+        text_resp = _mock_response('{"speech_act": "command", "ambiguity": "low"}')
+        executor.gateway.route.side_effect = [tool_resp, text_resp]
+        executor.tool_dispatcher.get_api_tools.return_value = [
+            {"name": "list_packages", "description": "List pkgs", "input_schema": {"type": "object", "properties": {}}},
+        ]
+        classify_wo["constraints"]["tools_allowed"] = ["list_packages"]
+        result = executor.execute(classify_wo)
+        assert result["state"] == "completed"
+        assert result["cost"]["tool_ids_used"] == ["list_packages"]
+
+    def test_consolidation_prompt_pack_loads(self, executor):
+        """PRM-CONSOLIDATE-001.txt exists and renders with template variables."""
+        # Write the consolidation prompt pack to the executor's prompt_packs dir
+        template_dir = executor.contract_loader.contracts_dir.parent / "prompt_packs"
+        template_dir.mkdir(exist_ok=True)
+        (template_dir / "PRM-CONSOLIDATE-001.txt").write_text(
+            "You are analyzing patterns in user interaction signals.\n\n"
+            "Signal: {{signal_id}}\nObservation count: {{count}}\n"
+            "Across sessions: {{session_count}}\nRecent events:\n{{recent_events}}\n\n"
+            "Respond with valid JSON matching this schema."
+        )
+        ctx = {
+            "signal_id": "intent:tool_query",
+            "count": "5",
+            "session_count": "3",
+            "recent_events": '["EVT-001", "EVT-002"]',
+        }
+        result = executor._render_template("PRM-CONSOLIDATE-001", ctx)
+        assert "intent:tool_query" in result
+        assert "Observation count: 5" in result
+        assert "{{signal_id}}" not in result
+
+    def test_consolidation_contract_loads(self, executor, tmp_path):
+        """PRC-CONSOLIDATE-001.json loads via contract_loader."""
+        # Write consolidate contract to the executor's contracts dir
+        contracts_dir = executor.contract_loader.contracts_dir
+        (contracts_dir / "consolidate.json").write_text(json.dumps({
+            "contract_id": "PRC-CONSOLIDATE-001",
+            "version": "1.0.0",
+            "prompt_pack_id": "PRM-CONSOLIDATE-001",
+            "tier": "ho1",
+            "boundary": {"max_tokens": 512, "temperature": 0.0},
+            "input_schema": {"type": "object", "required": ["signal_id", "count", "session_count", "recent_events"]},
+            "output_schema": {"type": "object", "required": ["bias", "category", "salience_weight", "decay_modifier"]},
+        }))
+        contract = executor.contract_loader.load("PRC-CONSOLIDATE-001")
+        assert contract["contract_id"] == "PRC-CONSOLIDATE-001"
+        assert contract["prompt_pack_id"] == "PRM-CONSOLIDATE-001"
+        assert contract["boundary"]["max_tokens"] == 512

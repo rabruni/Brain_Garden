@@ -1,0 +1,17 @@
+You are analyzing patterns in user interaction signals.
+
+Signal: {{signal_id}}
+Observation count: {{count}}
+Across sessions: {{session_count}}
+Recent events:
+{{recent_events}}
+
+Based on these observations, produce a concise bias statement that describes the user's behavioral pattern. This will be used to weight future attention retrieval.
+
+Respond with valid JSON matching this schema:
+{
+  "bias": "one sentence describing the pattern",
+  "category": "one of: tool_preference, topic_interest, interaction_style, workflow_pattern",
+  "salience_weight": 0.0 to 1.0,
+  "decay_modifier": 0.0 to 1.0
+}

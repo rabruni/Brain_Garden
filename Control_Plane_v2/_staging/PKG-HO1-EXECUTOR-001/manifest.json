@@ -2,7 +2,7 @@
   "package_id": "PKG-HO1-EXECUTOR-001",
   "package_type": "kernel",
   "title": "HO1 Executor",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "schema_version": "1.2",
   "spec_id": "SPEC-GATE-001",
   "framework_id": "FMWK-000",
@@ -21,7 +21,7 @@
     },
     {
       "path": "HO1/kernel/ho1_executor.py",
-      "sha256": "sha256:9b8051d71ca43b92f98c317ed23d9f9e38fbacc9b45b63369ae95b03d7204ce7",
+      "sha256": "sha256:24d68de2d4237b5591453a1baad745439c02a699d24471284dadb3e932b6d631",
       "classification": "library"
     },
     {
@@ -40,6 +40,11 @@
       "classification": "contract"
     },
     {
+      "path": "HO1/contracts/consolidate.json",
+      "sha256": "sha256:e37f3e081cae95d13ef15f81d5e55754d01f6bcb9ac4ec4276eb9bf77583d990",
+      "classification": "contract"
+    },
+    {
       "path": "HO1/prompt_packs/PRM-CLASSIFY-001.txt",
       "sha256": "sha256:3da10407f898618791a2f8301d39938e2fea1183e687ee1fc8598d08e4cbab79",
       "classification": "prompt_pack"
@@ -55,8 +60,13 @@
       "classification": "prompt_pack"
     },
     {
+      "path": "HO1/prompt_packs/PRM-CONSOLIDATE-001.txt",
+      "sha256": "sha256:31f423a939fec5c9e8a679317558a961c13826772a0d6471081f6f44264bbd19",
+      "classification": "prompt_pack"
+    },
+    {
       "path": "HO1/tests/test_ho1_executor.py",
-      "sha256": "sha256:e456274d7e116e23be7f216a527c63c84a43bb0c9a78fe8a067e881d9e65c46a",
+      "sha256": "sha256:537ec55e7a9e05e924a36ac14f6e46928c5fd4e3d74becfaa9a0271317de8240",
       "classification": "test"
     }
   ],

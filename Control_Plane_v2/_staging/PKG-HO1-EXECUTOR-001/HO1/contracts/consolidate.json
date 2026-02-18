@@ -1,0 +1,18 @@
+{
+  "contract_id": "PRC-CONSOLIDATE-001",
+  "version": "1.0.0",
+  "prompt_pack_id": "PRM-CONSOLIDATE-001",
+  "tier": "ho1",
+  "boundary": {
+    "max_tokens": 512,
+    "temperature": 0.0
+  },
+  "input_schema": {
+    "type": "object",
+    "required": ["signal_id", "count", "session_count", "recent_events"]
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["bias", "category", "salience_weight", "decay_modifier"]
+  }
+}

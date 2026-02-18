@@ -208,6 +208,7 @@ class HO1Executor:
                     for tu in tool_uses:
                         tool_result = self.tool_dispatcher.execute(tu["tool_id"], tu.get("arguments", {}))
                         cost["tool_calls"] += 1
+                        cost.setdefault("tool_ids_used", []).append(tu["tool_id"])
                         result_output = getattr(tool_result, "output", None)
                         cached_results.append({
                             "tool_id": tu["tool_id"],
@@ -379,6 +380,7 @@ class HO1Executor:
             token_budget = wo.get("constraints", {}).get("token_budget", 100000)
             prompt_pack_id = contract.get("prompt_pack_id", "")
             prompt_text = self._render_template(prompt_pack_id, input_ctx, additional_context)
+            domain_tags = wo.get("constraints", {}).get("domain_tags", [])
             return SimpleNamespace(
                 prompt=prompt_text,
                 prompt_pack_id=prompt_pack_id,
@@ -393,6 +395,7 @@ class HO1Executor:
                 max_tokens=min(boundary.get("max_tokens", 4096), token_budget),
                 temperature=boundary.get("temperature", 0.0),
                 tools=tools,
+                domain_tags=domain_tags,
             )
 
         boundary = contract.get("boundary", {})
@@ -400,6 +403,7 @@ class HO1Executor:
         token_budget = wo.get("constraints", {}).get("token_budget", 100000)
         prompt_pack_id = contract.get("prompt_pack_id", "")
         prompt_text = self._render_template(prompt_pack_id, input_ctx, additional_context)
+        domain_tags = wo.get("constraints", {}).get("domain_tags", [])
 
         return PromptRequest(
             prompt=prompt_text,
@@ -419,6 +423,7 @@ class HO1Executor:
             output_schema=contract.get("output_schema"),
             template_variables=input_ctx,
             tools=tools,
+            domain_tags=domain_tags,
         )
 
     def _extract_tool_uses(self, content: str, response: object = None) -> list:

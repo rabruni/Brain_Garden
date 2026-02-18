@@ -102,6 +102,7 @@ class RouterConfig:
     default_timeout_ms: int = 30000
     circuit_breaker: Optional[CircuitBreakerConfig] = None
     max_retries: int = 0
+    domain_tag_routes: dict = field(default_factory=dict)
 
 
 class CircuitBreaker:
@@ -199,6 +200,7 @@ class LLMGateway:
             default_model=data["default_model"],
             default_timeout_ms=data["default_timeout_ms"],
             circuit_breaker=cb_config,
+            domain_tag_routes=data.get("domain_tag_routes", {}),
         )
         return cls(
             ledger_client=ledger_client,
@@ -211,6 +213,24 @@ class LLMGateway:
         """Register an LLM provider."""
         self._providers[provider_id] = provider
 
+    def _resolve_domain_tags(self, tags: list) -> Optional[str]:
+        """Resolve domain tags to a provider_id via the routing map.
+
+        Returns the first matching provider_id from domain_tag_routes,
+        or None if no tags match (falls through to default).
+        """
+        if not tags or not self._config.domain_tag_routes:
+            return None
+        for tag in tags:
+            route = self._config.domain_tag_routes.get(tag)
+            if route and isinstance(route, dict):
+                pid = route.get("provider_id")
+                if pid:
+                    return pid
+            elif route and isinstance(route, str):
+                return route
+        return None
+
     def route(self, request: PromptRequest) -> PromptResponse:
         """Route a prompt through the 10-step pipeline."""
         from hashing import sha256_string
@@ -219,7 +239,11 @@ class LLMGateway:
         timestamp = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(start_time))
 
         model_id = request.model_id or self._config.default_model
-        provider_id = request.provider_id or self._config.default_provider
+        provider_id = (
+            request.provider_id
+            or self._resolve_domain_tags(request.domain_tags)
+            or self._config.default_provider
+        )
         timeout_ms = self._config.default_timeout_ms
 
         # Step 1: Validate input
