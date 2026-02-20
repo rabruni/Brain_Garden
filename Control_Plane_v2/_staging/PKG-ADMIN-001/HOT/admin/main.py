@@ -1259,6 +1259,7 @@ def build_session_host_v2(
 
     # 7. HO2 Supervisor
     ho3_cfg = cfg_dict.get("ho3", {})
+    projection_cfg = cfg_dict.get("projection", {})
     ho2_config = HO2Config(
         attention_templates=["ATT-ADMIN-001"],
         ho2m_path=root / "HO2" / "ledger" / "ho2m.jsonl",
@@ -1276,6 +1277,8 @@ def build_session_host_v2(
         ho3_gate_session_threshold=ho3_cfg.get("gate_session_threshold", 3),
         ho3_gate_window_hours=ho3_cfg.get("gate_window_hours", 168),
         consolidation_budget=budget_cfg.get("consolidation_budget", 4000),
+        projection_budget=budget_cfg.get("projection_budget", 10000),
+        projection_mode=projection_cfg.get("mode", "shadow"),
     )
 
     # 7b. HO3 Memory (optional — enabled via ho3.enabled in config)

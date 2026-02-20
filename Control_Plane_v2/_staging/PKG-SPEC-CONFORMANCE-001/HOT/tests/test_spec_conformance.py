@@ -18,14 +18,36 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-HOT_ROOT = SCRIPT_DIR.parent
-CP_ROOT = HOT_ROOT.parent
-sys.path.insert(0, str(HOT_ROOT))
+# Dual-context path detection: installed root vs staging packages
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
+_INSTALLED = (_HOT / "kernel" / "ledger_client.py").exists()
 
-# All spec manifest paths
-SPEC_PACKS = CP_ROOT / "HOT" / "spec_packs"
+if _INSTALLED:
+    # Installed layout — all packages merged under HOT/
+    HOT_ROOT = _HOT
+    CP_ROOT = _HOT.parent
+    _paths = [_HOT / "kernel", _HOT, _HOT / "scripts"]
+else:
+    # Staging layout — sibling packages under _staging/
+    _STAGING = _HERE.parents[2]
+    HOT_ROOT = _HOT  # PKG-SPEC-CONFORMANCE-001's own HOT/
+    CP_ROOT = _STAGING.parent
+    _paths = [
+        _STAGING / "PKG-KERNEL-001" / "HOT" / "kernel",
+        _STAGING / "PKG-KERNEL-001" / "HOT",
+    ]
+
+for _p in _paths:
+    _s = str(_p)
+    if _s not in sys.path:
+        sys.path.insert(0, _s)
+
+# All spec manifest paths — only available in installed root
+SPEC_PACKS = CP_ROOT / "HOT" / "spec_packs" if _INSTALLED else _HOT / "spec_packs"
 ALL_SPECS = sorted(SPEC_PACKS.glob("SPEC-*/manifest.yaml"))
+
+_skip_staging = pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
 
 
 def _parse_yaml_simple(path: Path) -> dict:
@@ -64,6 +86,7 @@ def _parse_yaml_simple(path: Path) -> dict:
 
 # === Registry Files Claimed ===
 
+@_skip_staging
 class TestRegistryFilesClaimed:
     """All registry files must be claimed by SPEC-REG-001."""
 
@@ -87,6 +110,7 @@ class TestRegistryFilesClaimed:
                 f"SPEC-REG-001 missing registry asset: {reg_file}"
 
 
+@_skip_staging
 class TestGenesisFilesClaimed:
     """New genesis config/schema files must be claimed by SPEC-GENESIS-001."""
 
@@ -107,6 +131,7 @@ class TestGenesisFilesClaimed:
                 f"SPEC-GENESIS-001 missing asset: {f}"
 
 
+@_skip_staging
 class TestNewTestFilesClaimed:
     """New HOT test files must be claimed by appropriate specs."""
 
@@ -148,6 +173,7 @@ SURVIVING_SPECS = [
 ]
 
 
+@_skip_staging
 class TestRemovedSpecsGone:
     """14 dead spec dirs must not exist."""
 
@@ -172,6 +198,7 @@ def _load_owned_files(cp_root: Path) -> set[str]:
     return owned
 
 
+@_skip_staging
 class TestGovernanceHealth:
     """Governance health: baseline regression + ownership validation."""
 
@@ -253,6 +280,7 @@ class TestGovernanceHealth:
         assert not unowned, f"Spec dirs with no registered files: {unowned}"
 
 
+@_skip_staging
 class TestSpecAssetPaths:
     """No surviving spec should reference HO3/tests/ in its assets."""
 
@@ -272,6 +300,7 @@ class TestSpecAssetPaths:
 
 # === Spec Completeness Tests ===
 
+@_skip_staging
 class TestAllActiveSpecsHaveInterfaces:
     """Every active spec must have at least 1 interface."""
 
@@ -292,6 +321,7 @@ class TestAllActiveSpecsHaveInterfaces:
 
 # === Spec Manifest Quality ===
 
+@_skip_staging
 class TestAllSpecsHavePlaneId:
     """Every spec must declare plane_id."""
 
@@ -305,6 +335,7 @@ class TestAllSpecsHavePlaneId:
         assert "plane_id" in data, f"{spec_id}: missing plane_id"
 
 
+@_skip_staging
 class TestSpecValidation:
     """All spec manifests must pass validate_spec()."""
 

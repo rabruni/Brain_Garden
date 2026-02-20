@@ -44,6 +44,9 @@ else:
 import main as admin_main  # noqa: E402
 from main import build_session_host_v2, load_admin_config, run_cli  # noqa: E402
 
+# Path to the real admin_config.json (staging or installed)
+ADMIN_CONFIG_PATH = _HOT / "config" / "admin_config.json"
+
 
 def _write_admin_files(tmp_path: Path):
     cfg_dir = tmp_path / "HOT" / "config"
@@ -1475,3 +1478,61 @@ class TestHO3Wiring:
         # Call _ensure_import_paths (staging mode, no root)
         admin_main._ensure_import_paths(root=None)
         assert expected in sys.path
+
+
+class TestProjectionConfig:
+    """H-31E-2: projection_budget and projection section in config."""
+
+    def test_projection_budget_in_config(self):
+        """admin_config.json must have projection_budget=10000 in budget section."""
+        cfg = json.loads(ADMIN_CONFIG_PATH.read_text())
+        assert cfg["budget"]["projection_budget"] == 10000
+
+    def test_projection_mode_in_config(self):
+        """admin_config.json must have projection section with mode=shadow."""
+        cfg = json.loads(ADMIN_CONFIG_PATH.read_text())
+        assert cfg["projection"]["mode"] == "shadow"
+
+    def test_projection_budget_wired_to_ho2config(self, tmp_path: Path):
+        """build_session_host_v2 must pass projection_budget to HO2Config."""
+        cfg_path, _ = _write_admin_files(tmp_path)
+        cfg = json.loads(cfg_path.read_text())
+        cfg["budget"]["projection_budget"] = 8000
+        cfg_path.write_text(json.dumps(cfg))
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2 = shell._host._ho2
+        assert ho2._config.projection_budget == 8000
+
+    def test_projection_mode_wired_to_ho2config(self, tmp_path: Path):
+        """build_session_host_v2 must pass projection_mode to HO2Config."""
+        cfg_path, _ = _write_admin_files(tmp_path)
+        cfg = json.loads(cfg_path.read_text())
+        cfg["projection"] = {"mode": "active", "intent_header_budget": 500, "wo_status_budget": 2000}
+        cfg_path.write_text(json.dumps(cfg))
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2 = shell._host._ho2
+        assert ho2._config.projection_mode == "active"
+
+    def test_projection_config_optional(self, tmp_path: Path):
+        """Missing projection section must not crash — defaults apply."""
+        cfg_path, _ = _write_admin_files(tmp_path)
+        cfg = json.loads(cfg_path.read_text())
+        cfg.pop("projection", None)
+        cfg["budget"].pop("projection_budget", None)
+        cfg_path.write_text(json.dumps(cfg))
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2 = shell._host._ho2
+        assert ho2._config.projection_budget == 10000
+        assert ho2._config.projection_mode == "shadow"
+
+    def test_budget_section_complete(self):
+        """After H-31E-2, all 10 budget keys must be present."""
+        cfg = json.loads(ADMIN_CONFIG_PATH.read_text())
+        expected_keys = {
+            "session_token_limit", "classify_budget", "synthesize_budget",
+            "projection_budget", "consolidation_budget", "ho3_bias_budget",
+            "followup_min_remaining", "budget_mode", "turn_limit", "timeout_seconds",
+        }
+        actual_keys = set(cfg["budget"].keys())
+        missing = expected_keys - actual_keys
+        assert not missing, f"Missing budget keys: {missing}"

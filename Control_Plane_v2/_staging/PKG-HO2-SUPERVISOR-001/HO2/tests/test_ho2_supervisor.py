@@ -158,6 +158,12 @@ def supervisor(tmp_path, config, mock_ho1, mock_ledger, mock_budgeter):
     )
 
 
+@pytest.fixture(autouse=True)
+def _allow_append_only_external_paths():
+    with patch("kernel.pristine.assert_append_only", lambda *args, **kwargs: None):
+        yield
+
+
 # ===========================================================================
 # handle_turn Tests (8)
 # ===========================================================================
@@ -1461,3 +1467,247 @@ class TestIntentLifecycleIntegration:
         assert len(ledger.events_of_type("INTENT_DECLARED")) == declared_count
         assert len(ledger.events_of_type("INTENT_SUPERSEDED")) == 0
         assert len(ledger.events_of_type("INTENT_CLOSED")) == 0
+
+
+# ===========================================================================
+# Liveness + Projection Integration Tests (4) -- HANDOFF-31D
+# ===========================================================================
+
+class TestLivenessProjectionIntegration:
+    def _make_supervisor(self, tmp_path):
+        ho2m = tmp_path / "ho2m_live"
+        ho2m.mkdir(exist_ok=True)
+        ho1m = tmp_path / "ho1m_live"
+        ho1m.mkdir(exist_ok=True)
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=ho2m,
+            ho1m_path=ho1m,
+        )
+        responses = {
+            "classify": {"speech_act": "question", "ambiguity": "low"},
+            "synthesize": {"response_text": "ok"},
+        }
+        ho1 = MockHO1Executor(responses=responses)
+        ledger = MockLedgerClient()
+        budgeter = MockTokenBudgeter()
+        sv = HO2Supervisor(
+            plane_root=tmp_path,
+            agent_class="ADMIN",
+            ho1_executor=ho1,
+            ledger_client=ledger,
+            token_budgeter=budgeter,
+            config=config,
+        )
+        return sv, ho1, ledger, config
+
+    def test_liveness_computed_each_turn(self, tmp_path):
+        sv, _, _, _ = self._make_supervisor(tmp_path)
+        with patch("ho2_supervisor.reduce_liveness") as mock_reduce:
+            from liveness import LivenessState
+            mock_reduce.return_value = LivenessState()
+            sv.handle_turn("hello")
+            assert mock_reduce.call_count == 1
+
+    def test_projection_written_each_turn(self, tmp_path):
+        sv, _, _, config = self._make_supervisor(tmp_path)
+        sv.handle_turn("hello")
+        overlay_path = tmp_path / "HO2" / "ledger" / "ho2_context_authority.jsonl"
+        assert overlay_path.exists()
+        lines = [ln for ln in overlay_path.read_text().splitlines() if ln.strip()]
+        assert len(lines) >= 1
+        latest = json.loads(lines[-1])
+        assert latest["event_type"] == "PROJECTION_COMPUTED"
+
+    def test_liveness_available_for_context(self, tmp_path):
+        sv, _, _, _ = self._make_supervisor(tmp_path)
+        sv.handle_turn("hello")
+        assert hasattr(sv, "_current_liveness")
+        assert sv._current_liveness is not None
+
+    def test_ho1m_entries_joined(self, tmp_path):
+        sv, _, _, config = self._make_supervisor(tmp_path)
+        sid = sv.start_session()
+        ho1_entry = {
+            "event_type": "WO_COMPLETED",
+            "submission_id": "WO-PREV-001",
+            "timestamp": "2026-02-20T00:00:00+00:00",
+            "metadata": {"provenance": {"session_id": sid, "work_order_id": "WO-PREV-001"}},
+        }
+        (config.ho1m_path / "prev.jsonl").write_text(json.dumps(ho1_entry) + "\n")
+
+        with patch("ho2_supervisor.reduce_liveness") as mock_reduce:
+            from liveness import LivenessState
+            mock_reduce.return_value = LivenessState()
+            sv.handle_turn("hello")
+            _, kwargs = mock_reduce.call_args
+            ho1m_entries = kwargs["ho1m_entries"]
+            assert any(e.get("event_type") == "WO_COMPLETED" for e in ho1m_entries)
+
+
+# ===========================================================================
+# Context Projector Integration Tests (6) -- HANDOFF-31E-1
+# ===========================================================================
+
+class TestContextProjectorIntegration:
+    def _make_supervisor(self, tmp_path, projection_mode="shadow"):
+        ho2m = tmp_path / "ho2m_proj"
+        ho2m.mkdir(exist_ok=True)
+        ho1m = tmp_path / "ho1m_proj"
+        ho1m.mkdir(exist_ok=True)
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=ho2m,
+            ho1m_path=ho1m,
+            projection_mode=projection_mode,
+        )
+        ho1 = MockHO1Executor(
+            responses={
+                "classify": {"speech_act": "question", "ambiguity": "low"},
+                "synthesize": {"response_text": "ok"},
+            }
+        )
+        ledger = MockLedgerClient()
+        budgeter = MockTokenBudgeter()
+        sv = HO2Supervisor(
+            plane_root=tmp_path,
+            agent_class="ADMIN",
+            ho1_executor=ho1,
+            ledger_client=ledger,
+            token_budgeter=budgeter,
+            config=config,
+        )
+        return sv, ho1, ledger
+
+    def test_shadow_mode_uses_old_context(self, tmp_path):
+        sv, ho1, _ = self._make_supervisor(tmp_path, projection_mode="shadow")
+        old_context = {
+            "user_input": "hello",
+            "classification": {"speech_act": "question", "ambiguity": "low"},
+            "assembled_context": {
+                "context_text": "OLD_CONTEXT_TEXT",
+                "context_hash": "a" * 64,
+                "fragment_count": 1,
+                "tokens_used": 5,
+            },
+        }
+        new_context = {
+            "user_input": "hello",
+            "classification": {"speech_act": "question", "ambiguity": "low"},
+            "assembled_context": {
+                "context_text": "NEW_CONTEXT_TEXT",
+                "context_hash": "b" * 64,
+                "fragment_count": 1,
+                "tokens_used": 5,
+            },
+        }
+        sv._attention.assemble_wo_context = MagicMock(return_value=old_context)
+        sv._projector.project = MagicMock(return_value=new_context)
+
+        sv.handle_turn("hello")
+
+        synth = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"][0]
+        assert synth["input_context"]["assembled_context"]["context_text"] == "OLD_CONTEXT_TEXT"
+        assert sv._projector.project.call_count == 1
+
+    def test_shadow_mode_logs_comparison(self, tmp_path):
+        sv, _, ledger = self._make_supervisor(tmp_path, projection_mode="shadow")
+        sv._attention.assemble_wo_context = MagicMock(return_value={
+            "user_input": "hello",
+            "classification": {"speech_act": "question", "ambiguity": "low"},
+            "assembled_context": {
+                "context_text": "old",
+                "context_hash": "a" * 64,
+                "fragment_count": 1,
+                "tokens_used": 1,
+            },
+        })
+        sv._projector.project = MagicMock(return_value={
+            "user_input": "hello",
+            "classification": {"speech_act": "question", "ambiguity": "low"},
+            "assembled_context": {
+                "context_text": "new",
+                "context_hash": "b" * 64,
+                "fragment_count": 1,
+                "tokens_used": 1,
+            },
+        })
+        sv.handle_turn("hello")
+        assert len(ledger.events_of_type("PROJECTION_SHADOW_COMPARE")) >= 1
+
+    def test_enforce_mode_uses_new_context(self, tmp_path):
+        sv, ho1, _ = self._make_supervisor(tmp_path, projection_mode="enforce")
+        sv._projector.project = MagicMock(return_value={
+            "user_input": "hello",
+            "classification": {"speech_act": "question", "ambiguity": "low"},
+            "assembled_context": {
+                "context_text": "NEW_CONTEXT_TEXT",
+                "context_hash": "b" * 64,
+                "fragment_count": 1,
+                "tokens_used": 5,
+            },
+        })
+        sv._attention.assemble_wo_context = MagicMock(side_effect=AssertionError("old context should not be used"))
+
+        sv.handle_turn("hello")
+
+        synth = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"][0]
+        assert synth["input_context"]["assembled_context"]["context_text"] == "NEW_CONTEXT_TEXT"
+
+    def test_fallback_no_projector(self, tmp_path):
+        sv, ho1, _ = self._make_supervisor(tmp_path, projection_mode="enforce")
+        sv._projector = None
+        sv._attention.assemble_wo_context = MagicMock(return_value={
+            "user_input": "hello",
+            "classification": {"speech_act": "question", "ambiguity": "low"},
+            "assembled_context": {
+                "context_text": "FALLBACK_CONTEXT",
+                "context_hash": "c" * 64,
+                "fragment_count": 1,
+                "tokens_used": 4,
+            },
+        })
+
+        sv.handle_turn("hello")
+
+        synth = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"][0]
+        assert synth["input_context"]["assembled_context"]["context_text"] == "FALLBACK_CONTEXT"
+
+    def test_projection_after_liveness(self, tmp_path):
+        sv, _, _ = self._make_supervisor(tmp_path, projection_mode="enforce")
+        order = []
+
+        def _reduce(*args, **kwargs):
+            from liveness import LivenessState
+            order.append("reduce")
+            return LivenessState()
+
+        def _project(*args, **kwargs):
+            order.append("project")
+            return {
+                "user_input": "hello",
+                "classification": {"speech_act": "question", "ambiguity": "low"},
+                "assembled_context": {
+                    "context_text": "NEW_CONTEXT_TEXT",
+                    "context_hash": "b" * 64,
+                    "fragment_count": 1,
+                    "tokens_used": 5,
+                },
+            }
+
+        with patch("ho2_supervisor.reduce_liveness", side_effect=_reduce):
+            sv._projector.project = MagicMock(side_effect=_project)
+            sv.handle_turn("hello")
+
+        assert order.index("reduce") < order.index("project")
+
+    def test_synthesize_output_shape_unchanged(self, tmp_path):
+        sv, ho1, _ = self._make_supervisor(tmp_path, projection_mode="enforce")
+        sv.handle_turn("hello")
+        synth = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"][0]
+        assert "user_input" in synth["input_context"]
+        assert "classification" in synth["input_context"]
+        assert "assembled_context" in synth["input_context"]
+        assert set(synth["input_context"]["assembled_context"].keys()) == {
+            "context_text", "context_hash", "fragment_count", "tokens_used"
+        }

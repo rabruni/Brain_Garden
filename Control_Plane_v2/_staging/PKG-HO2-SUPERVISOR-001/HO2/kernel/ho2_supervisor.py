@@ -38,6 +38,9 @@ from attention import AttentionRetriever, ContextProvider, AttentionContext
 from quality_gate import QualityGate, QualityGateResult
 from intent_resolver import resolve_intent_transition, make_intent_id, TransitionDecision
 from bias_selector import select_biases
+from liveness import reduce_liveness, LivenessState
+from overlay_writer import write_projection
+from context_projector import ContextProjector, ProjectionConfig
 
 # Optional HO3 memory integration (PKG-HO3-MEMORY-001)
 try:
@@ -82,6 +85,8 @@ class HO2Config:
     ho3_gate_session_threshold: int = 3
     ho3_gate_window_hours: int = 168
     ho3_bias_budget: int = 2000
+    projection_budget: int = 10000
+    projection_mode: str = "shadow"
     # Consolidation config (29C)
     consolidation_budget: int = 4000
     consolidation_contract_id: str = "PRC-CONSOLIDATE-001"
@@ -129,11 +134,22 @@ class HO2Supervisor:
 
         agent_id = f"{agent_class}.ho2"
         self._session_mgr = SessionManager(ledger_client, agent_class, agent_id)
+        self._context_provider = ContextProvider(plane_root)
         self._attention = AttentionRetriever(
             plane_root,
-            ContextProvider(plane_root),
+            self._context_provider,
             config,
         )
+        self._projector = ContextProjector(
+            ProjectionConfig(
+                projection_budget=config.projection_budget,
+                projection_mode=config.projection_mode,
+                ho3_budget=config.ho3_bias_budget,
+            )
+        )
+        overlay_path = plane_root / "HO2" / "ledger" / "ho2_context_authority.jsonl"
+        self._overlay_ledger = LedgerClient(ledger_path=overlay_path)
+        self._current_liveness = LivenessState()
         self._quality_gate = QualityGate(config)
         self._total_cost: Dict[str, int] = {
             "input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
@@ -197,11 +213,33 @@ class HO2Supervisor:
             )
             self._apply_intent_decision(intent_decision, session_id)
 
-            # ------ Step 2b: Attention retrieval ------
-            horizontal = self._attention.horizontal_scan(session_id)
-            priority = self._attention.priority_probe()
+            # ------ Step 2a++: Liveness reduction + projection snapshot ------
+            ho2m_entries = self._context_provider.read_ledger_entries(
+                ledger_path=self._config.ho2m_path,
+                filters={"session_id": session_id},
+            )
+            ho1m_entries: List[Dict[str, Any]] = []
+            if self._config.ho1m_path:
+                ho1m_entries = self._context_provider.read_ledger_entries(
+                    ledger_path=self._config.ho1m_path,
+                    filters={"session_id": session_id},
+                )
 
-            # ------ Step 2b+: HO3 bias injection (29B) ------
+            self._current_liveness = reduce_liveness(
+                ho2m_entries=ho2m_entries,
+                ho1m_entries=ho1m_entries,
+                session_id=session_id,
+            )
+            turn_id = f"TURN-{self._session_mgr.turn_count + 1:03d}"
+            write_projection(
+                liveness=self._current_liveness,
+                session_id=session_id,
+                turn_id=turn_id,
+                token_budget=self._config.projection_budget,
+                overlay_ledger=self._overlay_ledger,
+            )
+
+            # ------ Step 2b+: HO3 bias selection (29B) ------
             ho3_biases = []
             if self._ho3_memory and self._config.ho3_enabled:
                 try:
@@ -217,10 +255,41 @@ class HO2Supervisor:
                     turn_event_ts,
                 )
 
-            # ------ Step 2c: Assemble context for synthesize WO ------
-            assembled_context = self._attention.assemble_wo_context(
-                horizontal, priority, user_message, classification,
-            )
+            # ------ Step 2b/2c: Context projection (31E-1) ------
+            projection_mode = (getattr(self._config, "projection_mode", "shadow") or "shadow").lower()
+            if projection_mode not in {"shadow", "enforce"}:
+                projection_mode = "shadow"
+
+            if self._projector and projection_mode == "enforce":
+                assembled_context = self._projector.project(
+                    liveness=self._current_liveness,
+                    ho3_artifacts=ho3_biases,
+                    user_message=user_message,
+                    classification=classification,
+                    session_id=session_id,
+                )
+            elif self._projector and projection_mode == "shadow":
+                horizontal = self._attention.horizontal_scan(session_id)
+                priority = self._attention.priority_probe()
+                old_context = self._attention.assemble_wo_context(
+                    horizontal, priority, user_message, classification,
+                )
+                new_context = self._projector.project(
+                    liveness=self._current_liveness,
+                    ho3_artifacts=ho3_biases,
+                    user_message=user_message,
+                    classification=classification,
+                    session_id=session_id,
+                )
+                self._log_shadow_comparison(session_id, old_context, new_context)
+                assembled_context = old_context
+            else:
+                horizontal = self._attention.horizontal_scan(session_id)
+                priority = self._attention.priority_probe()
+                assembled_context = self._attention.assemble_wo_context(
+                    horizontal, priority, user_message, classification,
+                )
+
             if ho3_biases:
                 context_lines = []
                 for artifact in ho3_biases:
@@ -556,6 +625,39 @@ class HO2Supervisor:
                 "context_fingerprint": {"context_hash": trace_hash},
                 "decision": gate_result.decision,
                 "wo_id": gate_result.wo_id,
+            },
+        ))
+
+    def _log_shadow_comparison(
+        self,
+        session_id: str,
+        old_context: Dict[str, Any],
+        new_context: Dict[str, Any],
+    ) -> None:
+        """Log shadow-mode context comparison to HO2 ledger."""
+        old_assembled = old_context.get("assembled_context", {}) if isinstance(old_context, dict) else {}
+        new_assembled = new_context.get("assembled_context", {}) if isinstance(new_context, dict) else {}
+        old_hash = old_assembled.get("context_hash", "")
+        new_hash = new_assembled.get("context_hash", "")
+        self._ledger.write(LedgerEntry(
+            event_type="PROJECTION_SHADOW_COMPARE",
+            submission_id=session_id,
+            decision="SHADOW_COMPARE",
+            reason="Compared attention context with projected context",
+            metadata={
+                "provenance": {
+                    "agent_id": f"{self._agent_class}.ho2",
+                    "agent_class": self._agent_class,
+                    "session_id": session_id,
+                },
+                "mode": "shadow",
+                "old_context_hash": old_hash,
+                "new_context_hash": new_hash,
+                "hash_changed": old_hash != new_hash,
+                "old_fragment_count": old_assembled.get("fragment_count", 0),
+                "new_fragment_count": new_assembled.get("fragment_count", 0),
+                "old_tokens_used": old_assembled.get("tokens_used", 0),
+                "new_tokens_used": new_assembled.get("tokens_used", 0),
             },
         ))
 

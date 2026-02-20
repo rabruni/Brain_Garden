@@ -59,7 +59,7 @@
 
 | # | Handoff | Package | Status | Tests Added | RESULTS File |
 |---|---------|---------|--------|-------------|--------------|
-| 7 | H-29.1C | PKG-HO2-SUPERVISOR-001 | SPEC ONLY | — | — |
+| 7 | H-29.1C | PKG-HO2-SUPERVISOR-001 | **PASS** | 18 | RESULTS_HANDOFF_29_1C.md |
 
 **Why serial**: select_biases needs structured artifacts (H-29.1A/B) and label vocabulary (H-31B). Signal extraction needs classify labels. Modifies PKG-HO2-SUPERVISOR-001 after H-31C already changed it — must incorporate those changes.
 
@@ -100,7 +100,7 @@ H-31A-2 ✅ (SESSION-HOST-V2)  H-31B ✅ (HO1-EXECUTOR)
   │                    │                   │
   │                    └─────────┬─────────┘
   │                              ▼
-  │                           H-29.1C (HO2-SUP)
+  │                           H-29.1C ✅ (HO2-SUP)
   │                              │
   │                              ▼
   │                           H-31D (HO2-SUP)
@@ -176,7 +176,8 @@ All 10 handoff specs exist on disk:
 | 2026-02-19 | H-31C 10Q reviewed — 13/13 PASS. Approved. Re-dispatched with tighter prompt. | Claude Code |
 | 2026-02-19 | H-31C implemented and verified (PASS, 807 tests, 16 new, 8/8 gates) | Builder agent |
 | 2026-02-19 | H-29.1B implemented and verified (PASS, 791 tests, 10 new, 8/8 gates) | Builder agent |
-| | | |
+| 2026-02-19 | H-29.1C 10Q reviewed — 13/13 PASS. Approved. | Claude Code |
+| 2026-02-19 | H-29.1C implemented and verified (PASS, 807 installed tests, 18 new, 8/8 gates) | Builder agent |
 | | | |
 
 ---

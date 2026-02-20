@@ -345,12 +345,18 @@
     "session_token_limit": 200000,
     "classify_budget": 2000,
     "synthesize_budget": 100000,
+    "projection_budget": 10000,
     "consolidation_budget": 4000,
     "ho3_bias_budget": 2000,
     "followup_min_remaining": 500,
     "budget_mode": "warn",
     "turn_limit": 50,
     "timeout_seconds": 7200
+  },
+  "projection": {
+    "mode": "shadow",
+    "intent_header_budget": 500,
+    "wo_status_budget": 2000
   },
   "ho3": {
     "enabled": true,

@@ -16,7 +16,7 @@
   "assets": [
     {
       "path": "HOT/tests/test_llm_gateway.py",
-      "sha256": "sha256:75f8ccda460eb22ceecf42d9f3dccc5f3d0a71b783abd99d2f9ab5eda7803e5b",
+      "sha256": "sha256:525f5886fcc1e21f758cd9bc5a277ca98ebe6d37aa0b3a397e4af07837588616",
       "classification": "test"
     },
     {

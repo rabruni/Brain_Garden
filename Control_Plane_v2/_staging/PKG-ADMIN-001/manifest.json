@@ -22,7 +22,7 @@
   "assets": [
     {
       "path": "HOT/admin/main.py",
-      "sha256": "sha256:9ba06beb6b928c9a54ea9a551cc2dc9c754a5a964f8c674506490e5c4f7a6457",
+      "sha256": "sha256:6a281afb1fe235c0c8660fbc261b34ee6f715ead1f649d7a538f506503221d8d",
       "classification": "application"
     },
     {
@@ -37,7 +37,7 @@
     },
     {
       "path": "HOT/config/admin_config.json",
-      "sha256": "sha256:bdc4831eb2ae81db37ad31c210cf16752c63c4ea19111b102caf02bcf93a3076",
+      "sha256": "sha256:9c89c714e4d196ea4075fb8c2429c46d04e3e1888dd4175184430ce67d686136",
       "classification": "config"
     },
     {
@@ -52,12 +52,12 @@
     },
     {
       "path": "HOT/schemas/admin_config.schema.json",
-      "sha256": "sha256:8e02bb43154eac6bd7de04149fa0616d371392a685ea92a14ba7b404bd0d95fc",
+      "sha256": "sha256:b7d3b0d39893c14bbadf763ca020dcec9da63a751bc91f27f5527d72abfcbc0a",
       "classification": "schema"
     },
     {
       "path": "HOT/tests/test_admin.py",
-      "sha256": "sha256:f67a3e337fbdcac4b4d18facd04090272b1e66254c1e04ae91eaec48d232b771",
+      "sha256": "sha256:784d463aeac2b83ac21785d848546366f56e08f31e0e8c5a209449884ae14d5c",
       "classification": "test"
     },
     {

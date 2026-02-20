@@ -11,11 +11,28 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-_staging = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(_staging / "PKG-KERNEL-001" / "HOT" / "kernel"))
-sys.path.insert(0, str(_staging / "PKG-KERNEL-001" / "HOT"))
-sys.path.insert(0, str(_staging / "PKG-TOKEN-BUDGETER-001" / "HOT" / "kernel"))
-sys.path.insert(0, str(_staging / "PKG-LLM-GATEWAY-001" / "HOT" / "kernel"))
+# Dual-context path detection: installed root vs staging packages
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
+_INSTALLED = (_HOT / "kernel" / "ledger_client.py").exists()
+
+if _INSTALLED:
+    # Installed layout — all packages merged under HOT/
+    _paths = [_HOT / "kernel", _HOT, _HOT / "scripts"]
+else:
+    # Staging layout — sibling packages under _staging/
+    _STAGING = _HERE.parents[2]
+    _paths = [
+        _STAGING / "PKG-KERNEL-001" / "HOT" / "kernel",
+        _STAGING / "PKG-KERNEL-001" / "HOT",
+        _STAGING / "PKG-TOKEN-BUDGETER-001" / "HOT" / "kernel",
+        _STAGING / "PKG-LLM-GATEWAY-001" / "HOT" / "kernel",
+    ]
+
+for _p in _paths:
+    _s = str(_p)
+    if _s not in sys.path:
+        sys.path.insert(0, _s)
 
 
 @pytest.fixture(autouse=True)

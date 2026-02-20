@@ -17,7 +17,7 @@
   "assets": [
     {
       "path": "HO2/kernel/ho2_supervisor.py",
-      "sha256": "sha256:807e22a26d025685f9ec8404cd6ef6c7d17c6ffcd69925c3c50f22789d06d7a5",
+      "sha256": "sha256:5d05b3c50985a44b931fbe26e231914bdf3881444099c79a94b3c3a7098d3b95",
       "classification": "library"
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "path": "HO2/tests/test_ho2_supervisor.py",
-      "sha256": "sha256:c7742a067b1ec6984b8d220f2e8bc315bd4636390b35021c8c6bcd0be8d5c078",
+      "sha256": "sha256:a512ed8ee30444e132dba05fadc6a592c336f15a279c0d189ca7769c76e8398f",
       "classification": "test"
     },
     {
@@ -68,6 +68,36 @@
     {
       "path": "HO2/tests/test_bias_selector.py",
       "sha256": "sha256:355d1c826e708e5590c8fbd6b90252b83496b5d67959a6f1f7741e99324d6eda",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/kernel/liveness.py",
+      "sha256": "sha256:5a0fdfe3dba79eff5b51b25b62acccca48b48e192b0ef6e8bce19394d9177a4b",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/overlay_writer.py",
+      "sha256": "sha256:cefda8bc744461113b32e404e53097c59fe51236f23b189f2b169ac4fff50d57",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_liveness.py",
+      "sha256": "sha256:ad2a2a23dad78e756acb959bd105bdd3f9d87c60b2fed1e871616b0176309d1b",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/tests/test_overlay_writer.py",
+      "sha256": "sha256:49119eed52db4252fa4c34cc15880b2430fcc2513e859b246e9a11ec2d2b627b",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/kernel/context_projector.py",
+      "sha256": "sha256:c706f175148f354b2ce7fa41cf532c2a0ec6ff81938a59b1a92374ebb1032b1f",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_context_projector.py",
+      "sha256": "sha256:25a4459eb6c758522ca94b6774ffbc5002d46dc86e1f5d3418c5be5f5d618334",
       "classification": "test"
     }
   ]

@@ -17,10 +17,31 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-HOT_ROOT = SCRIPT_DIR.parent
-CP_ROOT = HOT_ROOT.parent
-sys.path.insert(0, str(HOT_ROOT))
+# Dual-context path detection: installed root vs staging packages
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
+_INSTALLED = (_HOT / "kernel" / "ledger_client.py").exists()
+
+if _INSTALLED:
+    # Installed layout — all packages merged under HOT/
+    HOT_ROOT = _HOT
+    CP_ROOT = _HOT.parent
+    _paths = [_HOT / "kernel", _HOT, _HOT / "scripts"]
+else:
+    # Staging layout — sibling packages under _staging/
+    _STAGING = _HERE.parents[2]
+    HOT_ROOT = _HOT  # PKG-LAYOUT-001's own HOT/
+    CP_ROOT = _STAGING.parent
+    _paths = [
+        _STAGING / "PKG-KERNEL-001" / "HOT" / "kernel",
+        _STAGING / "PKG-KERNEL-001" / "HOT",
+        _STAGING / "PKG-LAYOUT-001" / "HOT",
+    ]
+
+for _p in _paths:
+    _s = str(_p)
+    if _s not in sys.path:
+        sys.path.insert(0, _s)
 
 
 # === layout.json Structure Tests ===
@@ -45,10 +66,10 @@ class TestLayoutJsonExists:
         assert data.get("schema_version") == "1.0"
 
     def test_has_tiers(self):
-        """Must declare all 4 tiers."""
+        """Must declare all 3 tiers: HOT, HO2, HO1."""
         data = json.loads(self.LAYOUT_PATH.read_text())
         tiers = data.get("tiers", {})
-        for tier in ["HOT", "HO3", "HO2", "HO1"]:
+        for tier in ["HOT", "HO2", "HO1"]:
             assert tier in tiers, f"Missing tier: {tier}"
 
     def test_has_hot_dirs(self):
@@ -151,30 +172,30 @@ class TestTierLayout:
         from kernel.layout import LAYOUT
         assert callable(LAYOUT.tier)
 
-    def test_tier_ho3_returns_tier_layout(self):
-        """LAYOUT.tier('HO3') must return a TierLayout."""
+    def test_tier_ho2_returns_tier_layout(self):
+        """LAYOUT.tier('HO2') must return a TierLayout."""
         from kernel.layout import LAYOUT
-        t = LAYOUT.tier("HO3")
+        t = LAYOUT.tier("HO2")
         assert t is not None
 
-    def test_tier_ho3_installed_is_path(self):
-        """LAYOUT.tier('HO3').installed must be a Path."""
+    def test_tier_ho2_installed_is_path(self):
+        """LAYOUT.tier('HO2').installed must be a Path ending with HO2/installed."""
         from kernel.layout import LAYOUT
-        t = LAYOUT.tier("HO3")
+        t = LAYOUT.tier("HO2")
         assert isinstance(t.installed, Path)
-        assert str(t.installed).endswith("HO3/installed")
+        assert str(t.installed).endswith("HO2/installed")
 
-    def test_tier_ho3_ledger_is_path(self):
-        """LAYOUT.tier('HO3').ledger must be a Path."""
+    def test_tier_ho2_ledger_is_path(self):
+        """LAYOUT.tier('HO2').ledger must be a Path ending with HO2/ledger."""
         from kernel.layout import LAYOUT
-        t = LAYOUT.tier("HO3")
+        t = LAYOUT.tier("HO2")
         assert isinstance(t.ledger, Path)
-        assert str(t.ledger).endswith("HO3/ledger")
+        assert str(t.ledger).endswith("HO2/ledger")
 
-    def test_tier_ho3_tests_is_path(self):
-        """LAYOUT.tier('HO3').tests must be a Path."""
+    def test_tier_ho2_tests_is_path(self):
+        """LAYOUT.tier('HO2').tests must be a Path."""
         from kernel.layout import LAYOUT
-        t = LAYOUT.tier("HO3")
+        t = LAYOUT.tier("HO2")
         assert isinstance(t.tests, Path)
 
     def test_tier_invalid_raises(self):
@@ -203,9 +224,9 @@ class TestLayoutConvenience:
         assert "HOT/registries" in str(path) or "HOT\\registries" in str(path)
 
     def test_ledger_file_resolves(self):
-        """LAYOUT.ledger_file('HO3', 'packages') must resolve to .jsonl path."""
+        """LAYOUT.ledger_file('HO2', 'packages') must resolve to .jsonl path."""
         from kernel.layout import LAYOUT
-        path = LAYOUT.ledger_file("HO3", "packages")
+        path = LAYOUT.ledger_file("HO2", "packages")
         assert isinstance(path, Path)
         assert str(path).endswith("packages.jsonl")
 
@@ -213,7 +234,7 @@ class TestLayoutConvenience:
         """ledger_file() with unknown key must raise."""
         from kernel.layout import LAYOUT
         with pytest.raises(KeyError):
-            LAYOUT.ledger_file("HO3", "nonexistent")
+            LAYOUT.ledger_file("HO2", "nonexistent")
 
 
 # === Bootstrap Fallback ===
