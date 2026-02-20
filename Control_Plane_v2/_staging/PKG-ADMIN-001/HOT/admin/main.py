@@ -49,6 +49,8 @@ def _ensure_import_paths(root: Path | None = None) -> None:
         staging / "PKG-SESSION-HOST-V2-001" / "HOT" / "kernel",
         staging / "PKG-SHELL-001" / "HOT" / "kernel",
         staging / "PKG-TOKEN-BUDGETER-001" / "HOT" / "kernel",
+        staging / "PKG-HO3-MEMORY-001" / "HOT" / "kernel",
+        staging / "PKG-HO3-MEMORY-001" / "HOT",
     ]
     if root is not None:
         add = [
@@ -74,11 +76,40 @@ def load_admin_config(config_path: Path) -> dict:
     return data
 
 
-def _register_admin_tools(dispatcher, root: Path) -> None:
+def _register_admin_tools(dispatcher, root: Path, runtime_config: dict | None = None) -> None:
     """Register built-in ADMIN tool handlers."""
     import re
     from collections import Counter
-    from datetime import datetime, timezone
+    try:
+        from forensic_policy import DEFAULT_POLICY
+        from ledger_forensics import (
+            correlate_by_wo,
+            entry_matches_session as lf_entry_matches_session,
+            entry_session_id as lf_entry_session_id,
+            entry_wo_id as lf_entry_wo_id,
+            extract_stages,
+            get_ledger_map as lf_get_ledger_map,
+            parse_ts as lf_parse_ts,
+            read_all_ledgers,
+            read_entries as lf_read_entries,
+            resolve_ledger_source as lf_resolve_ledger_source,
+        )
+    except ImportError:  # pragma: no cover - package-import fallback
+        from .forensic_policy import DEFAULT_POLICY
+        from .ledger_forensics import (
+            correlate_by_wo,
+            entry_matches_session as lf_entry_matches_session,
+            entry_session_id as lf_entry_session_id,
+            entry_wo_id as lf_entry_wo_id,
+            extract_stages,
+            get_ledger_map as lf_get_ledger_map,
+            parse_ts as lf_parse_ts,
+            read_all_ledgers,
+            read_entries as lf_read_entries,
+            resolve_ledger_source as lf_resolve_ledger_source,
+        )
+
+    runtime = dict(runtime_config or {})
 
     def _gate_check(args):
         gate = args.get("gate", "all")
@@ -166,65 +197,25 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
         return items[:limit], len(items), limit, 0
 
     def _get_ledger_map() -> dict[str, Path]:
-        return {
-            "governance": root / "HOT" / "ledger" / "governance.jsonl",
-            "ho2m": root / "HO2" / "ledger" / "ho2m.jsonl",
-            "ho1m": root / "HO1" / "ledger" / "ho1m.jsonl",
-        }
+        return lf_get_ledger_map(root)
 
     def _resolve_ledger_source(source: str) -> tuple[Path | None, str | None]:
-        ledger_path = _get_ledger_map().get(source)
-        if ledger_path is None:
-            return None, f"Unknown ledger: {source}. Valid: governance, ho2m, ho1m"
-        return ledger_path, None
+        return lf_resolve_ledger_source(root, source)
 
     def _read_entries(source: str) -> tuple[list, str | None]:
-        from ledger_client import LedgerClient
-
-        ledger_path, err = _resolve_ledger_source(source)
-        if err:
-            return [], err
-        if not ledger_path.exists():
-            return [], None
-        ledger = LedgerClient(ledger_path=ledger_path)
-        return ledger.read_all(), None
+        return lf_read_entries(root, source)
 
     def _entry_session_id(entry) -> str | None:
-        md = entry.metadata or {}
-        prov = md.get("provenance", {}) if isinstance(md.get("provenance", {}), dict) else {}
-        return (
-            md.get("session_id")
-            or prov.get("session_id")
-            or md.get("_session_id")
-            or (entry.submission_id if str(entry.submission_id).startswith("SES-") else None)
-        )
+        return lf_entry_session_id(entry)
 
     def _entry_wo_id(entry) -> str | None:
-        md = entry.metadata or {}
-        prov = md.get("provenance", {}) if isinstance(md.get("provenance", {}), dict) else {}
-        work_order_id = prov.get("work_order_id") or md.get("work_order_id")
-        if work_order_id:
-            return str(work_order_id)
-        if str(entry.submission_id).startswith("WO-"):
-            return str(entry.submission_id)
-        return None
+        return lf_entry_wo_id(entry)
 
     def _entry_matches_session(entry, session_id: str) -> bool:
-        sid = _entry_session_id(entry)
-        if sid == session_id:
-            return True
-        wo_id = _entry_wo_id(entry)
-        if wo_id and wo_id.startswith(f"WO-{session_id}-"):
-            return True
-        return False
+        return lf_entry_matches_session(entry, session_id)
 
     def _parse_ts(ts: str):
-        if not ts:
-            return datetime.min.replace(tzinfo=timezone.utc)
-        try:
-            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        except Exception:
-            return datetime.min.replace(tzinfo=timezone.utc)
+        return lf_parse_ts(ts)
 
     def _apply_pagination(items: list, limit: int, offset: int) -> list:
         return items[offset: offset + limit]
@@ -455,12 +446,12 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
 
         limit = _parse_int(args.get("limit", 100), 100, minimum=1, maximum=2000)
         offset = _parse_int(args.get("offset", 0), 0, minimum=0, maximum=100000)
-        max_bytes = _parse_int(args.get("max_bytes", 50000), 50000, minimum=256, maximum=2_000_000)
-        verbosity = str(args.get("verbosity", "compact")).lower()
+        max_bytes = _parse_int(args.get("max_bytes", DEFAULT_POLICY.max_bytes), DEFAULT_POLICY.max_bytes, minimum=256, maximum=2_000_000)
+        verbosity = str(args.get("verbosity", DEFAULT_POLICY.verbosity)).lower()
         if verbosity not in {"compact", "full"}:
-            verbosity = "compact"
-        include_prompts = bool(args.get("include_prompts", False))
-        include_tool_payloads = bool(args.get("include_tool_payloads", True))
+            verbosity = DEFAULT_POLICY.verbosity
+        include_prompts = bool(args.get("include_prompts", DEFAULT_POLICY.include_prompts))
+        include_tool_payloads = bool(args.get("include_tool_payloads", DEFAULT_POLICY.include_tool_payloads))
 
         source_priority = {"ho2m": 0, "ho1m": 1, "governance": 2}
         normalized = []
@@ -569,7 +560,12 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
     def _query_ledger_full(args):
         source = str(args.get("ledger", "governance"))
         event_type = args.get("event_type")
-        limit = _parse_int(args.get("limit", args.get("max_entries", 10)), 10, minimum=1, maximum=500)
+        limit = _parse_int(
+            args.get("limit", args.get("max_entries", DEFAULT_POLICY.max_entries)),
+            DEFAULT_POLICY.max_entries,
+            minimum=1,
+            maximum=500,
+        )
         offset = _parse_int(args.get("offset", 0), 0, minimum=0, maximum=100000)
 
         entries, err = _read_entries(source)
@@ -612,7 +608,7 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
             return {"status": "error", "error": err}
         if not ledger_path.exists():
             return {"status": "ok", "source": source, "pattern": pattern, "count": 0, "limit": 0, "offset": 0, "entries": []}
-        limit = _parse_int(args.get("limit", 20), 20, minimum=1, maximum=1000)
+        limit = _parse_int(args.get("limit", DEFAULT_POLICY.max_entries), DEFAULT_POLICY.max_entries, minimum=1, maximum=1000)
         offset = _parse_int(args.get("offset", 0), 0, minimum=0, maximum=100000)
         try:
             regex = re.compile(pattern)
@@ -636,6 +632,116 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
             "offset": offset,
             "entries": page,
         }
+
+    def _trace_prompt_journey(args):
+        session_id = str(args.get("session_id", "")).strip()
+        if not session_id:
+            return {"status": "error", "error": "session_id is required"}
+
+        wo_filter = str(args.get("wo_id", "")).strip()
+        turn_filter = args.get("turn_number")
+        include_prompts = bool(args.get("include_prompts", DEFAULT_POLICY.include_prompts))
+        include_tool_payloads = bool(args.get("include_tool_payloads", DEFAULT_POLICY.include_tool_payloads))
+        include_responses = bool(args.get("include_responses", DEFAULT_POLICY.include_responses))
+        include_evidence_ids = bool(args.get("include_evidence_ids", DEFAULT_POLICY.include_evidence_ids))
+        limit = _parse_int(args.get("limit", DEFAULT_POLICY.max_entries), DEFAULT_POLICY.max_entries, minimum=1, maximum=5000)
+        offset = _parse_int(args.get("offset", 0), 0, minimum=0, maximum=100000)
+        max_bytes = _parse_int(args.get("max_bytes", DEFAULT_POLICY.max_bytes), DEFAULT_POLICY.max_bytes, minimum=256, maximum=2_000_000)
+
+        entries_by_source = read_all_ledgers(root, session_id)
+        grouped = correlate_by_wo(entries_by_source)
+
+        if wo_filter:
+            grouped = {wo_id: rows for wo_id, rows in grouped.items() if wo_id == wo_filter}
+
+        ordered_wos = sorted(
+            grouped.items(),
+            key=lambda kv: _parse_ts(kv[1][0]["entry"].timestamp if kv[1] else ""),
+        )
+        ordered_wos = ordered_wos[offset: offset + limit]
+
+        turns = []
+        current_turn = None
+        turn_counter = 0
+
+        for wo_id, wo_entries in ordered_wos:
+            wo_type = "unknown"
+            for row in wo_entries:
+                meta = row["entry"].metadata or {}
+                if meta.get("wo_type"):
+                    wo_type = str(meta.get("wo_type"))
+                    break
+
+            if wo_type == "classify" or current_turn is None:
+                turn_counter += 1
+                current_turn = {"turn_number": turn_counter, "wo_chain": []}
+                turns.append(current_turn)
+
+            stages = extract_stages(
+                wo_entries,
+                include_prompts=include_prompts,
+                include_tool_payloads=include_tool_payloads,
+                include_responses=include_responses,
+                include_evidence_ids=include_evidence_ids,
+            )
+            current_turn["wo_chain"].append(
+                {"wo_id": wo_id, "wo_type": wo_type, "stages": stages}
+            )
+
+            quality_stage = next((s for s in stages if s.get("stage") == "quality_gate"), None)
+            if quality_stage and "quality_gate" not in current_turn:
+                current_turn["quality_gate"] = {
+                    key: quality_stage[key]
+                    for key in ("decision", "reason", "evidence_id", "timestamp", "source")
+                    if key in quality_stage
+                }
+
+        if turn_filter is not None:
+            try:
+                turn_num = int(turn_filter)
+                turns = [t for t in turns if t.get("turn_number") == turn_num]
+            except (TypeError, ValueError):
+                return {"status": "error", "error": "turn_number must be an integer"}
+
+        base = {
+            "status": "ok",
+            "session_id": session_id,
+            "wo_count": 0,
+            "llm_call_count": 0,
+            "tool_call_count": 0,
+            "turns": [],
+            "limit": limit,
+            "offset": offset,
+            "truncated": False,
+        }
+
+        for turn in turns:
+            probe = dict(base)
+            probe["turns"] = base["turns"] + [turn]
+            # recompute counts for probe
+            probe_wo_count = 0
+            probe_llm_calls = 0
+            probe_tool_calls = 0
+            for t in probe["turns"]:
+                for wo in t.get("wo_chain", []):
+                    probe_wo_count += 1
+                    for stage in wo.get("stages", []):
+                        if stage.get("stage") == "llm_response":
+                            probe_llm_calls += 1
+                        if stage.get("stage") == "tool_call":
+                            probe_tool_calls += 1
+            probe["wo_count"] = probe_wo_count
+            probe["llm_call_count"] = probe_llm_calls
+            probe["tool_call_count"] = probe_tool_calls
+
+            size = len(json.dumps(probe, default=str).encode("utf-8"))
+            if size > max_bytes:
+                base["truncated"] = True
+                base["truncation_marker"] = DEFAULT_POLICY.truncation_marker.format(bytes=max_bytes)
+                break
+            base = probe
+
+        return base
 
     def _list_files(args):
         import fnmatch
@@ -690,6 +796,28 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
         packages = sorted(p.name for p in installed_dir.glob("PKG-*") if p.is_dir())
         return {"status": "ok", "packages": packages}
 
+    def _show_runtime_config(_args):
+        return {"status": "ok", "runtime": dict(runtime)}
+
+    def _list_tuning_files(_args):
+        files = [
+            "HOT/config/admin_config.json",
+            "HOT/config/layout.json",
+            "HO1/contracts/classify.json",
+            "HO1/contracts/synthesize.json",
+            "HO1/prompt_packs/PRM-SYNTHESIZE-001.txt",
+            "HO2/kernel/quality_gate.py",
+            "HOT/kernel/llm_gateway.py",
+            "HOT/admin/main.py",
+        ]
+        existing = [p for p in files if (root / p).exists()]
+        return {
+            "status": "ok",
+            "count": len(files),
+            "files": files,
+            "existing": existing,
+        }
+
     dispatcher.register_tool("gate_check", _gate_check)
     dispatcher.register_tool("read_file", _read_file)
     dispatcher.register_tool("query_ledger", _query_ledger)
@@ -700,6 +828,9 @@ def _register_admin_tools(dispatcher, root: Path) -> None:
     dispatcher.register_tool("reconstruct_session", _reconstruct_session)
     dispatcher.register_tool("query_ledger_full", _query_ledger_full)
     dispatcher.register_tool("grep_jsonl", _grep_jsonl)
+    dispatcher.register_tool("trace_prompt_journey", _trace_prompt_journey)
+    dispatcher.register_tool("show_runtime_config", _show_runtime_config)
+    dispatcher.register_tool("list_tuning_files", _list_tuning_files)
 
 
 def _register_dev_tools(dispatcher, root: Path, permissions: dict) -> list[dict]:
@@ -1042,8 +1173,6 @@ def build_session_host_v2(
         tool_configs=cfg_dict.get("tools", []),
         permissions=cfg_dict.get("permissions", {}),
     )
-    _register_admin_tools(dispatcher, root=root)
-
     # 3b. Dev tools: dual gate check
     import os as _os
     tool_profile = cfg_dict.get("tool_profile", "production")
@@ -1061,20 +1190,55 @@ def build_session_host_v2(
     # Merge static + dev configs for tools_allowed
     all_tools = cfg_dict.get("tools", []) + dev_tool_configs
 
-    # 4. LLM Gateway
+    # 4. LLM router tuning
+    router_cfg = cfg_dict.get("router", {}) if isinstance(cfg_dict.get("router", {}), dict) else {}
+
+    def _to_int(value, default: int, min_value: int = 0) -> int:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            parsed = default
+        return max(min_value, parsed)
+
+    llm_timeout_ms = _to_int(router_cfg.get("llm_timeout_ms", cfg_dict.get("llm_timeout_ms", 30000)), 30000, 1)
+    llm_max_retries = _to_int(router_cfg.get("llm_max_retries", cfg_dict.get("llm_max_retries", 0)), 0, 0)
+    llm_retry_backoff_ms = _to_int(router_cfg.get("llm_retry_backoff_ms", cfg_dict.get("llm_retry_backoff_ms", 0)), 0, 0)
+
+    _register_admin_tools(
+        dispatcher,
+        root=root,
+        runtime_config={
+            "provider_id": "anthropic",
+            "model_id": "claude-sonnet-4-5-20250929",
+            "llm_timeout_ms": llm_timeout_ms,
+            "llm_max_retries": llm_max_retries,
+            "llm_retry_backoff_ms": llm_retry_backoff_ms,
+            "budget_mode": budget_mode,
+            "session_token_limit": budget_cfg.get("session_token_limit", 200000),
+            "classify_budget": budget_cfg.get("classify_budget", 2000),
+            "synthesize_budget": budget_cfg.get("synthesize_budget", 16000),
+            "tool_profile": tool_profile,
+            "enabled_tool_ids": [t["tool_id"] for t in all_tools],
+        },
+    )
+
+    # 5. LLM Gateway
     gateway = LLMGateway(
         ledger_client=ledger_gov,
         budgeter=budgeter,
         config=RouterConfig(
             default_provider="anthropic",
             default_model="claude-sonnet-4-5-20250929",
+            default_timeout_ms=llm_timeout_ms,
+            max_retries=llm_max_retries,
+            retry_backoff_ms=llm_retry_backoff_ms,
         ),
         dev_mode=dev_mode,
         budget_mode=budget_mode,
     )
     gateway.register_provider("anthropic", AnthropicProvider())
 
-    # 5. HO1 Executor
+    # 6. HO1 Executor
     ho1_config = {
         "agent_id": cfg_dict.get("agent_id", "admin-001") + ".ho1",
         "agent_class": cfg_dict.get("agent_class", "ADMIN"),
@@ -1093,7 +1257,8 @@ def build_session_host_v2(
         config=ho1_config,
     )
 
-    # 6. HO2 Supervisor
+    # 7. HO2 Supervisor
+    ho3_cfg = cfg_dict.get("ho3", {})
     ho2_config = HO2Config(
         attention_templates=["ATT-ADMIN-001"],
         ho2m_path=root / "HO2" / "ledger" / "ho2m.jsonl",
@@ -1104,7 +1269,33 @@ def build_session_host_v2(
         followup_min_remaining=budget_cfg.get("followup_min_remaining", 500),
         budget_mode=budget_mode,
         tools_allowed=[t["tool_id"] for t in all_tools],
+        # HO3 fields — all from config, no silent defaults
+        ho3_enabled=ho3_cfg.get("enabled", False),
+        ho3_memory_dir=Path(ho3_cfg["memory_dir"]) if ho3_cfg.get("memory_dir") else None,
+        ho3_gate_count_threshold=ho3_cfg.get("gate_count_threshold", 5),
+        ho3_gate_session_threshold=ho3_cfg.get("gate_session_threshold", 3),
+        ho3_gate_window_hours=ho3_cfg.get("gate_window_hours", 168),
+        consolidation_budget=budget_cfg.get("consolidation_budget", 4000),
     )
+
+    # 7b. HO3 Memory (optional — enabled via ho3.enabled in config)
+    ho3_memory = None
+    if ho3_cfg.get("enabled", False):
+        try:
+            from ho3_memory import HO3Memory, HO3MemoryConfig
+            memory_dir = root / ho3_cfg.get("memory_dir", "HOT/memory")
+            memory_dir.mkdir(parents=True, exist_ok=True)
+            ho3_config = HO3MemoryConfig(
+                memory_dir=memory_dir,
+                gate_count_threshold=ho3_cfg.get("gate_count_threshold", 5),
+                gate_session_threshold=ho3_cfg.get("gate_session_threshold", 3),
+                gate_window_hours=ho3_cfg.get("gate_window_hours", 168),
+                enabled=True,
+            )
+            ho3_memory = HO3Memory(plane_root=root, config=ho3_config)
+        except ImportError:
+            pass  # PKG-HO3-MEMORY-001 not installed — ho3_memory stays None
+
     ho2 = HO2Supervisor(
         plane_root=root,
         agent_class=cfg_dict.get("agent_class", "ADMIN"),
@@ -1112,9 +1303,10 @@ def build_session_host_v2(
         ledger_client=ledger_ho2m,
         token_budgeter=budgeter,
         config=ho2_config,
+        ho3_memory=ho3_memory,
     )
 
-    # 7. V2 Agent Config
+    # 8. V2 Agent Config
     v2_agent_config = V2AgentConfig(
         agent_id=cfg_dict["agent_id"],
         agent_class=cfg_dict["agent_class"],
@@ -1127,7 +1319,7 @@ def build_session_host_v2(
         permissions=cfg_dict["permissions"],
     )
 
-    # 8. Session Host V2
+    # 9. Session Host V2
     sh_v2 = SessionHostV2(
         ho2_supervisor=ho2,
         gateway=gateway,
@@ -1135,7 +1327,7 @@ def build_session_host_v2(
         ledger_client=ledger_gov,
     )
 
-    # 9. Shell
+    # 10. Shell
     return Shell(sh_v2, v2_agent_config, input_fn, output_fn)
 
 

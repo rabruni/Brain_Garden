@@ -36,6 +36,8 @@ except ImportError:
 from session_manager import SessionManager, TurnMessage
 from attention import AttentionRetriever, ContextProvider, AttentionContext
 from quality_gate import QualityGate, QualityGateResult
+from intent_resolver import resolve_intent_transition, make_intent_id, TransitionDecision
+from bias_selector import select_biases
 
 # Optional HO3 memory integration (PKG-HO3-MEMORY-001)
 try:
@@ -79,6 +81,7 @@ class HO2Config:
     ho3_gate_count_threshold: int = 5
     ho3_gate_session_threshold: int = 3
     ho3_gate_window_hours: int = 168
+    ho3_bias_budget: int = 2000
     # Consolidation config (29C)
     consolidation_budget: int = 4000
     consolidation_contract_id: str = "PRC-CONSOLIDATE-001"
@@ -136,6 +139,8 @@ class HO2Supervisor:
             "input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
             "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0,
         }
+        self._active_intents: List[Dict[str, Any]] = []
+        self._intent_sequence: int = 0
 
     def start_session(self) -> str:
         """Initialize session. Returns session_id."""
@@ -163,6 +168,7 @@ class HO2Supervisor:
             "input_tokens": 0, "output_tokens": 0, "total_tokens": 0,
             "llm_calls": 0, "tool_calls": 0, "elapsed_ms": 0,
         }
+        turn_event_ts = datetime.now(timezone.utc).isoformat()
 
         try:
             # ------ Step 2a: Classify user intent ------
@@ -184,6 +190,13 @@ class HO2Supervisor:
 
             classification = classify_result.get("output_result", {}) or {}
 
+            # ------ Step 2a+: Intent lifecycle (31C) ------
+            active_intents = self._scan_active_intents(session_id)
+            intent_decision = resolve_intent_transition(
+                active_intents, classification, session_id, self._intent_sequence + 1,
+            )
+            self._apply_intent_decision(intent_decision, session_id)
+
             # ------ Step 2b: Attention retrieval ------
             horizontal = self._attention.horizontal_scan(session_id)
             priority = self._attention.priority_probe()
@@ -191,14 +204,35 @@ class HO2Supervisor:
             # ------ Step 2b+: HO3 bias injection (29B) ------
             ho3_biases = []
             if self._ho3_memory and self._config.ho3_enabled:
-                ho3_biases = self._ho3_memory.read_active_biases()
+                try:
+                    all_artifacts = self._ho3_memory.read_active_biases(as_of_ts=turn_event_ts)
+                except TypeError:
+                    # Backward compatibility with older HO3 memory API.
+                    all_artifacts = self._ho3_memory.read_active_biases()
+                turn_labels = classification.get("labels", {}) if isinstance(classification, dict) else {}
+                ho3_biases = select_biases(
+                    all_artifacts,
+                    turn_labels if isinstance(turn_labels, dict) else {},
+                    self._config.ho3_bias_budget,
+                    turn_event_ts,
+                )
 
             # ------ Step 2c: Assemble context for synthesize WO ------
             assembled_context = self._attention.assemble_wo_context(
                 horizontal, priority, user_message, classification,
             )
             if ho3_biases:
-                assembled_context["ho3_biases"] = ho3_biases
+                context_lines = []
+                for artifact in ho3_biases:
+                    if not isinstance(artifact, dict):
+                        continue
+                    line = artifact.get("context_line")
+                    if not line and isinstance(artifact.get("content", {}), dict):
+                        line = artifact.get("content", {}).get("bias")
+                    if isinstance(line, str) and line.strip():
+                        context_lines.append(line.strip())
+                if context_lines:
+                    assembled_context["ho3_biases"] = context_lines
 
             # ------ Step 3: Dispatch synthesize WO to HO1 ------
             synthesize_wo = self._create_wo(
@@ -309,23 +343,43 @@ class HO2Supervisor:
             if self._ho3_memory and self._config.ho3_enabled:
                 # Extract deterministic signals from the turn
                 signals_this_turn: List[str] = []
+                seen_signals = set()
+
+                def _emit_signal(sig_id: str) -> None:
+                    if not sig_id or sig_id in seen_signals:
+                        return
+                    evt_id = f"EVT-{hashlib.sha256(f'{session_id}:{sig_id}:{time.time_ns()}'.encode()).hexdigest()[:8]}"
+                    self._ho3_memory.log_signal(sig_id, session_id, evt_id)
+                    signals_this_turn.append(sig_id)
+                    seen_signals.add(sig_id)
 
                 # Intent signal from classify WO result
                 classification_type = classification.get("speech_act")
                 if classification_type:
-                    sig_id = f"intent:{classification_type}"
-                    evt_id = f"EVT-{hashlib.sha256(f'{session_id}:{sig_id}:{time.time()}'.encode()).hexdigest()[:8]}"
-                    self._ho3_memory.log_signal(sig_id, session_id, evt_id)
-                    signals_this_turn.append(sig_id)
+                    _emit_signal(f"intent:{classification_type}")
+
+                # Domain/task signals from classify labels
+                labels = classification.get("labels", {}) if isinstance(classification, dict) else {}
+                if isinstance(labels, dict):
+                    for domain_label in self._normalize_label_values(labels.get("domain")):
+                        _emit_signal(f"domain:{domain_label}")
+                    for task_label in self._normalize_label_values(labels.get("task")):
+                        _emit_signal(f"task:{task_label}")
 
                 # Tool signals from WO chain cost.tool_ids_used (29C)
                 for wo_result in wo_chain:
                     for tid in wo_result.get("cost", {}).get("tool_ids_used", []):
-                        sig_id = f"tool:{tid}"
-                        evt_id = f"EVT-{hashlib.sha256(f'{session_id}:{sig_id}:{time.time()}'.encode()).hexdigest()[:8]}"
-                        self._ho3_memory.log_signal(sig_id, session_id, evt_id)
-                        if sig_id not in signals_this_turn:
-                            signals_this_turn.append(sig_id)
+                        _emit_signal(f"tool:{tid}")
+
+                # Outcome signal from final synthesize WO result
+                synth_state = synth_result.get("state", "unknown")
+                if synth_state == "completed":
+                    outcome = "success"
+                elif synth_state == "failed":
+                    outcome = "failed"
+                else:
+                    outcome = "unknown"
+                _emit_signal(f"outcome:{outcome}")
 
                 # Gate check for each signal logged this turn
                 for sig_id in signals_this_turn:
@@ -410,6 +464,16 @@ class HO2Supervisor:
     def _accumulate_cost(self, target: Dict[str, int], source: Dict[str, Any]) -> None:
         for key in ("input_tokens", "output_tokens", "total_tokens", "llm_calls", "tool_calls", "elapsed_ms"):
             target[key] = target.get(key, 0) + int(source.get(key, 0))
+
+    def _normalize_label_values(self, value: Any) -> List[str]:
+        """Normalize classify label values into a list of non-empty strings."""
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value] if value else []
+        if isinstance(value, list):
+            return [str(v) for v in value if str(v)]
+        return [str(value)] if str(value) else []
 
     def _compute_trace_hash(self, wo_ids: List[str], session_id: str) -> str:
         """SHA256 of concatenated HO1m entries for this WO chain."""
@@ -529,6 +593,83 @@ class HO2Supervisor:
                 "wo_id": gate_result.wo_id,
             },
         ))
+
+    # -----------------------------------------------------------------------
+    # Intent lifecycle (31C)
+    # -----------------------------------------------------------------------
+
+    def _scan_active_intents(self, session_id: str = None) -> List[Dict[str, Any]]:
+        """Return currently active intents (in-memory cache)."""
+        return list(self._active_intents)
+
+    def _apply_intent_decision(self, decision: TransitionDecision, session_id: str) -> None:
+        """Write intent lifecycle events to ledger and update in-memory state."""
+        if decision.action in ("noop", "continue"):
+            return
+
+        # Handle supersede or close: write event for the closed intent
+        if decision.action in ("supersede", "close") and decision.closed_intent_id:
+            if decision.action == "supersede":
+                self._ledger.write(LedgerEntry(
+                    event_type="INTENT_SUPERSEDED",
+                    submission_id=session_id,
+                    decision="SUPERSEDED",
+                    reason="User started new topic",
+                    metadata={
+                        "provenance": {
+                            "agent_id": f"{self._agent_class}.ho2",
+                            "agent_class": self._agent_class,
+                            "session_id": session_id,
+                        },
+                        "intent_id": decision.closed_intent_id,
+                        "superseded_by_intent_id": decision.new_intent["intent_id"] if decision.new_intent else None,
+                        "reason": "User started new topic",
+                    },
+                ))
+            else:  # close
+                self._ledger.write(LedgerEntry(
+                    event_type="INTENT_CLOSED",
+                    submission_id=session_id,
+                    decision="CLOSED",
+                    reason="User farewell",
+                    metadata={
+                        "provenance": {
+                            "agent_id": f"{self._agent_class}.ho2",
+                            "agent_class": self._agent_class,
+                            "session_id": session_id,
+                        },
+                        "intent_id": decision.closed_intent_id,
+                        "outcome": "completed",
+                        "reason": "User farewell",
+                    },
+                ))
+            # Remove closed intent from active list
+            self._active_intents = [
+                i for i in self._active_intents
+                if i.get("intent_id") != decision.closed_intent_id
+            ]
+
+        # Handle declare: write INTENT_DECLARED and add to active list
+        if decision.new_intent:
+            self._ledger.write(LedgerEntry(
+                event_type="INTENT_DECLARED",
+                submission_id=session_id,
+                decision="DECLARED",
+                reason=f"Intent declared: {decision.new_intent.get('objective', '')}",
+                metadata={
+                    "provenance": {
+                        "agent_id": f"{self._agent_class}.ho2",
+                        "agent_class": self._agent_class,
+                        "session_id": session_id,
+                    },
+                    "intent_id": decision.new_intent["intent_id"],
+                    "scope": decision.new_intent.get("scope", "session"),
+                    "objective": decision.new_intent.get("objective", ""),
+                    "parent_intent_id": None,
+                },
+            ))
+            self._active_intents.append(decision.new_intent)
+            self._intent_sequence += 1
 
     # -----------------------------------------------------------------------
     # Consolidation (29C)

@@ -953,7 +953,7 @@ class MockHO3Memory:
         })
         return event_id
 
-    def read_active_biases(self) -> list:
+    def read_active_biases(self, as_of_ts=None) -> list:
         return list(self._biases)
 
     def check_gate(self, signal_id: str):
@@ -1056,8 +1056,8 @@ class TestHO3SignalWiring:
         assert result_off.response == result_on.response
 
     def test_ho3_read_injects_biases(self, tmp_path):
-        """Active biases exist -> added to synthesize WO input_context."""
-        biases = [{"bias": "User prefers tool queries", "category": "tool_preference", "salience_weight": 0.8}]
+        """Active biases exist -> context_line values injected into synthesize WO."""
+        biases = [{"context_line": "User prefers tool queries", "weight": 0.8, "scope": "global"}]
         ho3 = MockHO3Memory(enabled=True, biases=biases)
         sv, ho1, ledger = self._make_supervisor(tmp_path, ho3_memory=ho3, ho3_enabled=True)
         sv.handle_turn("hello")
@@ -1065,7 +1065,85 @@ class TestHO3SignalWiring:
         synth_wos = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"]
         assert len(synth_wos) >= 1
         assert "ho3_biases" in synth_wos[0]["input_context"]
-        assert synth_wos[0]["input_context"]["ho3_biases"] == biases
+        assert synth_wos[0]["input_context"]["ho3_biases"] == ["User prefers tool queries"]
+
+    def test_domain_signal_logged(self, tmp_path):
+        """labels.domain from classify should emit domain:<value> signal."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={
+                "speech_act": "question",
+                "ambiguity": "low",
+                "labels": {"domain": "system", "task": "inspect"},
+            },
+        )
+        sv.handle_turn("show packages")
+        assert any(s["signal_id"] == "domain:system" for s in ho3.logged_signals)
+
+    def test_task_signal_logged(self, tmp_path):
+        """labels.task from classify should emit task:<value> signal."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={
+                "speech_act": "question",
+                "ambiguity": "low",
+                "labels": {"domain": "system", "task": "inspect"},
+            },
+        )
+        sv.handle_turn("show packages")
+        assert any(s["signal_id"] == "task:inspect" for s in ho3.logged_signals)
+
+    def test_outcome_signal_logged(self, tmp_path):
+        """Successful synthesize should emit outcome:success signal."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "greeting", "ambiguity": "low"},
+        )
+        sv.handle_turn("hello")
+        assert any(s["signal_id"] == "outcome:success" for s in ho3.logged_signals)
+
+    def test_no_domain_signal_without_labels(self, tmp_path):
+        """If classify has no labels, domain signal should not be logged."""
+        ho3 = MockHO3Memory(enabled=True)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "question", "ambiguity": "low"},
+        )
+        sv.handle_turn("hello")
+        assert not any(s["signal_id"].startswith("domain:") for s in ho3.logged_signals)
+
+    def test_select_biases_called_at_step2b(self, tmp_path):
+        """HO2 should call select_biases instead of dump-all behavior."""
+        biases = [{"context_line": "line-from-artifact", "scope": "global"}]
+        ho3 = MockHO3Memory(enabled=True, biases=biases)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={
+                "speech_act": "question",
+                "ambiguity": "low",
+                "labels": {"domain": "system", "task": "inspect"},
+            },
+        )
+        with patch("ho2_supervisor.select_biases") as mock_select:
+            mock_select.return_value = [{"context_line": "line-from-selector"}]
+            sv.handle_turn("show packages")
+            assert mock_select.called
+
+    def test_context_lines_injected(self, tmp_path):
+        """Selected artifacts should inject context_line strings only."""
+        biases = [{"context_line": "artifact-context-line", "scope": "global"}]
+        ho3 = MockHO3Memory(enabled=True, biases=biases)
+        sv, ho1, ledger = self._make_supervisor(
+            tmp_path, ho3_memory=ho3, ho3_enabled=True,
+            classify_response={"speech_act": "question", "ambiguity": "low", "labels": {"domain": "system"}},
+        )
+        sv.handle_turn("show packages")
+        synth_wos = [w for w in ho1.executed_wos if w["wo_type"] == "synthesize"]
+        assert synth_wos
+        assert synth_wos[0]["input_context"].get("ho3_biases") == ["artifact-context-line"]
 
     def test_gate_check_runs_post_turn(self, tmp_path):
         """Signals logged -> check_gate called for each."""
@@ -1128,7 +1206,7 @@ class MockHO3MemoryForConsolidation:
         self.logged_signals.append({"signal_id": signal_id, "session_id": session_id, "event_id": event_id})
         return event_id
 
-    def read_active_biases(self):
+    def read_active_biases(self, as_of_ts=None):
         return []
 
     def check_gate(self, signal_id):
@@ -1291,3 +1369,95 @@ class TestConsolidationDispatch:
         # Should have logged tool:gate_check signal
         tool_signals = [s for s in ho3.logged_signals if s["signal_id"] == "tool:gate_check"]
         assert len(tool_signals) == 1
+
+
+# ===========================================================================
+# Intent Lifecycle Integration Tests (4) -- HANDOFF-31C
+# ===========================================================================
+
+class TestIntentLifecycleIntegration:
+    """4 integration tests for intent lifecycle in handle_turn."""
+
+    def _make_intent_supervisor(self, tmp_path, classify_response=None):
+        ho2m = tmp_path / "ho2m_intent"
+        ho2m.mkdir(exist_ok=True)
+        ho1m = tmp_path / "ho1m_intent"
+        ho1m.mkdir(exist_ok=True)
+        config = HO2Config(
+            attention_templates=["ATT-ADMIN-001"],
+            ho2m_path=ho2m,
+            ho1m_path=ho1m,
+        )
+        responses = {
+            "classify": classify_response or {"speech_act": "greeting", "ambiguity": "low"},
+            "synthesize": {"response_text": "Hello!"},
+        }
+        ho1 = MockHO1Executor(responses=responses)
+        ledger = MockLedgerClient()
+        budgeter = MockTokenBudgeter()
+        sv = HO2Supervisor(
+            plane_root=tmp_path,
+            agent_class="ADMIN",
+            ho1_executor=ho1,
+            ledger_client=ledger,
+            token_budgeter=budgeter,
+            config=config,
+        )
+        return sv, ho1, ledger
+
+    def test_intent_declared_on_first_turn(self, tmp_path):
+        """First handle_turn -> INTENT_DECLARED in ho2m."""
+        sv, ho1, ledger = self._make_intent_supervisor(tmp_path)
+        sv.handle_turn("hello")
+        declared = ledger.events_of_type("INTENT_DECLARED")
+        assert len(declared) == 1
+        assert declared[0].metadata["intent_id"].startswith("INT-")
+        assert declared[0].metadata["scope"] == "session"
+
+    def test_intent_superseded_on_topic_switch(self, tmp_path):
+        """Turn with action=new when active -> SUPERSEDED + DECLARED."""
+        # First turn: declares an intent (bridge mode, no intent_signal)
+        sv, ho1, ledger = self._make_intent_supervisor(tmp_path)
+        sv.handle_turn("hello")
+        first_declared = ledger.events_of_type("INTENT_DECLARED")
+        assert len(first_declared) == 1
+
+        # Second turn: new topic with intent_signal.action=new
+        ho1.responses["classify"] = {
+            "speech_act": "command", "ambiguity": "low",
+            "intent_signal": {"action": "new", "candidate_objective": "Check gates", "confidence": 0.9},
+        }
+        sv.handle_turn("check the gates")
+        superseded = ledger.events_of_type("INTENT_SUPERSEDED")
+        assert len(superseded) == 1
+        all_declared = ledger.events_of_type("INTENT_DECLARED")
+        assert len(all_declared) == 2  # first + new
+
+    def test_intent_closed_on_farewell(self, tmp_path):
+        """Turn with close -> INTENT_CLOSED in ho2m."""
+        sv, ho1, ledger = self._make_intent_supervisor(tmp_path)
+        sv.handle_turn("hello")  # declares intent
+
+        ho1.responses["classify"] = {
+            "speech_act": "farewell", "ambiguity": "low",
+            "intent_signal": {"action": "close", "candidate_objective": "done", "confidence": 0.9},
+        }
+        sv.handle_turn("goodbye")
+        closed = ledger.events_of_type("INTENT_CLOSED")
+        assert len(closed) == 1
+
+    def test_no_intent_events_on_continue(self, tmp_path):
+        """Turn with continue -> no new INTENT_* events beyond initial declare."""
+        sv, ho1, ledger = self._make_intent_supervisor(tmp_path)
+        sv.handle_turn("hello")  # declares intent
+        declared_count = len(ledger.events_of_type("INTENT_DECLARED"))
+
+        ho1.responses["classify"] = {
+            "speech_act": "question", "ambiguity": "low",
+            "intent_signal": {"action": "continue", "candidate_objective": "still chatting", "confidence": 0.8},
+        }
+        sv.handle_turn("tell me more")
+        # No new DECLARED, SUPERSEDED, or CLOSED
+        assert len(ledger.events_of_type("INTENT_DECLARED")) == declared_count
+        assert len(ledger.events_of_type("INTENT_SUPERSEDED")) == 0
+        assert len(ledger.events_of_type("INTENT_CLOSED")) == 0

@@ -961,8 +961,27 @@ class TestForensicToolsInConfig:
         cfg_path = Path(admin_main.__file__).resolve().parents[1] / "config" / "admin_config.json"
         cfg = json.loads(cfg_path.read_text())
         tool_ids = {t.get("tool_id") for t in cfg.get("tools", [])}
-        expected = {"list_sessions", "session_overview", "reconstruct_session", "query_ledger_full", "grep_jsonl"}
+        expected = {
+            "list_sessions",
+            "session_overview",
+            "reconstruct_session",
+            "query_ledger_full",
+            "grep_jsonl",
+            "trace_prompt_journey",
+        }
         assert expected.issubset(tool_ids)
+
+    def test_trace_prompt_journey_registered(self, tmp_path: Path):
+        class _CaptureDispatcher:
+            def __init__(self):
+                self.tools = {}
+
+            def register_tool(self, name, handler):
+                self.tools[name] = handler
+
+        dispatcher = _CaptureDispatcher()
+        admin_main._register_admin_tools(dispatcher, root=tmp_path)
+        assert "trace_prompt_journey" in dispatcher.tools
 
 
 # ====================================================================
@@ -1225,3 +1244,234 @@ class TestRunShellDev:
         result = handler({"command": "python3 -c \"print('x' * 60000)\""})
         assert result["status"] == "ok"
         assert "TRUNCATED" in result["stdout"]
+
+
+class TestAdminReliability29P:
+    class _CaptureDispatcher:
+        def __init__(self):
+            self.tools = {}
+
+        def register_tool(self, name, handler):
+            self.tools[name] = handler
+
+    def _write_router_fields(self, cfg_path: Path):
+        cfg = json.loads(cfg_path.read_text())
+        cfg["router"] = {
+            "llm_timeout_ms": 45000,
+            "llm_max_retries": 2,
+            "llm_retry_backoff_ms": 125,
+        }
+        cfg["tools"].extend([
+            {
+                "tool_id": "show_runtime_config",
+                "description": "Show effective runtime config",
+                "handler": "tools.show_runtime_config",
+                "parameters": {"type": "object", "properties": {}},
+            },
+            {
+                "tool_id": "list_tuning_files",
+                "description": "List tuning files",
+                "handler": "tools.list_tuning_files",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        ])
+        cfg_path.write_text(json.dumps(cfg))
+
+    def test_show_runtime_config_tool_returns_effective_values(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files(tmp_path)
+        self._write_router_fields(cfg_path)
+
+        dispatcher = self._CaptureDispatcher()
+        admin_main._register_admin_tools(
+            dispatcher,
+            root=tmp_path,
+            runtime_config={
+                "provider_id": "anthropic",
+                "model_id": "claude-sonnet-4-5-20250929",
+                "llm_timeout_ms": 45000,
+                "llm_max_retries": 2,
+                "llm_retry_backoff_ms": 125,
+                "budget_mode": "warn",
+                "session_token_limit": 1000,
+                "classify_budget": 2000,
+                "synthesize_budget": 16000,
+                "tool_profile": "production",
+                "enabled_tool_ids": ["show_runtime_config", "list_tuning_files"],
+            },
+        )
+
+        result = dispatcher.tools["show_runtime_config"]({})
+        assert result["status"] == "ok"
+        assert result["runtime"]["llm_timeout_ms"] == 45000
+        assert result["runtime"]["llm_max_retries"] == 2
+        assert result["runtime"]["llm_retry_backoff_ms"] == 125
+
+    def test_list_tuning_files_tool_returns_expected_paths(self, tmp_path: Path):
+        dispatcher = self._CaptureDispatcher()
+        admin_main._register_admin_tools(dispatcher, root=tmp_path)
+
+        result = dispatcher.tools["list_tuning_files"]({})
+        assert result["status"] == "ok"
+        paths = set(result["files"])
+        assert "HOT/config/admin_config.json" in paths
+        assert "HO1/contracts/synthesize.json" in paths
+        assert "HO1/prompt_packs/PRM-SYNTHESIZE-001.txt" in paths
+
+    def test_tools_present_in_admin_config_and_tools_allowed(self):
+        cfg_path = Path(admin_main.__file__).resolve().parents[1] / "config" / "admin_config.json"
+        cfg = json.loads(cfg_path.read_text())
+        tool_ids = {t.get("tool_id") for t in cfg.get("tools", [])}
+        assert "show_runtime_config" in tool_ids
+        assert "list_tuning_files" in tool_ids
+
+    def test_router_config_wired_from_admin_config(self, tmp_path: Path, monkeypatch):
+        cfg_path, _ = _write_admin_files(tmp_path)
+        self._write_router_fields(cfg_path)
+
+        anthropic_path = (
+            Path(admin_main.__file__).resolve().parents[3]
+            / "PKG-ANTHROPIC-PROVIDER-001"
+            / "HOT"
+            / "kernel"
+        )
+        provider_path = (
+            Path(admin_main.__file__).resolve().parents[3]
+            / "PKG-LLM-GATEWAY-001"
+            / "HOT"
+            / "kernel"
+        )
+        if str(anthropic_path) not in sys.path:
+            sys.path.insert(0, str(anthropic_path))
+        if str(provider_path) not in sys.path:
+            sys.path.insert(0, str(provider_path))
+        import anthropic_provider
+
+        class DummyAnthropicProvider:
+            provider_id = "anthropic"
+
+            def send(self, **kwargs):
+                from provider import ProviderResponse
+                return ProviderResponse(
+                    content="ok",
+                    model=kwargs.get("model_id", "dummy"),
+                    input_tokens=1,
+                    output_tokens=1,
+                    request_id="req-dummy",
+                    provider_id="anthropic",
+                )
+
+        monkeypatch.setattr(anthropic_provider, "AnthropicProvider", DummyAnthropicProvider)
+
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        gateway_cfg = shell._host._gateway._config
+        assert gateway_cfg.default_timeout_ms == 45000
+        assert gateway_cfg.max_retries == 2
+        assert gateway_cfg.retry_backoff_ms == 125
+
+
+def test_synthesize_prompt_contains_grounding_rules():
+    here = Path(__file__).resolve()
+    candidates = [
+        # Staging layout
+        here.parents[3] / "PKG-HO1-EXECUTOR-001" / "HO1" / "prompt_packs" / "PRM-SYNTHESIZE-001.txt",
+        # Installed clean-room layout
+        here.parents[2] / "HO1" / "prompt_packs" / "PRM-SYNTHESIZE-001.txt",
+    ]
+    prompt_path = next((p for p in candidates if p.exists()), candidates[0])
+    text = prompt_path.read_text()
+    assert "Do not claim to have read ledgers, files, or code" in text
+    assert "If evidence is missing" in text
+
+
+# ====================================================================
+# HANDOFF-31A1: HO3Memory Wiring Tests
+# ====================================================================
+
+
+def _write_admin_files_with_ho3(tmp_path: Path, ho3_enabled=True):
+    """Like _write_admin_files but with ho3 config section."""
+    cfg_path, tpl_path = _write_admin_files(tmp_path)
+    cfg = json.loads(cfg_path.read_text())
+    cfg["ho3"] = {
+        "enabled": ho3_enabled,
+        "memory_dir": "HOT/memory",
+        "gate_count_threshold": 5,
+        "gate_session_threshold": 3,
+        "gate_window_hours": 168,
+    }
+    cfg["budget"]["consolidation_budget"] = 4000
+    cfg["budget"]["ho3_bias_budget"] = 2000
+    cfg_path.write_text(json.dumps(cfg))
+    return cfg_path, tpl_path
+
+
+class TestHO3Wiring:
+    def test_ho3_memory_created_when_enabled(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=True)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2 = shell._host._ho2
+        assert ho2._ho3_memory is not None
+
+    def test_ho3_memory_none_when_disabled(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=False)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2 = shell._host._ho2
+        assert ho2._ho3_memory is None
+
+    def test_ho3_memory_none_when_section_missing(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files(tmp_path)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2 = shell._host._ho2
+        assert ho2._ho3_memory is None
+
+    def test_ho3_config_values_mapped_to_ho2config(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=True)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2_cfg = shell._host._ho2._config
+        assert ho2_cfg.ho3_enabled is True
+        assert ho2_cfg.ho3_gate_count_threshold == 5
+        assert ho2_cfg.ho3_gate_session_threshold == 3
+        assert ho2_cfg.ho3_gate_window_hours == 168
+
+    def test_consolidation_budget_from_config(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=True)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2_cfg = shell._host._ho2._config
+        assert ho2_cfg.consolidation_budget == 4000
+
+    def test_consolidation_budget_not_default_when_config_differs(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=True)
+        cfg = json.loads(cfg_path.read_text())
+        cfg["budget"]["consolidation_budget"] = 8000
+        cfg_path.write_text(json.dumps(cfg))
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho2_cfg = shell._host._ho2._config
+        assert ho2_cfg.consolidation_budget == 8000
+
+    def test_ho3_bias_budget_in_config(self):
+        cfg_path = Path(admin_main.__file__).resolve().parents[1] / "config" / "admin_config.json"
+        cfg = json.loads(cfg_path.read_text())
+        assert cfg["budget"]["ho3_bias_budget"] == 2000
+
+    def test_ho3_memory_dir_resolved_against_root(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=True)
+        shell = build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        ho3_mem = shell._host._ho2._ho3_memory
+        assert ho3_mem is not None
+        expected = tmp_path / "HOT" / "memory"
+        assert ho3_mem.config.memory_dir == expected
+
+    def test_ho3_memory_dir_created(self, tmp_path: Path):
+        cfg_path, _ = _write_admin_files_with_ho3(tmp_path, ho3_enabled=True)
+        memory_dir = tmp_path / "HOT" / "memory"
+        assert not memory_dir.exists()
+        build_session_host_v2(root=tmp_path, config_path=cfg_path, dev_mode=True)
+        assert memory_dir.is_dir()
+
+    def test_ho3_import_path_in_staging_mode(self):
+        """Verify _ensure_import_paths includes PKG-HO3-MEMORY-001 path in staging mode."""
+        staging = admin_main._staging_root()
+        expected = str(staging / "PKG-HO3-MEMORY-001" / "HOT" / "kernel")
+        # Call _ensure_import_paths (staging mode, no root)
+        admin_main._ensure_import_paths(root=None)
+        assert expected in sys.path

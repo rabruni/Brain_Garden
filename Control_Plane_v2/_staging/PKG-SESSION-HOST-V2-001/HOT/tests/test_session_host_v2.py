@@ -106,6 +106,151 @@ class TestNormalPath:
         mock_ho2.end_session.assert_called_once()
 
 
+class TestConsolidation:
+    def test_consolidation_called_when_candidates_present(self, host, mock_ho2):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Hello from HO2",
+            tool_calls=[],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=["intent:tool_query"],
+        )
+        host.start_session()
+        result = host.process_turn("hello")
+
+        mock_ho2.run_consolidation.assert_called_once_with(["intent:tool_query"])
+        assert result.outcome == "success"
+
+    def test_consolidation_not_called_when_empty(self, host, mock_ho2):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Hello from HO2",
+            tool_calls=[],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=[],
+        )
+        host.start_session()
+        host.process_turn("hello")
+
+        mock_ho2.run_consolidation.assert_not_called()
+
+    def test_consolidation_not_called_when_missing(self, host, mock_ho2):
+        class ResultWithoutCandidates:
+            response = "Hello from HO2"
+            tool_calls = []
+            exchange_entry_ids = ["EX-001"]
+
+        mock_ho2.handle_turn.return_value = ResultWithoutCandidates()
+        host.start_session()
+        host.process_turn("hello")
+
+        mock_ho2.run_consolidation.assert_not_called()
+
+    def test_consolidation_failure_does_not_crash_turn(self, host, mock_ho2):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Hello from HO2",
+            tool_calls=[{"tool_id": "query_ledger"}],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=["intent:tool_query"],
+        )
+        mock_ho2.run_consolidation.side_effect = RuntimeError("Consolidation failed")
+
+        host.start_session()
+        result = host.process_turn("hello")
+
+        assert result.outcome == "success"
+        assert result.response == "Hello from HO2"
+        assert result.tool_calls == [{"tool_id": "query_ledger"}]
+        assert result.exchange_entry_ids == ["EX-001"]
+
+    def test_consolidation_failure_logged(self, host, mock_ho2, caplog):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Hello from HO2",
+            tool_calls=[],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=["intent:tool_query"],
+        )
+        mock_ho2.run_consolidation.side_effect = RuntimeError("Consolidation failed")
+
+        host.start_session()
+        with caplog.at_level("WARNING"):
+            host.process_turn("hello")
+
+        assert "Consolidation failed for candidates" in caplog.text
+        assert "intent:tool_query" in caplog.text
+
+    def test_response_unchanged_by_consolidation(self, host, mock_ho2):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Stable response",
+            tool_calls=[],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=["intent:tool_query"],
+        )
+        mock_ho2.run_consolidation.return_value = [{"id": "WO-CONS-001"}]
+
+        host.start_session()
+        result = host.process_turn("hello")
+
+        assert result.response == "Stable response"
+
+    def test_consolidation_runs_after_result_construction(self, host, mock_ho2):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Stable response",
+            tool_calls=[{"tool_id": "query_ledger"}],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=["intent:tool_query"],
+        )
+        mock_ho2.run_consolidation.side_effect = RuntimeError("Consolidation failed")
+
+        host.start_session()
+        result = host.process_turn("hello")
+
+        # If result is returned with all fields after consolidation exception,
+        # result construction happened before consolidation execution.
+        assert result.response == "Stable response"
+        assert result.tool_calls == [{"tool_id": "query_ledger"}]
+        assert result.exchange_entry_ids == ["EX-001"]
+
+    def test_consolidation_with_multiple_candidates(self, host, mock_ho2):
+        candidates = [
+            "intent:tool_query",
+            "intent:budget",
+            "topic:ledger_forensics",
+        ]
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Hello from HO2",
+            tool_calls=[],
+            exchange_entry_ids=["EX-001"],
+            consolidation_candidates=candidates,
+        )
+        host.start_session()
+        host.process_turn("hello")
+
+        mock_ho2.run_consolidation.assert_called_once_with(candidates)
+
+    def test_degradation_path_skips_consolidation(self, host, mock_ho2, mock_gateway):
+        host.start_session()
+        mock_ho2.handle_turn = MagicMock(side_effect=RuntimeError("HO2 crashed"))
+        host.process_turn("hello")
+
+        mock_gateway.route.assert_called_once()
+        mock_ho2.run_consolidation.assert_not_called()
+
+    def test_turn_result_fields_preserved(self, host, mock_ho2):
+        mock_ho2.handle_turn.return_value = MagicMock(
+            response="Final answer",
+            tool_calls=[{"tool_id": "list_sessions"}],
+            exchange_entry_ids=["EX-123"],
+            consolidation_candidates=["intent:tool_query"],
+        )
+        mock_ho2.run_consolidation.return_value = [{"work_order_id": "WO-CONS-001"}]
+        host.start_session()
+        result = host.process_turn("hello")
+
+        assert result.response == "Final answer"
+        assert result.outcome == "success"
+        assert result.tool_calls == [{"tool_id": "list_sessions"}]
+        assert result.exchange_entry_ids == ["EX-123"]
+
+
 class TestDegradation:
     def test_degradation_on_ho2_exception(self, host, mock_ho2, mock_gateway):
         host.start_session()

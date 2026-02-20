@@ -1,6 +1,6 @@
 {
   "package_id": "PKG-ADMIN-001",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": "1.2",
   "title": "ADMIN First Boot",
   "description": "ADMIN configuration and CLI entrypoint on top of Session Host",
@@ -15,18 +15,29 @@
     "PKG-LLM-GATEWAY-001",
     "PKG-HO1-EXECUTOR-001",
     "PKG-HO2-SUPERVISOR-001",
+    "PKG-HO3-MEMORY-001",
     "PKG-SESSION-HOST-V2-001",
     "PKG-SHELL-001"
   ],
   "assets": [
     {
       "path": "HOT/admin/main.py",
-      "sha256": "sha256:7fa66acf8167bc3e0b5ad7989c2aeae1f039b89dfa79be7fe4bc37e73d51f5ce",
+      "sha256": "sha256:9ba06beb6b928c9a54ea9a551cc2dc9c754a5a964f8c674506490e5c4f7a6457",
       "classification": "application"
     },
     {
+      "path": "HOT/admin/forensic_policy.py",
+      "sha256": "sha256:037cd46b4f476bd85cfc82b6f7af3357c86b895d8025ad7e4b8f6601c3e5a526",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/admin/ledger_forensics.py",
+      "sha256": "sha256:af42b8e82e19e0946a9a6cfdd7c1410e39756af32f7c7f6989748a5e13983efe",
+      "classification": "library"
+    },
+    {
       "path": "HOT/config/admin_config.json",
-      "sha256": "sha256:2b0019210290e05cc07994ad231cbe748f77f36369b3da6052b1bb6741716e3e",
+      "sha256": "sha256:bdc4831eb2ae81db37ad31c210cf16752c63c4ea19111b102caf02bcf93a3076",
       "classification": "config"
     },
     {
@@ -41,12 +52,27 @@
     },
     {
       "path": "HOT/schemas/admin_config.schema.json",
-      "sha256": "sha256:f2e85abeee5e29cbfdf9ad9631d92c4fd1344acd48554360e35bd9ae7001ec19",
+      "sha256": "sha256:8e02bb43154eac6bd7de04149fa0616d371392a685ea92a14ba7b404bd0d95fc",
       "classification": "schema"
     },
     {
       "path": "HOT/tests/test_admin.py",
-      "sha256": "sha256:7dd42786e45a057eddcc2af222528e0022143949ecd8de5a6b60175ffeacf334",
+      "sha256": "sha256:f67a3e337fbdcac4b4d18facd04090272b1e66254c1e04ae91eaec48d232b771",
+      "classification": "test"
+    },
+    {
+      "path": "HOT/tests/test_forensic_policy.py",
+      "sha256": "sha256:bdb575041fe88ec5dfe4ed0b9f4c7bb4e1fc782ab81695de272ba7df716df543",
+      "classification": "test"
+    },
+    {
+      "path": "HOT/tests/test_ledger_forensics.py",
+      "sha256": "sha256:1197926966d997eb651335736e441e22ebde20b016e8e145c8836070ade58855",
+      "classification": "test"
+    },
+    {
+      "path": "HOT/tests/test_trace_prompt_journey.py",
+      "sha256": "sha256:6646fe44bd0bc29857b9cb363dd3dab13eedfa4c85e846412f0a32e685a7e350",
       "classification": "test"
     }
   ]

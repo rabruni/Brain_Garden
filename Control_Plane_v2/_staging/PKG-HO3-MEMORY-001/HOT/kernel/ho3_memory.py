@@ -26,11 +26,12 @@ Usage:
         ...
 """
 
+import hashlib
 import json
 import math
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -195,6 +196,25 @@ class HO3Memory:
                 "Unauditable overlays are forbidden."
             )
 
+        # Gap 4: Idempotency check via artifact_id
+        artifact_id = overlay.get("artifact_id")
+        if artifact_id:
+            existing = self._find_overlay_by_artifact_id(artifact_id)
+            if existing is not None:
+                existing_meta = existing["metadata"]
+                # Check if deactivated
+                if existing.get("deactivated", False):
+                    # Re-activate via weight update
+                    new_weight = overlay.get("weight", overlay.get("salience_weight", 0.0))
+                    self.update_overlay_weight(
+                        artifact_id=artifact_id,
+                        new_weight=new_weight,
+                        reason="re-activated via duplicate log_overlay",
+                        event_ts=datetime.now(timezone.utc).isoformat(),
+                    )
+                # Return existing overlay_id (skip duplicate)
+                return existing_meta.get("overlay_id", "")
+
         overlay_id = f"OVL-{uuid.uuid4().hex[:8]}"
 
         entry_metadata = {
@@ -208,6 +228,17 @@ class HO3Memory:
             "window_end": overlay.get("window_end", ""),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        # Gap 2: Structured artifact fields (optional on read, persisted on write)
+        structured_keys = [
+            "artifact_id", "artifact_type", "labels", "weight", "scope",
+            "context_line", "enabled", "expires_at_event_ts",
+            "source_signal_ids", "gate_snapshot", "model",
+            "prompt_pack_version", "consolidation_event_ts",
+        ]
+        for key in structured_keys:
+            if key in overlay:
+                entry_metadata[key] = overlay[key]
 
         entry = LedgerEntry(
             event_type="HO3_OVERLAY",
@@ -227,6 +258,7 @@ class HO3Memory:
         self,
         signal_id: Optional[str] = None,
         min_count: int = 0,
+        as_of_ts: Optional[str] = None,
     ) -> List[SignalAccumulator]:
         """Read accumulated signal state.
 
@@ -273,7 +305,7 @@ class HO3Memory:
                 g["last_seen"] = ts
 
         # Convert to SignalAccumulator with decay
-        now = datetime.now(timezone.utc)
+        now = datetime.fromisoformat(as_of_ts) if as_of_ts else datetime.now(timezone.utc)
         result = []
         for sid, g in groups.items():
             if g["count"] < min_count:
@@ -327,16 +359,234 @@ class HO3Memory:
             result.append(meta)
         return result
 
-    def read_active_biases(self) -> List[Dict[str, Any]]:
+    def read_active_biases(self, as_of_ts: Optional[str] = None) -> List[Dict[str, Any]]:
         """Read active biases for context injection.
 
         Returns overlays with salience > 0, suitable for injection
-        into HO2's assembled context at Step 2b.
+        into HO2's assembled context at Step 2b. Applies lifecycle
+        resolution: deactivated overlays excluded, latest weight wins,
+        expired overlays excluded.
+
+        Args:
+            as_of_ts: Optional ISO timestamp for deterministic expiry.
+                      If None, uses datetime.now(timezone.utc).
 
         Returns:
             List of overlay dicts with active biases
         """
-        return self.read_overlays(active_only=True)
+        now = datetime.fromisoformat(as_of_ts) if as_of_ts else datetime.now(timezone.utc)
+        entries = self._overlays_client.read_all()
+
+        # Phase 1: Collect all events by artifact_id
+        # Events without artifact_id are legacy overlays — pass through directly
+        legacy = []
+        by_artifact: Dict[str, List[Dict[str, Any]]] = {}
+
+        for entry in entries:
+            meta = entry.metadata
+            etype = entry.event_type
+            art_id = meta.get("artifact_id")
+
+            if etype == "HO3_OVERLAY" and not art_id:
+                # Legacy overlay (no artifact_id) — include if salience > 0
+                if meta.get("salience_weight", 0) > 0:
+                    legacy.append(meta)
+                continue
+
+            if art_id:
+                if art_id not in by_artifact:
+                    by_artifact[art_id] = []
+                by_artifact[art_id].append({"event_type": etype, "metadata": meta, "timestamp": entry.timestamp})
+
+        # Phase 2: Resolve lifecycle per artifact_id
+        result = list(legacy)
+        for art_id, events in by_artifact.items():
+            # Sort by timestamp to find latest event
+            events.sort(key=lambda e: e["timestamp"])
+
+            # Find the original OVERLAY event
+            base_overlay = None
+            latest_weight = None
+            deactivated = False
+
+            for evt in events:
+                etype = evt["event_type"]
+                meta = evt["metadata"]
+                if etype == "HO3_OVERLAY":
+                    base_overlay = meta
+                elif etype == "HO3_OVERLAY_DEACTIVATED":
+                    deactivated = True
+                elif etype == "HO3_OVERLAY_WEIGHT_UPDATED":
+                    deactivated = False  # weight update re-activates
+                    latest_weight = meta.get("new_weight")
+
+            if base_overlay is None:
+                continue
+            if deactivated:
+                continue
+
+            # Check expiry
+            expires = base_overlay.get("expires_at_event_ts")
+            if expires:
+                try:
+                    if now >= datetime.fromisoformat(expires):
+                        continue
+                except (ValueError, TypeError):
+                    pass
+
+            # Apply latest weight if updated
+            overlay = dict(base_overlay)
+            if latest_weight is not None:
+                overlay["weight"] = latest_weight
+                overlay["salience_weight"] = latest_weight
+
+            # Filter salience > 0
+            if overlay.get("salience_weight", 0) <= 0:
+                continue
+
+            result.append(overlay)
+
+        return result
+
+    # =======================================================================
+    # Overlay Lifecycle (append-only)
+    # =======================================================================
+
+    def deactivate_overlay(self, artifact_id: str, reason: str, event_ts: str) -> str:
+        """Append HO3_OVERLAY_DEACTIVATED event.
+
+        Does NOT mutate the original overlay. Append-only invariant.
+        read_active_biases resolves lifecycle: latest event wins.
+
+        Args:
+            artifact_id: The artifact_id of the overlay to deactivate
+            reason: Why the overlay is being deactivated
+            event_ts: ISO timestamp of the deactivation event
+
+        Returns:
+            The artifact_id
+
+        Raises:
+            ValueError: If no overlay exists with this artifact_id
+        """
+        existing = self._find_overlay_by_artifact_id(artifact_id)
+        if existing is None:
+            raise ValueError(
+                f"No overlay found with artifact_id={artifact_id}. "
+                "Cannot deactivate a nonexistent overlay."
+            )
+
+        entry = LedgerEntry(
+            event_type="HO3_OVERLAY_DEACTIVATED",
+            submission_id=artifact_id,
+            decision="DEACTIVATED",
+            reason=reason,
+            metadata={
+                "artifact_id": artifact_id,
+                "reason": reason,
+                "event_ts": event_ts,
+            },
+        )
+        self._overlays_client.write(entry)
+        return artifact_id
+
+    def update_overlay_weight(self, artifact_id: str, new_weight: float, reason: str, event_ts: str) -> str:
+        """Append HO3_OVERLAY_WEIGHT_UPDATED event.
+
+        Does NOT mutate the original overlay. Append-only invariant.
+        read_active_biases uses latest weight.
+
+        Args:
+            artifact_id: The artifact_id of the overlay to update
+            new_weight: The new weight value
+            reason: Why the weight is being updated
+            event_ts: ISO timestamp of the update event
+
+        Returns:
+            The artifact_id
+
+        Raises:
+            ValueError: If no overlay exists with this artifact_id
+        """
+        existing = self._find_overlay_by_artifact_id(artifact_id)
+        if existing is None:
+            raise ValueError(
+                f"No overlay found with artifact_id={artifact_id}. "
+                "Cannot update weight of a nonexistent overlay."
+            )
+
+        entry = LedgerEntry(
+            event_type="HO3_OVERLAY_WEIGHT_UPDATED",
+            submission_id=artifact_id,
+            decision="WEIGHT_UPDATED",
+            reason=reason,
+            metadata={
+                "artifact_id": artifact_id,
+                "new_weight": new_weight,
+                "reason": reason,
+                "event_ts": event_ts,
+            },
+        )
+        self._overlays_client.write(entry)
+        return artifact_id
+
+    def _find_overlay_by_artifact_id(self, artifact_id: str) -> Optional[Dict[str, Any]]:
+        """Find an overlay by artifact_id, with lifecycle resolution.
+
+        Scans all overlay events for the given artifact_id and resolves
+        the lifecycle state (active, deactivated, weight-updated).
+
+        Args:
+            artifact_id: The artifact_id to search for
+
+        Returns:
+            Dict with 'metadata' and 'deactivated' keys, or None if not found
+        """
+        entries = self._overlays_client.read_all()
+        base_overlay = None
+        deactivated = False
+
+        for entry in entries:
+            meta = entry.metadata
+            if meta.get("artifact_id") != artifact_id:
+                continue
+            etype = entry.event_type
+            if etype == "HO3_OVERLAY":
+                base_overlay = meta
+                deactivated = False
+            elif etype == "HO3_OVERLAY_DEACTIVATED":
+                deactivated = True
+            elif etype == "HO3_OVERLAY_WEIGHT_UPDATED":
+                deactivated = False
+
+        if base_overlay is None:
+            return None
+        return {"metadata": base_overlay, "deactivated": deactivated}
+
+    @staticmethod
+    def compute_artifact_id(
+        source_signal_ids: List[str],
+        gate_window_key: str,
+        model: str,
+        prompt_pack_version: str,
+    ) -> str:
+        """Compute deterministic artifact_id from consolidation inputs.
+
+        Same inputs always produce the same ID. source_signal_ids are
+        sorted before hashing to ensure order-independence.
+
+        Args:
+            source_signal_ids: Signal IDs that contributed
+            gate_window_key: Gate window identifier (e.g., "2026-W07")
+            model: LLM model used for consolidation
+            prompt_pack_version: Prompt pack version used
+
+        Returns:
+            Deterministic artifact_id in format "ART-<12 hex chars>"
+        """
+        canonical = "|".join(sorted(source_signal_ids)) + "|" + gate_window_key + "|" + model + "|" + prompt_pack_version
+        digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+        return f"ART-{digest}"
 
     # =======================================================================
     # Bistable Gate
@@ -409,7 +659,7 @@ class HO3Memory:
             reason="All thresholds met, not consolidated",
         )
 
-    def _is_consolidated(self, signal_id: str) -> bool:
+    def _is_consolidated(self, signal_id: str, as_of_ts: Optional[str] = None) -> bool:
         """Check if signal was already consolidated within the gate window.
 
         Reads overlays.jsonl for an overlay with matching signal_id
@@ -417,6 +667,8 @@ class HO3Memory:
 
         Args:
             signal_id: Signal to check
+            as_of_ts: Optional ISO timestamp for deterministic check.
+                      If None, uses datetime.now(timezone.utc).
 
         Returns:
             True if consolidated within window (gate stays closed)
@@ -425,10 +677,8 @@ class HO3Memory:
         if not overlays:
             return False
 
-        now = datetime.now(timezone.utc)
-        window_cutoff = now - __import__("datetime").timedelta(
-            hours=self.config.gate_window_hours
-        )
+        now = datetime.fromisoformat(as_of_ts) if as_of_ts else datetime.now(timezone.utc)
+        window_cutoff = now - timedelta(hours=self.config.gate_window_hours)
 
         for overlay in overlays:
             window_end_str = overlay.get("window_end", "")
@@ -436,7 +686,7 @@ class HO3Memory:
                 continue
             try:
                 window_end = datetime.fromisoformat(window_end_str)
-                if window_end >= window_cutoff:
+                if window_cutoff <= window_end <= now:
                     return True
             except (ValueError, TypeError):
                 continue
@@ -453,4 +703,8 @@ __all__ = [
     "HO3MemoryConfig",
     "SignalAccumulator",
     "GateResult",
+    "ARTIFACT_TYPES",
 ]
+
+# Closed vocabulary for artifact types
+ARTIFACT_TYPES = ("topic_affinity", "interaction_style", "task_pattern", "constraint")

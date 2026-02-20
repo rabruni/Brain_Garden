@@ -1,7 +1,7 @@
 {
   "package_id": "PKG-HO2-SUPERVISOR-001",
   "package_type": "kernel",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "schema_version": "1.2",
   "supersedes": "PKG-ATTENTION-001",
   "title": "HO2 Supervisor \u2014 Modified Kitchener Loop",
@@ -17,7 +17,7 @@
   "assets": [
     {
       "path": "HO2/kernel/ho2_supervisor.py",
-      "sha256": "sha256:1e133421fc18932508d2b0cab09489fb034c1418f3983caf1c84c62745f02a36",
+      "sha256": "sha256:807e22a26d025685f9ec8404cd6ef6c7d17c6ffcd69925c3c50f22789d06d7a5",
       "classification": "library"
     },
     {
@@ -27,7 +27,7 @@
     },
     {
       "path": "HO2/kernel/quality_gate.py",
-      "sha256": "sha256:28e9daa7d7856cf44af20de5243e09b22de082189f1f52e721183537a139132b",
+      "sha256": "sha256:81da27fb9da4d6d386bd7fb0be5ee200c92a232ee99a0d7f3ea22faa97533195",
       "classification": "library"
     },
     {
@@ -41,8 +41,33 @@
       "classification": "template"
     },
     {
+      "path": "HO2/kernel/intent_resolver.py",
+      "sha256": "sha256:933712f5413ff19e81bc5748eab6f898055887f9f8bb6ce865f90ee2bc29c3e9",
+      "classification": "library"
+    },
+    {
       "path": "HO2/tests/test_ho2_supervisor.py",
-      "sha256": "sha256:34186c603ba76e67cbd0e562ebb0687a50a621723a22bd681d68ac515ce3c6fc",
+      "sha256": "sha256:c7742a067b1ec6984b8d220f2e8bc315bd4636390b35021c8c6bcd0be8d5c078",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/tests/test_intent_resolver.py",
+      "sha256": "sha256:5098bb83d01e6e517a69c75cc486f4285a43888146fe845196db339c5bb74b84",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/tests/test_quality_gate.py",
+      "sha256": "sha256:f38c17469c3dadc60eaf6a7e43ead1685d444869065175da0f2da19b33cade50",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/kernel/bias_selector.py",
+      "sha256": "sha256:c044c819ff998e2e716bf2f492d6ecf597f0995e7ee91d1fa9fd6ae6a209604f",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_bias_selector.py",
+      "sha256": "sha256:355d1c826e708e5590c8fbd6b90252b83496b5d67959a6f1f7741e99324d6eda",
       "classification": "test"
     }
   ]

@@ -18,12 +18,12 @@
   "assets": [
     {
       "path": "HOT/kernel/session_host_v2.py",
-      "sha256": "sha256:0cb2e3be48fa56055f670cda33e33425fc0e3fb9f9b57422ac8a5bef07f2cc1e",
+      "sha256": "sha256:019a7137a42baebb6e333130b692a16f8652c327b637051cf1d3f62a93a57e09",
       "classification": "kernel"
     },
     {
       "path": "HOT/tests/test_session_host_v2.py",
-      "sha256": "sha256:befec2126adec9f6b1ac3a3e0cb2bf98a29e8f59bf39610a437aed12db479879",
+      "sha256": "sha256:85aa3b5482dd4214380e55419b642ee3aba5355dc1100fbfc8ac37556d49c940",
       "classification": "test"
     }
   ]

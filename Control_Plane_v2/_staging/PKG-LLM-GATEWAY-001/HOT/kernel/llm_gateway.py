@@ -102,6 +102,7 @@ class RouterConfig:
     default_timeout_ms: int = 30000
     circuit_breaker: Optional[CircuitBreakerConfig] = None
     max_retries: int = 0
+    retry_backoff_ms: int = 0
     domain_tag_routes: dict = field(default_factory=dict)
 
 
@@ -200,6 +201,8 @@ class LLMGateway:
             default_model=data["default_model"],
             default_timeout_ms=data["default_timeout_ms"],
             circuit_breaker=cb_config,
+            max_retries=data.get("max_retries", 0),
+            retry_backoff_ms=data.get("retry_backoff_ms", 0),
             domain_tag_routes=data.get("domain_tag_routes", {}),
         )
         return cls(
@@ -319,56 +322,63 @@ class LLMGateway:
                 error_message=f"Provider '{provider_id}' not registered",
             )
 
-        try:
-            from provider import ProviderError
-
-            provider_response = provider.send(
-                model_id=model_id,
-                prompt=request.prompt,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                timeout_ms=timeout_ms,
-                structured_output=request.structured_output,
-                tools=request.tools,
-            )
-        except Exception as e:
-            self._circuit_breaker.record_failure()
-            # Determine outcome based on error type
-            error_code = "PROVIDER_ERROR"
-            outcome = RouteOutcome.ERROR
+        max_retries = max(0, int(self._config.max_retries))
+        retry_backoff_ms = max(0, int(getattr(self._config, "retry_backoff_ms", 0)))
+        retry_count = 0
+        provider_response = None
+        while True:
             try:
-                from provider import ProviderError as PE
-                if isinstance(e, PE):
-                    error_code = e.code
-                    if e.code == "TIMEOUT":
-                        outcome = RouteOutcome.TIMEOUT
-            except ImportError:
-                pass
+                provider_response = provider.send(
+                    model_id=model_id,
+                    prompt=request.prompt,
+                    max_tokens=request.max_tokens,
+                    temperature=request.temperature,
+                    timeout_ms=timeout_ms,
+                    structured_output=request.structured_output,
+                    tools=request.tools,
+                )
+                break
+            except Exception as e:
+                self._circuit_breaker.record_failure()
+                error_code, outcome, retryable = self._classify_provider_error(e)
+                should_retry = retryable and retry_count < max_retries
 
-            exchange_entry_id = self._write_exchange_error(
-                request=request,
-                dispatch_entry_id=dispatch_entry_id,
-                error_code=error_code,
-                error_message=str(e),
-                context_hash=context_hash,
-                model_id=model_id,
-                latency_ms=self._elapsed_ms(start_time),
-            )
-            return PromptResponse(
-                content="",
-                outcome=outcome,
-                input_tokens=0,
-                output_tokens=0,
-                model_id=model_id,
-                provider_id=provider_id,
-                latency_ms=self._elapsed_ms(start_time),
-                timestamp=timestamp,
-                exchange_entry_id=exchange_entry_id,
-                dispatch_entry_id=dispatch_entry_id,
-                context_hash=context_hash,
-                error_code=error_code,
-                error_message=str(e),
-            )
+                exchange_entry_id = self._write_exchange_error(
+                    request=request,
+                    dispatch_entry_id=dispatch_entry_id,
+                    error_code=error_code,
+                    error_message=str(e),
+                    context_hash=context_hash,
+                    model_id=model_id,
+                    latency_ms=self._elapsed_ms(start_time),
+                    retry_metadata={
+                        "retry_attempt": retry_count + 1,
+                        "retryable": retryable,
+                        "will_retry": should_retry,
+                        "max_retries": max_retries,
+                    },
+                )
+                if not should_retry:
+                    return PromptResponse(
+                        content="",
+                        outcome=outcome,
+                        input_tokens=0,
+                        output_tokens=0,
+                        model_id=model_id,
+                        provider_id=provider_id,
+                        latency_ms=self._elapsed_ms(start_time),
+                        timestamp=timestamp,
+                        exchange_entry_id=exchange_entry_id,
+                        dispatch_entry_id=dispatch_entry_id,
+                        context_hash=context_hash,
+                        error_code=error_code,
+                        error_message=str(e),
+                    )
+
+                retry_count += 1
+                if retry_backoff_ms > 0:
+                    # Simple bounded linear backoff keeps behavior deterministic.
+                    time.sleep((retry_backoff_ms * retry_count) / 1000.0)
 
         # Success path
         self._circuit_breaker.record_success()
@@ -381,6 +391,7 @@ class LLMGateway:
             context_hash=context_hash,
             model_id=model_id,
             latency_ms=self._elapsed_ms(start_time),
+            retry_count=retry_count,
         )
 
         # Step 9: Debit budget
@@ -531,6 +542,7 @@ class LLMGateway:
         context_hash: str,
         model_id: str,
         latency_ms: float,
+        retry_count: int = 0,
     ) -> str:
         """Write EXCHANGE record for successful round-trip."""
         from ledger_client import LedgerEntry
@@ -571,6 +583,9 @@ class LLMGateway:
                 # Tool observability
                 "tools_offered": tools_offered,
                 "tool_use_in_response": tool_use_in_response,
+                # Retry observability
+                "retry_count": retry_count,
+                "attempts_total": retry_count + 1,
             },
         )
         return self._ledger.write(entry)
@@ -584,6 +599,7 @@ class LLMGateway:
         context_hash: str,
         model_id: str,
         latency_ms: float,
+        retry_metadata: Optional[dict[str, Any]] = None,
     ) -> str:
         """Write EXCHANGE record for failed round-trip."""
         from ledger_client import LedgerEntry
@@ -618,7 +634,44 @@ class LLMGateway:
                 "latency_ms": latency_ms,
             },
         )
+        if retry_metadata:
+            entry.metadata.update(retry_metadata)
         return self._ledger.write(entry)
+
+    def _classify_provider_error(self, error: Exception) -> tuple[str, RouteOutcome, bool]:
+        """Classify provider exception into code/outcome/retryability."""
+        retryable_codes = {"TIMEOUT", "RATE_LIMITED", "SERVER_ERROR"}
+        non_retryable_codes = {"AUTH_ERROR", "INVALID_REQUEST"}
+
+        error_code = "PROVIDER_ERROR"
+        outcome = RouteOutcome.ERROR
+        retryable = False
+        try:
+            from provider import ProviderError as PE
+            if isinstance(error, PE):
+                error_code = str(error.code or "PROVIDER_ERROR")
+                retryable = bool(getattr(error, "retryable", False))
+        except ImportError:
+            pass
+
+        # Handle generic timeout-family errors defensively.
+        if isinstance(error, TimeoutError):
+            error_code = "TIMEOUT"
+            retryable = True
+        else:
+            lower = str(error).lower()
+            if "timeout" in lower and error_code == "PROVIDER_ERROR":
+                error_code = "TIMEOUT"
+                retryable = True
+
+        if error_code in retryable_codes:
+            retryable = True
+        if error_code in non_retryable_codes:
+            retryable = False
+        if error_code == "TIMEOUT":
+            outcome = RouteOutcome.TIMEOUT
+
+        return error_code, outcome, retryable
 
     def _validate_output(
         self, content: str, schema: dict[str, Any]

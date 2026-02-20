@@ -41,6 +41,16 @@
       }
     },
     "budget": {"type": "object"},
+    "ho3": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "memory_dir": {"type": "string"},
+        "gate_count_threshold": {"type": "integer", "minimum": 1},
+        "gate_session_threshold": {"type": "integer", "minimum": 1},
+        "gate_window_hours": {"type": "integer", "minimum": 1}
+      }
+    },
     "permissions": {"type": "object"}
   }
 }

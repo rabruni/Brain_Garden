@@ -3,6 +3,7 @@
 Binary accept/reject for MVP. Checks output_result for completeness.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Any, Dict
 
@@ -28,6 +29,47 @@ class QualityGate:
 
     def __init__(self, config: Any = None):
         self._config = config
+
+    @staticmethod
+    def _has_source_visibility_claim(response_text: str) -> bool:
+        text = (response_text or "").strip()
+        if not text:
+            return False
+        lower = text.lower()
+
+        # Do not flag explicit uncertainty/non-visibility statements.
+        if (
+            "i can't see" in lower
+            or "i cannot see" in lower
+            or "i do not have access" in lower
+            or "i don't have access" in lower
+            or "no evidence" in lower
+        ):
+            return False
+
+        patterns = (
+            r"\bi can see\b",
+            r"\bi can read\b",
+            r"\bi looked at\b",
+            r"\bi checked\b",
+            r"\bfrom (the )?(ledger|ledgers|file|files|code)\b",
+            r"\bin (the )?(ledger|ledgers|file|files|code)\b",
+        )
+        return any(re.search(p, lower) for p in patterns)
+
+    @staticmethod
+    def _has_source_evidence(acceptance_criteria: Dict[str, Any]) -> bool:
+        if bool(acceptance_criteria.get("source_evidence_present")):
+            return True
+        if bool(acceptance_criteria.get("source_evidence")):
+            return True
+        if bool(acceptance_criteria.get("prior_results")):
+            return True
+        if bool(acceptance_criteria.get("tool_outputs")):
+            return True
+        if bool(acceptance_criteria.get("assembled_context")):
+            return True
+        return False
 
     def verify(
         self,
@@ -60,6 +102,12 @@ class QualityGate:
             return QualityGateResult(
                 decision="reject",
                 reason="response_text is empty",
+                wo_id=wo_id,
+            )
+        if self._has_source_visibility_claim(response_text) and not self._has_source_evidence(acceptance_criteria):
+            return QualityGateResult(
+                decision="reject",
+                reason="ungrounded_source_claim: source visibility asserted without current-turn evidence",
                 wo_id=wo_id,
             )
         # Check for error markers

@@ -144,7 +144,7 @@ def executor(tmp_path):
             "properties": {"speech_act": {"type": "string"}, "ambiguity": {"type": "string"}},
         }},
         "input_schema": {"type": "object", "required": ["user_input"], "properties": {"user_input": {"type": "string"}}},
-        "output_schema": {"type": "object", "required": ["speech_act", "ambiguity"], "properties": {"speech_act": {"type": "string"}, "ambiguity": {"type": "string"}}},
+        "output_schema": {"type": "object", "required": ["speech_act", "ambiguity"], "properties": {"speech_act": {"type": "string"}, "ambiguity": {"type": "string"}}, "additionalProperties": True},
     }))
     (contracts_dir / "synthesize.json").write_text(json.dumps({
         "contract_id": "PRC-SYNTHESIZE-001",
@@ -1368,3 +1368,299 @@ class TestDomainTagsPassthrough:
         assert contract["contract_id"] == "PRC-CONSOLIDATE-001"
         assert contract["prompt_pack_id"] == "PRM-CONSOLIDATE-001"
         assert contract["boundary"]["max_tokens"] == 512
+
+
+# ===========================================================================
+# 31B Tests: Classify intent_signal + labels extension
+# ===========================================================================
+
+class TestClassifyIntentAndLabels:
+    def test_classify_returns_intent_signal(self, executor, classify_wo):
+        """Mock LLM returns full classify with intent_signal → parsed into output_result."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "command", "ambiguity": "low",
+            "intent_signal": {"action": "new", "candidate_objective": "list packages", "confidence": 0.9},
+            "labels": {"domain": "system", "task": "inspect"},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["state"] == "completed"
+        assert "intent_signal" in result["output_result"]
+        assert result["output_result"]["intent_signal"]["action"] == "new"
+        assert result["output_result"]["intent_signal"]["candidate_objective"] == "list packages"
+        assert result["output_result"]["intent_signal"]["confidence"] == 0.9
+
+    def test_classify_returns_labels(self, executor, classify_wo):
+        """Mock LLM returns classify with labels → parsed into output_result."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "question", "ambiguity": "low",
+            "labels": {"domain": "config", "task": "modify"},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["state"] == "completed"
+        assert "labels" in result["output_result"]
+        assert result["output_result"]["labels"]["domain"] == "config"
+        assert result["output_result"]["labels"]["task"] == "modify"
+
+    def test_classify_intent_action_new(self, executor, classify_wo):
+        """LLM classifies first message as 'new'."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "greeting", "ambiguity": "low",
+            "intent_signal": {"action": "new", "candidate_objective": "start session", "confidence": 0.95},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["output_result"]["intent_signal"]["action"] == "new"
+
+    def test_classify_intent_action_continue(self, executor, classify_wo):
+        """LLM classifies follow-up as 'continue'."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "question", "ambiguity": "low",
+            "intent_signal": {"action": "continue", "candidate_objective": "follow up on packages", "confidence": 0.8},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["output_result"]["intent_signal"]["action"] == "continue"
+
+    def test_classify_intent_action_close(self, executor, classify_wo):
+        """LLM classifies 'goodbye' as 'close'."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "farewell", "ambiguity": "low",
+            "intent_signal": {"action": "close", "candidate_objective": "end conversation", "confidence": 0.95},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["output_result"]["intent_signal"]["action"] == "close"
+
+    def test_classify_labels_domain_system(self, executor, classify_wo):
+        """'what packages are installed?' → domain='system'."""
+        classify_wo["input_context"]["user_input"] = "what packages are installed?"
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "question", "ambiguity": "low",
+            "labels": {"domain": "system", "task": "inspect"},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["output_result"]["labels"]["domain"] == "system"
+
+    def test_classify_labels_task_inspect(self, executor, classify_wo):
+        """'list sessions' → task='inspect'."""
+        classify_wo["input_context"]["user_input"] = "list sessions"
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "command", "ambiguity": "low",
+            "labels": {"domain": "session", "task": "inspect"},
+        }))
+        result = executor.execute(classify_wo)
+        assert result["output_result"]["labels"]["task"] == "inspect"
+
+    def test_classify_backward_compatible_no_intent(self, executor, classify_wo):
+        """LLM returns only speech_act + ambiguity (no intent_signal) → works."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "greeting", "ambiguity": "low",
+        }))
+        result = executor.execute(classify_wo)
+        assert result["state"] == "completed"
+        assert result["output_result"]["speech_act"] == "greeting"
+        assert "intent_signal" not in result["output_result"]
+
+    def test_classify_backward_compatible_no_labels(self, executor, classify_wo):
+        """LLM returns speech_act + ambiguity only → no KeyError on missing labels."""
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "speech_act": "command", "ambiguity": "medium",
+        }))
+        result = executor.execute(classify_wo)
+        assert result["state"] == "completed"
+        assert "labels" not in result["output_result"]
+
+    def test_classify_prompt_template_has_user_input(self, executor):
+        """Prompt template contains {{user_input}} placeholder."""
+        template_dir = executor.contract_loader.contracts_dir.parent / "prompt_packs"
+        template_path = template_dir / "PRM-CLASSIFY-001.txt"
+        content = template_path.read_text()
+        assert "{{user_input}}" in content
+
+    def test_classify_contract_allows_additional_properties(self, executor):
+        """classify.json has additionalProperties: true."""
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        assert contract["output_schema"].get("additionalProperties") is True
+
+    def test_classify_required_fields_unchanged(self, executor):
+        """required still only ['speech_act', 'ambiguity'] — intent_signal and labels NOT in required."""
+        contract = executor.contract_loader.load("PRC-CLASSIFY-001")
+        assert contract["output_schema"]["required"] == ["speech_act", "ambiguity"]
+
+
+# ===========================================================================
+# 29.1B Tests: Consolidation structured artifacts
+# ===========================================================================
+
+class TestConsolidationStructuredArtifacts:
+    def test_consolidation_prompt_has_variables(self):
+        """Prompt contains all required template variables."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        prompt = (ho1_root / "prompt_packs" / "PRM-CONSOLIDATE-001.txt").read_text()
+        assert "{{signal_id}}" in prompt
+        assert "{{count}}" in prompt
+        assert "{{session_count}}" in prompt
+        assert "{{recent_events}}" in prompt
+
+    def test_consolidation_schema_requires_artifact_type(self):
+        """consolidate.json required includes artifact_type."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        assert "artifact_type" in contract["output_schema"]["required"]
+
+    def test_consolidation_schema_requires_labels(self):
+        """consolidate.json required includes labels."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        assert "labels" in contract["output_schema"]["required"]
+
+    def test_consolidation_schema_requires_context_line(self):
+        """consolidate.json required includes context_line."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        assert "context_line" in contract["output_schema"]["required"]
+
+    def test_consolidation_structured_output_parsed(self, executor):
+        """Mock LLM returns structured artifact shape -> output_result parsed."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        consolidate_contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        consolidate_prompt = (ho1_root / "prompt_packs" / "PRM-CONSOLIDATE-001.txt").read_text()
+
+        contracts_dir = executor.contract_loader.contracts_dir
+        prompt_dir = contracts_dir.parent / "prompt_packs"
+        prompt_dir.mkdir(exist_ok=True)
+        (contracts_dir / "consolidate.json").write_text(json.dumps(consolidate_contract))
+        (prompt_dir / "PRM-CONSOLIDATE-001.txt").write_text(consolidate_prompt)
+
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "artifact_type": "task_pattern",
+            "labels": {
+                "domain": ["system"],
+                "task": ["inspect"],
+            },
+            "weight": 0.8,
+            "scope": "agent",
+            "context_line": "User repeatedly inspects package and gate state.",
+            "expires_after_days": 30,
+        }))
+
+        wo = {
+            "wo_id": "WO-SES-TEST0001-CONSOL-001",
+            "session_id": "SES-TEST0001",
+            "wo_type": "consolidate",
+            "tier_target": "HO1",
+            "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z",
+            "created_by": "ADMIN.ho2",
+            "input_context": {
+                "signal_id": "intent:tool_query",
+                "count": 5,
+                "session_count": 3,
+                "recent_events": '["EVT-001", "EVT-002"]',
+            },
+            "constraints": {
+                "prompt_contract_id": "PRC-CONSOLIDATE-001",
+                "token_budget": 4000,
+                "turn_limit": 1,
+            },
+            "cost": {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "llm_calls": 0,
+                "tool_calls": 0,
+                "elapsed_ms": 0,
+            },
+        }
+
+        result = executor.execute(wo)
+        assert result["state"] == "completed"
+        assert result["output_result"]["artifact_type"] == "task_pattern"
+        assert result["output_result"]["labels"]["domain"] == ["system"]
+        assert result["output_result"]["labels"]["task"] == ["inspect"]
+        assert result["output_result"]["weight"] == 0.8
+        assert result["output_result"]["scope"] == "agent"
+        assert "context_line" in result["output_result"]
+
+    def test_consolidation_artifact_type_enum(self):
+        """Schema has the 4 artifact_type enum values."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        enum_values = contract["output_schema"]["properties"]["artifact_type"]["enum"]
+        assert set(enum_values) == {
+            "topic_affinity",
+            "interaction_style",
+            "task_pattern",
+            "constraint",
+        }
+
+    def test_consolidation_scope_enum(self):
+        """Schema has the 3 scope enum values."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        scope_values = contract["output_schema"]["properties"]["scope"]["enum"]
+        assert set(scope_values) == {"agent", "session", "global"}
+
+    def test_consolidation_labels_domain_list(self):
+        """labels.domain is an array of strings."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        labels = contract["output_schema"]["properties"]["labels"]["properties"]
+        assert labels["domain"]["type"] == "array"
+        assert labels["domain"]["items"]["type"] == "string"
+
+    def test_consolidation_backward_compat(self, executor):
+        """Old-style output does not crash executor; returns schema-validation failure."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        consolidate_contract = json.loads((ho1_root / "contracts" / "consolidate.json").read_text())
+        consolidate_prompt = (ho1_root / "prompt_packs" / "PRM-CONSOLIDATE-001.txt").read_text()
+
+        contracts_dir = executor.contract_loader.contracts_dir
+        prompt_dir = contracts_dir.parent / "prompt_packs"
+        prompt_dir.mkdir(exist_ok=True)
+        (contracts_dir / "consolidate.json").write_text(json.dumps(consolidate_contract))
+        (prompt_dir / "PRM-CONSOLIDATE-001.txt").write_text(consolidate_prompt)
+
+        executor.gateway.route.return_value = _mock_response(json.dumps({
+            "bias": "user likes package inspections",
+            "category": "topic_interest",
+            "salience_weight": 0.8,
+            "decay_modifier": 0.95,
+        }))
+
+        wo = {
+            "wo_id": "WO-SES-TEST0001-CONSOL-002",
+            "session_id": "SES-TEST0001",
+            "wo_type": "consolidate",
+            "tier_target": "HO1",
+            "state": "dispatched",
+            "created_at": "2026-02-15T00:00:00Z",
+            "created_by": "ADMIN.ho2",
+            "input_context": {
+                "signal_id": "intent:tool_query",
+                "count": 5,
+                "session_count": 3,
+                "recent_events": '["EVT-001", "EVT-002"]',
+            },
+            "constraints": {
+                "prompt_contract_id": "PRC-CONSOLIDATE-001",
+                "token_budget": 4000,
+                "turn_limit": 1,
+            },
+            "cost": {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "llm_calls": 0,
+                "tool_calls": 0,
+                "elapsed_ms": 0,
+            },
+        }
+
+        result = executor.execute(wo)
+        assert result["state"] == "failed"
+        assert "output_schema_invalid" in result.get("error", "")
+
+    def test_consolidation_budget_check(self):
+        """Prompt + response estimate stays well within consolidation budget (4000)."""
+        ho1_root = Path(__file__).resolve().parents[1]
+        prompt = (ho1_root / "prompt_packs" / "PRM-CONSOLIDATE-001.txt").read_text()
+        estimated_tokens = len(prompt.split()) + 200  # rough output allowance
+        assert estimated_tokens < 4000

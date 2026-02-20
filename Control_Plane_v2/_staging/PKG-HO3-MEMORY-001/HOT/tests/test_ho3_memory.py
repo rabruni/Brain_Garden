@@ -1,13 +1,15 @@
 """Tests for PKG-HO3-MEMORY-001 -- HO3 Memory Store.
 
-18 tests covering: signal logging, signal reading/accumulation,
+36 tests covering: signal logging, signal reading/accumulation,
 overlay logging, overlay reading, bistable gate, decay computation,
-active biases, source ledger immutability. No LLM calls. All tests
-use tmp_path for isolation.
+active biases, source ledger immutability, as_of_ts replay-safe decay,
+structured artifacts, overlay lifecycle, expiry filtering, idempotency.
+No LLM calls. All tests use tmp_path for isolation.
 """
 
 import sys
 import json
+import hashlib
 import math
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -307,3 +309,355 @@ class TestImmutability:
         # First 3 lines must be identical (append-only, no mutation)
         for i in range(3):
             assert lines_before[i] == lines_after[i], f"Line {i} was mutated"
+
+
+# === as_of_ts Replay-Safe Decay Tests ===
+
+class TestAsOfTs:
+    def test_as_of_ts_deterministic_decay(self, ho3):
+        """Same as_of_ts -> same decay across runs."""
+        ho3.log_signal("sig:test", "SES-001", "EVT-001")
+        fixed_ts = "2026-02-25T00:00:00+00:00"
+        acc1 = ho3.read_signals(signal_id="sig:test", as_of_ts=fixed_ts)
+        acc2 = ho3.read_signals(signal_id="sig:test", as_of_ts=fixed_ts)
+        assert acc1[0].decay == acc2[0].decay
+
+    def test_as_of_ts_none_uses_wall_clock(self, ho3):
+        """as_of_ts=None -> uses datetime.now() (backward compatible)."""
+        ho3.log_signal("sig:test", "SES-001", "EVT-001")
+        acc = ho3.read_signals(signal_id="sig:test")
+        assert len(acc) == 1
+        # Decay should be close to 1.0 (just logged)
+        assert acc[0].decay > 0.99
+
+    def test_as_of_ts_in_read_active_biases(self, ho3):
+        """Biases filtered by as_of_ts -- expired excluded."""
+        now = datetime.now(timezone.utc)
+        ho3.log_overlay({
+            "signal_id": "sig:test",
+            "salience_weight": 0.8,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "test"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-expiry001",
+            "artifact_type": "topic_affinity",
+            "expires_at_event_ts": (now + timedelta(days=1)).isoformat(),
+            "enabled": True,
+        })
+        # as_of_ts before expiry -> included
+        biases = ho3.read_active_biases(as_of_ts=now.isoformat())
+        assert len(biases) >= 1
+        # as_of_ts after expiry -> excluded
+        far_future = (now + timedelta(days=30)).isoformat()
+        biases_future = ho3.read_active_biases(as_of_ts=far_future)
+        expired_ids = [b.get("artifact_id") for b in biases_future]
+        assert "ART-expiry001" not in expired_ids
+
+    def test_as_of_ts_in_is_consolidated(self, ho3):
+        """Consolidated check uses as_of_ts -- deterministic gate."""
+        now = datetime.now(timezone.utc)
+        # Log enough signals to cross thresholds
+        for i in range(5):
+            ho3.log_signal("sig:test", f"SES-{i:03d}", f"EVT-{i:03d}")
+        # Log an overlay within window
+        ho3.log_overlay({
+            "signal_id": "sig:test",
+            "salience_weight": 0.8,
+            "source_event_ids": ["EVT-000"],
+            "content": {"bias": "consolidated"},
+            "window_start": (now - timedelta(days=5)).isoformat(),
+            "window_end": now.isoformat(),
+        })
+        # _is_consolidated should use as_of_ts
+        # as_of_ts just after window_end -> consolidated
+        result = ho3._is_consolidated("sig:test", as_of_ts=now.isoformat())
+        assert result is True
+        # as_of_ts far in the past (before window) -> not consolidated
+        past = (now - timedelta(days=365)).isoformat()
+        result_past = ho3._is_consolidated("sig:test", as_of_ts=past)
+        assert result_past is False
+
+
+# === Structured Artifact Tests ===
+
+class TestStructuredArtifacts:
+    def _make_structured_overlay(self, **overrides):
+        now = datetime.now(timezone.utc)
+        base = {
+            "signal_id": "sig:test",
+            "salience_weight": 0.8,
+            "decay_modifier": 0.95,
+            "source_event_ids": ["EVT-001", "EVT-002"],
+            "content": {"bias": "User prefers X", "category": "topic_affinity"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-abc123def0",
+            "artifact_type": "topic_affinity",
+            "labels": {"domain": ["system"], "task": ["inspect"]},
+            "weight": 0.7,
+            "scope": "agent",
+            "context_line": "User frequently explores package structure",
+            "enabled": True,
+            "expires_at_event_ts": None,
+            "source_signal_ids": ["domain:system", "tool:read_file"],
+            "gate_snapshot": {"count": 12, "sessions": 3},
+            "model": "claude-sonnet-4-20250514",
+            "prompt_pack_version": "PRM-CONSOLIDATE-001",
+            "consolidation_event_ts": now.isoformat(),
+        }
+        base.update(overrides)
+        return base
+
+    def test_structured_artifact_all_fields(self, ho3, tmp_path):
+        """log_overlay with all structured fields -> all fields stored."""
+        overlay = self._make_structured_overlay()
+        ovl_id = ho3.log_overlay(overlay)
+        assert ovl_id.startswith("OVL-")
+        overlays = ho3.read_overlays()
+        assert len(overlays) == 1
+        stored = overlays[0]
+        assert stored.get("artifact_id") == "ART-abc123def0"
+        assert stored.get("artifact_type") == "topic_affinity"
+        assert stored.get("labels") == {"domain": ["system"], "task": ["inspect"]}
+        assert stored.get("weight") == 0.7
+        assert stored.get("scope") == "agent"
+        assert stored.get("context_line") == "User frequently explores package structure"
+        assert stored.get("enabled") is True
+        assert stored.get("source_signal_ids") == ["domain:system", "tool:read_file"]
+        assert stored.get("gate_snapshot") == {"count": 12, "sessions": 3}
+        assert stored.get("model") == "claude-sonnet-4-20250514"
+        assert stored.get("prompt_pack_version") == "PRM-CONSOLIDATE-001"
+
+    def test_structured_artifact_backward_read(self, ho3):
+        """Old overlay (no structured fields) still readable."""
+        now = datetime.now(timezone.utc)
+        ho3.log_overlay({
+            "signal_id": "sig:legacy",
+            "salience_weight": 0.5,
+            "source_event_ids": ["EVT-old"],
+            "content": {"bias": "legacy bias"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+        })
+        biases = ho3.read_active_biases()
+        assert len(biases) >= 1
+        # Old overlay has no artifact_id
+        assert biases[0].get("artifact_id") is None
+
+    def test_artifact_type_stored(self, ho3):
+        """artifact_type in overlay -> value persisted."""
+        overlay = self._make_structured_overlay(artifact_type="constraint")
+        ho3.log_overlay(overlay)
+        stored = ho3.read_overlays()[0]
+        assert stored.get("artifact_type") == "constraint"
+
+    def test_labels_stored(self, ho3):
+        """labels dict in overlay -> labels persisted."""
+        labels = {"domain": ["config", "system"], "task": ["modify"]}
+        overlay = self._make_structured_overlay(labels=labels)
+        ho3.log_overlay(overlay)
+        stored = ho3.read_overlays()[0]
+        assert stored.get("labels") == labels
+
+
+# === Overlay Lifecycle Tests ===
+
+class TestOverlayLifecycle:
+    def _log_structured(self, ho3, artifact_id="ART-lifecycle01", weight=0.8, enabled=True):
+        now = datetime.now(timezone.utc)
+        return ho3.log_overlay({
+            "signal_id": "sig:test",
+            "salience_weight": weight,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "test lifecycle"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": artifact_id,
+            "artifact_type": "topic_affinity",
+            "enabled": enabled,
+            "weight": weight,
+        })
+
+    def test_deactivate_overlay(self, ho3):
+        """Deactivate -> not returned by read_active_biases."""
+        self._log_structured(ho3, artifact_id="ART-deact001")
+        biases_before = ho3.read_active_biases()
+        art_ids_before = [b.get("artifact_id") for b in biases_before]
+        assert "ART-deact001" in art_ids_before
+
+        ho3.deactivate_overlay(
+            artifact_id="ART-deact001",
+            reason="no longer relevant",
+            event_ts=datetime.now(timezone.utc).isoformat(),
+        )
+        biases_after = ho3.read_active_biases()
+        art_ids_after = [b.get("artifact_id") for b in biases_after]
+        assert "ART-deact001" not in art_ids_after
+
+    def test_deactivate_nonexistent_raises(self, ho3):
+        """Deactivate unknown artifact_id -> ValueError."""
+        with pytest.raises(ValueError, match="artifact_id"):
+            ho3.deactivate_overlay(
+                artifact_id="ART-doesnotexist",
+                reason="test",
+                event_ts=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def test_update_weight(self, ho3):
+        """Update weight -> latest weight returned."""
+        self._log_structured(ho3, artifact_id="ART-weight01", weight=0.5)
+        ho3.update_overlay_weight(
+            artifact_id="ART-weight01",
+            new_weight=0.9,
+            reason="signal strengthened",
+            event_ts=datetime.now(timezone.utc).isoformat(),
+        )
+        biases = ho3.read_active_biases()
+        match = [b for b in biases if b.get("artifact_id") == "ART-weight01"]
+        assert len(match) == 1
+        assert match[0].get("weight") == 0.9
+
+
+# === Expiry Tests ===
+
+class TestExpiryFiltering:
+    def test_expiry_filter(self, ho3):
+        """Expired artifact excluded by as_of_ts."""
+        now = datetime.now(timezone.utc)
+        ho3.log_overlay({
+            "signal_id": "sig:expire",
+            "salience_weight": 0.8,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "will expire"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-expire01",
+            "artifact_type": "topic_affinity",
+            "enabled": True,
+            "expires_at_event_ts": (now - timedelta(hours=1)).isoformat(),
+        })
+        biases = ho3.read_active_biases(as_of_ts=now.isoformat())
+        art_ids = [b.get("artifact_id") for b in biases]
+        assert "ART-expire01" not in art_ids
+
+    def test_expiry_not_expired(self, ho3):
+        """Non-expired artifact still returned."""
+        now = datetime.now(timezone.utc)
+        ho3.log_overlay({
+            "signal_id": "sig:fresh",
+            "salience_weight": 0.8,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "still fresh"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-fresh01",
+            "artifact_type": "topic_affinity",
+            "enabled": True,
+            "expires_at_event_ts": (now + timedelta(days=30)).isoformat(),
+        })
+        biases = ho3.read_active_biases(as_of_ts=now.isoformat())
+        art_ids = [b.get("artifact_id") for b in biases]
+        assert "ART-fresh01" in art_ids
+
+
+# === Idempotency Tests ===
+
+class TestIdempotency:
+    def test_idempotency_skip_duplicate(self, ho3):
+        """Same artifact_id -> no duplicate."""
+        now = datetime.now(timezone.utc)
+        overlay = {
+            "signal_id": "sig:test",
+            "salience_weight": 0.8,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "test"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-idem001",
+            "artifact_type": "topic_affinity",
+            "enabled": True,
+        }
+        id1 = ho3.log_overlay(overlay)
+        id2 = ho3.log_overlay(overlay.copy())
+        # Second call should return existing overlay_id, not create new
+        assert id1 == id2
+        overlays = ho3.read_overlays(active_only=False)
+        art_matches = [o for o in overlays if o.get("artifact_id") == "ART-idem001"
+                       and o.get("overlay_id", "").startswith("OVL-")]
+        # Only one HO3_OVERLAY event for this artifact_id
+        assert len(art_matches) == 1
+
+    def test_idempotency_reactivate(self, ho3):
+        """Same artifact_id after deactivate -> weight update (re-activated)."""
+        now = datetime.now(timezone.utc)
+        overlay = {
+            "signal_id": "sig:test",
+            "salience_weight": 0.8,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "test"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-react001",
+            "artifact_type": "topic_affinity",
+            "enabled": True,
+            "weight": 0.6,
+        }
+        ho3.log_overlay(overlay)
+        ho3.deactivate_overlay("ART-react001", "obsolete", now.isoformat())
+        # Re-log same artifact_id -> should re-activate
+        overlay2 = overlay.copy()
+        overlay2["weight"] = 0.9
+        ho3.log_overlay(overlay2)
+        biases = ho3.read_active_biases()
+        match = [b for b in biases if b.get("artifact_id") == "ART-react001"]
+        assert len(match) == 1
+        assert match[0].get("weight") == 0.9
+
+    def test_compute_artifact_id_deterministic(self, ho3):
+        """Same inputs -> same ID."""
+        from ho3_memory import HO3Memory
+        id1 = HO3Memory.compute_artifact_id(
+            source_signal_ids=["domain:system", "tool:read_file"],
+            gate_window_key="2026-W07",
+            model="claude-sonnet-4-20250514",
+            prompt_pack_version="PRM-CONSOLIDATE-001",
+        )
+        id2 = HO3Memory.compute_artifact_id(
+            source_signal_ids=["tool:read_file", "domain:system"],  # different order
+            gate_window_key="2026-W07",
+            model="claude-sonnet-4-20250514",
+            prompt_pack_version="PRM-CONSOLIDATE-001",
+        )
+        assert id1 == id2
+        assert id1.startswith("ART-")
+        assert len(id1) == 16  # ART- + 12 hex chars
+
+
+# === Lifecycle Resolution Tests ===
+
+class TestLifecycleResolution:
+    def test_lifecycle_resolution_latest_wins(self, ho3):
+        """Multiple events -> last event determines state."""
+        now = datetime.now(timezone.utc)
+        # Create overlay
+        ho3.log_overlay({
+            "signal_id": "sig:test",
+            "salience_weight": 0.5,
+            "source_event_ids": ["EVT-001"],
+            "content": {"bias": "original"},
+            "window_start": (now - timedelta(days=7)).isoformat(),
+            "window_end": now.isoformat(),
+            "artifact_id": "ART-resolve01",
+            "artifact_type": "topic_affinity",
+            "enabled": True,
+            "weight": 0.5,
+        })
+        # Update weight
+        ho3.update_overlay_weight("ART-resolve01", 0.9, "boosted", now.isoformat())
+        # Deactivate
+        ho3.deactivate_overlay("ART-resolve01", "done", now.isoformat())
+        # After deactivation, should not appear in active biases
+        biases = ho3.read_active_biases()
+        art_ids = [b.get("artifact_id") for b in biases]
+        assert "ART-resolve01" not in art_ids

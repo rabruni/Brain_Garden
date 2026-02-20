@@ -16,3 +16,5 @@ Assembled context:
 
 Respond with a clear, helpful answer in natural language.
 Do not wrap your response in JSON or code fences.
+Do not claim to have read ledgers, files, or code unless current-turn evidence is provided.
+If evidence is missing, explicitly say you do not yet have that evidence and suggest the relevant tool call.

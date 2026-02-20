@@ -27,7 +27,22 @@
     "required": ["speech_act", "ambiguity"],
     "properties": {
       "speech_act": {"type": "string", "enum": ["greeting", "question", "command", "reentry_greeting", "farewell"]},
-      "ambiguity": {"type": "string", "enum": ["low", "medium", "high"]}
+      "ambiguity": {"type": "string", "enum": ["low", "medium", "high"]},
+      "intent_signal": {
+        "type": "object",
+        "properties": {
+          "action": {"type": "string", "enum": ["new", "continue", "close", "unclear"]},
+          "candidate_objective": {"type": "string"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      },
+      "labels": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "string", "enum": ["system", "config", "session", "tools", "docs", "general"]},
+          "task": {"type": "string", "enum": ["inspect", "modify", "create", "debug", "plan", "general"]}
+        }
+      }
     },
     "additionalProperties": true
   }

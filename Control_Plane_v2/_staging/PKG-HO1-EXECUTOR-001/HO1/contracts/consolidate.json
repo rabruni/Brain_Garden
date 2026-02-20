@@ -13,6 +13,23 @@
   },
   "output_schema": {
     "type": "object",
-    "required": ["bias", "category", "salience_weight", "decay_modifier"]
+    "required": ["artifact_type", "labels", "weight", "scope", "context_line"],
+    "properties": {
+      "artifact_type": {
+        "type": "string",
+        "enum": ["topic_affinity", "interaction_style", "task_pattern", "constraint"]
+      },
+      "labels": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "array", "items": {"type": "string"}},
+          "task": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "weight": {"type": "number", "minimum": 0, "maximum": 1},
+      "scope": {"type": "string", "enum": ["agent", "session", "global"]},
+      "context_line": {"type": "string"},
+      "expires_after_days": {"type": ["integer", "null"]}
+    }
   }
 }

@@ -26,7 +26,7 @@
     },
     {
       "path": "HO1/contracts/classify.json",
-      "sha256": "sha256:c71e74e1f5c051b97af13bf9befaaed584ea258f3754f19a72136e44a4f0db02",
+      "sha256": "sha256:71b5399439558ce8cba83c8cea2921fc6c2c99b57b4eba729d85ff210340b35e",
       "classification": "contract"
     },
     {
@@ -41,17 +41,17 @@
     },
     {
       "path": "HO1/contracts/consolidate.json",
-      "sha256": "sha256:e37f3e081cae95d13ef15f81d5e55754d01f6bcb9ac4ec4276eb9bf77583d990",
+      "sha256": "sha256:28973148500cb072424ffac444a7519ff276470f55c1383f6b467bac536e13fb",
       "classification": "contract"
     },
     {
       "path": "HO1/prompt_packs/PRM-CLASSIFY-001.txt",
-      "sha256": "sha256:3da10407f898618791a2f8301d39938e2fea1183e687ee1fc8598d08e4cbab79",
+      "sha256": "sha256:a4eb9f5b468cbc75b1e64d4d1ee627ed3cc42c5f7641300c76847130950fefbe",
       "classification": "prompt_pack"
     },
     {
       "path": "HO1/prompt_packs/PRM-SYNTHESIZE-001.txt",
-      "sha256": "sha256:fd4d85a6cfcb9bfc58dd681dbba8d14d2996818e9a3032cc751ad8c734b5f9a1",
+      "sha256": "sha256:55d519affd2988fcb3353f0989d95b56aba13c0baaae6f0ac1c547e0ef51363b",
       "classification": "prompt_pack"
     },
     {
@@ -61,12 +61,12 @@
     },
     {
       "path": "HO1/prompt_packs/PRM-CONSOLIDATE-001.txt",
-      "sha256": "sha256:31f423a939fec5c9e8a679317558a961c13826772a0d6471081f6f44264bbd19",
+      "sha256": "sha256:f7db11e1b88ba5821e97e6475d13d98f72d2f7e800a81b14777cc0a65b43d857",
       "classification": "prompt_pack"
     },
     {
       "path": "HO1/tests/test_ho1_executor.py",
-      "sha256": "sha256:537ec55e7a9e05e924a36ac14f6e46928c5fd4e3d74becfaa9a0271317de8240",
+      "sha256": "sha256:5f5276a88d796b3345b9a7f8a689dd88d496397b0e8ed5f2664ad95be832bc15",
       "classification": "test"
     }
   ],

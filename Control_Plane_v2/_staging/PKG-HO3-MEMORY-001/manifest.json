@@ -1,7 +1,7 @@
 {
   "package_id": "PKG-HO3-MEMORY-001",
   "package_type": "library",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": "1.2",
   "spec_id": "SPEC-GATE-001",
   "framework_id": "FMWK-000",
@@ -10,12 +10,12 @@
   "assets": [
     {
       "path": "HOT/kernel/ho3_memory.py",
-      "sha256": "sha256:c20e3a61744371740a0ac656f32b40409ced6659aef5a54ba2d285c1be90909b",
+      "sha256": "sha256:0d3a182740757f9eb18926454167cefb83f7c7b8db2cb389b8b6e28dcfa6371c",
       "classification": "source"
     },
     {
       "path": "HOT/tests/test_ho3_memory.py",
-      "sha256": "sha256:0aeb5689da424f02d50dbd8eb5732e57a3fb6d10089642e2104924b3ddd114fa",
+      "sha256": "sha256:a569393ce2dd88812950e737ef764972ff7bf5d5eefde113e13859236d7b5ed6",
       "classification": "test"
     }
   ],

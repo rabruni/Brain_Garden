@@ -561,3 +561,159 @@ class TestBudgetModes:
 
         assert resp.outcome == RouteOutcome.SUCCESS
         assert budgeter.check.call_count == 0
+
+
+class TestTimeoutRetryPolicy29P:
+    def _request(self):
+        from llm_gateway import PromptRequest
+
+        return PromptRequest(
+            prompt="verbose request",
+            prompt_pack_id="PRM-SYNTHESIZE-001",
+            contract_id="PRC-SYNTHESIZE-001",
+            agent_id="admin-001.ho1",
+            agent_class="ADMIN",
+            framework_id="FMWK-000",
+            package_id="PKG-HO1-EXECUTOR-001",
+            work_order_id="WO-TEST-RETRY",
+            session_id="SES-RETRY0001",
+            tier="ho1",
+        )
+
+    def test_route_retries_on_timeout_then_success(self, tmp_path):
+        from llm_gateway import LLMGateway, RouterConfig, RouteOutcome
+        from ledger_client import LedgerClient
+        from provider import ProviderError, ProviderResponse
+
+        class FlakyProvider:
+            provider_id = "flaky"
+
+            def __init__(self):
+                self.calls = 0
+
+            def send(self, **kwargs):
+                self.calls += 1
+                if self.calls == 1:
+                    raise ProviderError("first call timed out", code="TIMEOUT", retryable=True)
+                return ProviderResponse(
+                    content="ok after retry",
+                    model=kwargs["model_id"],
+                    input_tokens=10,
+                    output_tokens=5,
+                    request_id="req-retry-ok",
+                    provider_id=self.provider_id,
+                )
+
+        ledger_path = tmp_path / "ledger" / "retry.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        gw = LLMGateway(
+            ledger_client=lc,
+            config=RouterConfig(default_provider="flaky", max_retries=1),
+            dev_mode=True,
+        )
+        provider = FlakyProvider()
+        gw.register_provider("flaky", provider)
+
+        resp = gw.route(self._request())
+
+        assert resp.outcome == RouteOutcome.SUCCESS
+        assert provider.calls == 2
+
+    def test_route_stops_after_max_retries_on_timeout(self, tmp_path):
+        from llm_gateway import LLMGateway, RouterConfig, RouteOutcome
+        from ledger_client import LedgerClient
+        from provider import ProviderError
+
+        class AlwaysTimeoutProvider:
+            provider_id = "always-timeout"
+
+            def __init__(self):
+                self.calls = 0
+
+            def send(self, **kwargs):
+                self.calls += 1
+                raise ProviderError("timeout every time", code="TIMEOUT", retryable=True)
+
+        ledger_path = tmp_path / "ledger" / "retry-stop.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        gw = LLMGateway(
+            ledger_client=lc,
+            config=RouterConfig(default_provider="always-timeout", max_retries=2),
+            dev_mode=True,
+        )
+        provider = AlwaysTimeoutProvider()
+        gw.register_provider("always-timeout", provider)
+
+        resp = gw.route(self._request())
+
+        assert resp.outcome == RouteOutcome.TIMEOUT
+        assert provider.calls == 3  # initial + 2 retries
+
+    def test_route_does_not_retry_non_retryable_auth_error(self, tmp_path):
+        from llm_gateway import LLMGateway, RouterConfig, RouteOutcome
+        from ledger_client import LedgerClient
+        from provider import ProviderError
+
+        class AuthErrorProvider:
+            provider_id = "auth-fail"
+
+            def __init__(self):
+                self.calls = 0
+
+            def send(self, **kwargs):
+                self.calls += 1
+                raise ProviderError("bad key", code="AUTH_ERROR", retryable=False)
+
+        ledger_path = tmp_path / "ledger" / "retry-auth.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        gw = LLMGateway(
+            ledger_client=lc,
+            config=RouterConfig(default_provider="auth-fail", max_retries=5),
+            dev_mode=True,
+        )
+        provider = AuthErrorProvider()
+        gw.register_provider("auth-fail", provider)
+
+        resp = gw.route(self._request())
+
+        assert resp.outcome == RouteOutcome.ERROR
+        assert resp.error_code == "AUTH_ERROR"
+        assert provider.calls == 1
+
+    def test_route_uses_configured_timeout_ms(self, tmp_path):
+        from llm_gateway import LLMGateway, RouterConfig
+        from ledger_client import LedgerClient
+        from provider import ProviderResponse
+
+        observed = {"timeout_ms": None}
+
+        class TimeoutCaptureProvider:
+            provider_id = "capture"
+
+            def send(self, **kwargs):
+                observed["timeout_ms"] = kwargs.get("timeout_ms")
+                return ProviderResponse(
+                    content="ok",
+                    model=kwargs["model_id"],
+                    input_tokens=5,
+                    output_tokens=2,
+                    request_id="req-timeout-capture",
+                    provider_id=self.provider_id,
+                )
+
+        ledger_path = tmp_path / "ledger" / "timeout-capture.jsonl"
+        ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        lc = LedgerClient(ledger_path=ledger_path)
+        gw = LLMGateway(
+            ledger_client=lc,
+            config=RouterConfig(default_provider="capture", default_timeout_ms=65432),
+            dev_mode=True,
+        )
+        gw.register_provider("capture", TimeoutCaptureProvider())
+
+        gw.route(self._request())
+
+        assert observed["timeout_ms"] == 65432

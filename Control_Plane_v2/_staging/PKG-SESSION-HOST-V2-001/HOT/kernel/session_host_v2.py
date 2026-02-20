@@ -61,12 +61,26 @@ class SessionHostV2:
 
         try:
             result = self._ho2.handle_turn(user_message)
-            return TurnResult(
+            turn_result = TurnResult(
                 response=getattr(result, "response", str(result)),
                 outcome="success",
                 tool_calls=getattr(result, "tool_calls", []),
                 exchange_entry_ids=getattr(result, "exchange_entry_ids", []),
             )
+
+            # Out-of-band consolidation side-effect:
+            # does not change current turn response and must not crash turn flow.
+            candidates = getattr(result, "consolidation_candidates", [])
+            if candidates:
+                try:
+                    self._ho2.run_consolidation(candidates)
+                except Exception as cons_exc:
+                    logger.warning(
+                        "Consolidation failed for candidates %s: %s",
+                        candidates, cons_exc,
+                    )
+
+            return turn_result
         except Exception as ho2_exc:
             return self._degrade(user_message, ho2_exc)
 
