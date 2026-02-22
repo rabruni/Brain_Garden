@@ -1,0 +1,83 @@
+{
+  "package_id": "PKG-HO1-EXECUTOR-001",
+  "package_type": "kernel",
+  "title": "HO1 Executor",
+  "version": "1.2.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "ho1",
+  "layer": 3,
+  "assets": [
+    {
+      "path": "HO1/kernel/tool_dispatch.py",
+      "sha256": "sha256:8c50b55ca76d90d3b18eb04089d09e46ffa64e422d9289066c64152ab4ff0b60",
+      "classification": "library"
+    },
+    {
+      "path": "HO1/kernel/contract_loader.py",
+      "sha256": "sha256:5e31f4f17dcc98fe14c822bbdf0497adadadd08e13f00fc435fab3575233644c",
+      "classification": "library"
+    },
+    {
+      "path": "HO1/kernel/ho1_executor.py",
+      "sha256": "sha256:24d68de2d4237b5591453a1baad745439c02a699d24471284dadb3e932b6d631",
+      "classification": "library"
+    },
+    {
+      "path": "HO1/contracts/classify.json",
+      "sha256": "sha256:71b5399439558ce8cba83c8cea2921fc6c2c99b57b4eba729d85ff210340b35e",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/contracts/synthesize.json",
+      "sha256": "sha256:cf4c42afcdbd0aaa0b68f402a4ce4658cc1cc77e9849dacc4b536c3a654cfdca",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/contracts/execute.json",
+      "sha256": "sha256:dd06cc2a155d6c9e4ec265c11e18ddd804dede103a53c9712bfab7f0b2491666",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/contracts/consolidate.json",
+      "sha256": "sha256:28973148500cb072424ffac444a7519ff276470f55c1383f6b467bac536e13fb",
+      "classification": "contract"
+    },
+    {
+      "path": "HO1/prompt_packs/PRM-CLASSIFY-001.txt",
+      "sha256": "sha256:a4eb9f5b468cbc75b1e64d4d1ee627ed3cc42c5f7641300c76847130950fefbe",
+      "classification": "prompt_pack"
+    },
+    {
+      "path": "HO1/prompt_packs/PRM-SYNTHESIZE-001.txt",
+      "sha256": "sha256:55d519affd2988fcb3353f0989d95b56aba13c0baaae6f0ac1c547e0ef51363b",
+      "classification": "prompt_pack"
+    },
+    {
+      "path": "HO1/prompt_packs/PRM-EXECUTE-001.txt",
+      "sha256": "sha256:ac3698aadc0cfc24b38720b20171f0fc9f39a92caaf43c6ca37802e7cd01902a",
+      "classification": "prompt_pack"
+    },
+    {
+      "path": "HO1/prompt_packs/PRM-CONSOLIDATE-001.txt",
+      "sha256": "sha256:f7db11e1b88ba5821e97e6475d13d98f72d2f7e800a81b14777cc0a65b43d857",
+      "classification": "prompt_pack"
+    },
+    {
+      "path": "HO1/tests/test_ho1_executor.py",
+      "sha256": "sha256:5f5276a88d796b3345b9a7f8a689dd88d496397b0e8ed5f2664ad95be832bc15",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-LLM-GATEWAY-001",
+    "PKG-TOKEN-BUDGETER-001"
+  ],
+  "metadata": {
+    "created_at": "2026-02-15T00:00:00+00:00",
+    "author": "builder",
+    "description": "HO1 Executor \u2014 canonical LLM execution point. First non-HOT package (plane_id: ho1)."
+  }
+}

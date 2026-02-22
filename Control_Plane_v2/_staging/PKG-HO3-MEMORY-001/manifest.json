@@ -1,0 +1,31 @@
+{
+  "package_id": "PKG-HO3-MEMORY-001",
+  "package_type": "library",
+  "version": "1.1.0",
+  "schema_version": "1.2",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "assets": [
+    {
+      "path": "HOT/kernel/ho3_memory.py",
+      "sha256": "sha256:0d3a182740757f9eb18926454167cefb83f7c7b8db2cb389b8b6e28dcfa6371c",
+      "classification": "source"
+    },
+    {
+      "path": "HOT/tests/test_ho3_memory.py",
+      "sha256": "sha256:a569393ce2dd88812950e737ef764972ff7bf5d5eefde113e13859236d7b5ed6",
+      "classification": "test"
+    }
+  ],
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-LAYOUT-002"
+  ],
+  "metadata": {
+    "created_at": "2026-02-17T00:00:00+00:00",
+    "author": "builder-29a",
+    "description": "HO3 memory store -- signal-based addressable data plane with bistable consolidation gate"
+  }
+}

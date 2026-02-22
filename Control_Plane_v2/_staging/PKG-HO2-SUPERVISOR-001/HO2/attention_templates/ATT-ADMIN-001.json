@@ -1,0 +1,50 @@
+{
+  "template_id": "ATT-ADMIN-001",
+  "version": "1.0.0",
+  "description": "HO2 attention template for ADMIN agent class",
+  "applies_to": {
+    "agent_class": ["ADMIN"],
+    "tier": ["ho2"]
+  },
+  "pipeline": [
+    {
+      "stage": "select_tiers",
+      "type": "tier_select",
+      "config": {
+        "tiers": ["hot", "ho2", "ho1"]
+      }
+    },
+    {
+      "stage": "recent_wo_events",
+      "type": "ledger_query",
+      "config": {
+        "event_type": "WO_PLANNED",
+        "max_entries": 10
+      }
+    },
+    {
+      "stage": "registry_scan",
+      "type": "registry_query",
+      "config": {
+        "registry": "frameworks"
+      }
+    },
+    {
+      "stage": "structure",
+      "type": "structuring",
+      "config": {
+        "strategy": "chronological",
+        "max_tokens": 8000
+      }
+    }
+  ],
+  "budget": {
+    "max_context_tokens": 10000,
+    "max_queries": 20,
+    "timeout_ms": 5000
+  },
+  "fallback": {
+    "on_timeout": "return_partial",
+    "on_empty": "proceed_empty"
+  }
+}

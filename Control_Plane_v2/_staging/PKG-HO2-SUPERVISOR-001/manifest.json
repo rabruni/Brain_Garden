@@ -1,0 +1,104 @@
+{
+  "package_id": "PKG-HO2-SUPERVISOR-001",
+  "package_type": "kernel",
+  "version": "1.2.0",
+  "schema_version": "1.2",
+  "supersedes": "PKG-ATTENTION-001",
+  "title": "HO2 Supervisor \u2014 Modified Kitchener Loop",
+  "description": "HO2 Supervisor \u2014 Modified Kitchener cognitive dispatch loop (Steps 2-4). Classify, attention, synthesize, quality gate. Factory pattern per FMWK-010.",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "ho2",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-WORK-ORDER-001"
+  ],
+  "assets": [
+    {
+      "path": "HO2/kernel/ho2_supervisor.py",
+      "sha256": "sha256:5d05b3c50985a44b931fbe26e231914bdf3881444099c79a94b3c3a7098d3b95",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/attention.py",
+      "sha256": "sha256:5ee59fe4b4f31668917b77dc6c8030da9df456d4ebddd0f75b9fd3dc929f4324",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/quality_gate.py",
+      "sha256": "sha256:81da27fb9da4d6d386bd7fb0be5ee200c92a232ee99a0d7f3ea22faa97533195",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/session_manager.py",
+      "sha256": "sha256:3fd0aa69a95914e90bd51ca6ca26e30aec2cf60ce046cbdc3f6042654a92fdc9",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/attention_templates/ATT-ADMIN-001.json",
+      "sha256": "sha256:c3bac722029a742ecaf52b382c79406bdbf2d91f34ef040fb220548f3d68e9ba",
+      "classification": "template"
+    },
+    {
+      "path": "HO2/kernel/intent_resolver.py",
+      "sha256": "sha256:933712f5413ff19e81bc5748eab6f898055887f9f8bb6ce865f90ee2bc29c3e9",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_ho2_supervisor.py",
+      "sha256": "sha256:a512ed8ee30444e132dba05fadc6a592c336f15a279c0d189ca7769c76e8398f",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/tests/test_intent_resolver.py",
+      "sha256": "sha256:5098bb83d01e6e517a69c75cc486f4285a43888146fe845196db339c5bb74b84",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/tests/test_quality_gate.py",
+      "sha256": "sha256:f38c17469c3dadc60eaf6a7e43ead1685d444869065175da0f2da19b33cade50",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/kernel/bias_selector.py",
+      "sha256": "sha256:c044c819ff998e2e716bf2f492d6ecf597f0995e7ee91d1fa9fd6ae6a209604f",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_bias_selector.py",
+      "sha256": "sha256:355d1c826e708e5590c8fbd6b90252b83496b5d67959a6f1f7741e99324d6eda",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/kernel/liveness.py",
+      "sha256": "sha256:5a0fdfe3dba79eff5b51b25b62acccca48b48e192b0ef6e8bce19394d9177a4b",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/kernel/overlay_writer.py",
+      "sha256": "sha256:cefda8bc744461113b32e404e53097c59fe51236f23b189f2b169ac4fff50d57",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_liveness.py",
+      "sha256": "sha256:ad2a2a23dad78e756acb959bd105bdd3f9d87c60b2fed1e871616b0176309d1b",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/tests/test_overlay_writer.py",
+      "sha256": "sha256:49119eed52db4252fa4c34cc15880b2430fcc2513e859b246e9a11ec2d2b627b",
+      "classification": "test"
+    },
+    {
+      "path": "HO2/kernel/context_projector.py",
+      "sha256": "sha256:c706f175148f354b2ce7fa41cf532c2a0ec6ff81938a59b1a92374ebb1032b1f",
+      "classification": "library"
+    },
+    {
+      "path": "HO2/tests/test_context_projector.py",
+      "sha256": "sha256:25a4459eb6c758522ca94b6774ffbc5002d46dc86e1f5d3418c5be5f5d618334",
+      "classification": "test"
+    }
+  ]
+}

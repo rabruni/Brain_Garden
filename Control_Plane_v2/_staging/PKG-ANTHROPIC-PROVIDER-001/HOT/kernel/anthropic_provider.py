@@ -117,14 +117,9 @@ class AnthropicProvider:
         content_dicts = tuple(b.model_dump() for b in blocks)
         finish = STOP_REASON_MAP.get(response.stop_reason or "", "stop")
 
-        if tool_use_parts:
-            tool_use_list = [
-                {"tool_id": b.name, "arguments": b.input}
-                for b in tool_use_parts
-            ]
-            content = json.dumps({"tool_use": tool_use_list})
-        else:
-            content = "".join(text_parts)
+        content = "".join(text_parts)
+        if not content and tool_use_parts:
+            content = json.dumps(tool_use_parts[0].input)
 
         return AnthropicResponse(
             content=content,

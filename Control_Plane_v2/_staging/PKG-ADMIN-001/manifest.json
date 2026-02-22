@@ -1,6 +1,6 @@
 {
   "package_id": "PKG-ADMIN-001",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": "1.2",
   "title": "ADMIN First Boot",
   "description": "ADMIN configuration and CLI entrypoint on top of Session Host",
@@ -10,20 +10,34 @@
   "layer": 3,
   "dependencies": [
     "PKG-KERNEL-001",
-    "PKG-SESSION-HOST-001",
-    "PKG-ATTENTION-001",
-    "PKG-PROMPT-ROUTER-001",
-    "PKG-ANTHROPIC-PROVIDER-001"
+    "PKG-ANTHROPIC-PROVIDER-001",
+    "PKG-WORK-ORDER-001",
+    "PKG-LLM-GATEWAY-001",
+    "PKG-HO1-EXECUTOR-001",
+    "PKG-HO2-SUPERVISOR-001",
+    "PKG-HO3-MEMORY-001",
+    "PKG-SESSION-HOST-V2-001",
+    "PKG-SHELL-001"
   ],
   "assets": [
     {
       "path": "HOT/admin/main.py",
-      "sha256": "sha256:5775f595bfd5edd80e820063a1e98c943169037b6a2f67fdf04a31ead27bcecd",
+      "sha256": "sha256:6a281afb1fe235c0c8660fbc261b34ee6f715ead1f649d7a538f506503221d8d",
       "classification": "application"
     },
     {
+      "path": "HOT/admin/forensic_policy.py",
+      "sha256": "sha256:037cd46b4f476bd85cfc82b6f7af3357c86b895d8025ad7e4b8f6601c3e5a526",
+      "classification": "library"
+    },
+    {
+      "path": "HOT/admin/ledger_forensics.py",
+      "sha256": "sha256:af42b8e82e19e0946a9a6cfdd7c1410e39756af32f7c7f6989748a5e13983efe",
+      "classification": "library"
+    },
+    {
       "path": "HOT/config/admin_config.json",
-      "sha256": "sha256:c4f9cc69a8969c8ca7ba209c36ce70e03b8c3feb00b988e4031eb829e4c2c251",
+      "sha256": "sha256:9c89c714e4d196ea4075fb8c2429c46d04e3e1888dd4175184430ce67d686136",
       "classification": "config"
     },
     {
@@ -33,17 +47,32 @@
     },
     {
       "path": "HOT/FMWK-005_Admin/manifest.yaml",
-      "sha256": "sha256:54bf77783e508c12716ebb100bf75fcb1449f78a4a914cdc3515e8d82b129e51",
+      "sha256": "sha256:cbbcc905b591aee74c4d2b8d111c0f8da3c977ab994cc29751c4256070b11059",
       "classification": "framework"
     },
     {
       "path": "HOT/schemas/admin_config.schema.json",
-      "sha256": "sha256:f2e85abeee5e29cbfdf9ad9631d92c4fd1344acd48554360e35bd9ae7001ec19",
+      "sha256": "sha256:b7d3b0d39893c14bbadf763ca020dcec9da63a751bc91f27f5527d72abfcbc0a",
       "classification": "schema"
     },
     {
       "path": "HOT/tests/test_admin.py",
-      "sha256": "sha256:26c0ac45df81454cc0a637fd8ecc6e11793a82e0b63d47fae36b070505170f0f",
+      "sha256": "sha256:784d463aeac2b83ac21785d848546366f56e08f31e0e8c5a209449884ae14d5c",
+      "classification": "test"
+    },
+    {
+      "path": "HOT/tests/test_forensic_policy.py",
+      "sha256": "sha256:bdb575041fe88ec5dfe4ed0b9f4c7bb4e1fc782ab81695de272ba7df716df543",
+      "classification": "test"
+    },
+    {
+      "path": "HOT/tests/test_ledger_forensics.py",
+      "sha256": "sha256:1197926966d997eb651335736e441e22ebde20b016e8e145c8836070ade58855",
+      "classification": "test"
+    },
+    {
+      "path": "HOT/tests/test_trace_prompt_journey.py",
+      "sha256": "sha256:6646fe44bd0bc29857b9cb363dd3dab13eedfa4c85e846412f0a32e685a7e350",
       "classification": "test"
     }
   ]

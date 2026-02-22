@@ -1,0 +1,392 @@
+# AGENT_BUILD_PROCESS.yaml
+# Agent-optimized: the complete agent workflow for building within DoPeJar
+# Maps: context loading → handoff dispatch → 13Q gate → DTT → results → validation
+# This IS a DoPeJar framework under development
+# Last updated: 2026-02-22
+
+meta:
+  purpose: "Machine-readable agent build workflow — how work gets scoped, executed, and validated"
+  source_standard: "handoffs/BUILDER_HANDOFF_STANDARD.md"
+  handoffs_completed: 62
+  handoff_directory: "handoffs/"
+  note: "This build process IS a DoPeJar framework under development. The handoff system parallels the WO system."
+
+# ═══════════════════════════════════════════
+# SECTION 1: CONTEXT LOADING SEQUENCE
+# What an agent reads before starting work
+# ═══════════════════════════════════════════
+
+context_loading:
+  description: "Ordered sequence of documents an agent must read before building"
+  for_new_agent:
+    - order: 1
+      file: "handoffs/BUILDER_HANDOFF_STANDARD.md"
+      purpose: "Process standard — critical constraints, DTT, results format, governance chain"
+      tokens_approx: 3000
+    - order: 2
+      file: "handoffs/BUILDER_PROMPT_CONTRACT.md"
+      purpose: "Prompt contract — agent template, 13Q gate protocol, behavior rules, adversarial simulation"
+      tokens_approx: 1000
+    - order: 3
+      file: "<specific_handoff_spec>"
+      purpose: "The actual task specification"
+      tokens_approx: "varies (2000-5000)"
+
+  total_context_budget:
+    new_agent: "~8,000 tokens for full context load (standard + prompt contract + spec)"
+
+# ═══════════════════════════════════════════
+# SECTION 2: HANDOFF LIFECYCLE
+# The complete lifecycle of a unit of work
+# ═══════════════════════════════════════════
+
+handoff_lifecycle:
+  states:
+    - state: NOT_DISPATCHED
+      description: "Handoff doc written, not yet sent to an agent"
+      transitions_to: [DISPATCHED]
+    - state: DISPATCHED
+      description: "Handoff sent to agent, awaiting 13-question answers"
+      transitions_to: [APPROVED, FAILED]
+    - state: APPROVED
+      description: "13-question answers reviewed, agent told to proceed"
+      transitions_to: [COMPLETE, FAILED]
+    - state: COMPLETE
+      description: "Agent finished, results file written"
+      transitions_to: [VALIDATED, FAILED]
+    - state: VALIDATED
+      description: "Reviewer verified results file + spot-checked hashes/tests"
+      transitions_to: []
+    - state: FAILED
+      description: "Agent failed, see notes"
+      transitions_to: [DISPATCHED]
+    - state: BLOCKED
+      description: "Waiting on dependency"
+      transitions_to: [NOT_DISPATCHED, DISPATCHED]
+    - state: SUPERSEDED
+      description: "Absorbed or replaced by another handoff"
+      transitions_to: []
+
+  parallel_to_wo_lifecycle:
+    mapping:
+      NOT_DISPATCHED: "planned"
+      DISPATCHED: "dispatched"
+      APPROVED: "dispatched (post-gate)"
+      COMPLETE: "completed"
+      VALIDATED: "completed + verified"
+      FAILED: "failed"
+    note: "The handoff lifecycle IS the work order lifecycle being developed through practice"
+
+# ═══════════════════════════════════════════
+# SECTION 3: HANDOFF DOCUMENT STRUCTURE
+# What a handoff spec must contain
+# ═══════════════════════════════════════════
+
+handoff_structure:
+  file_organization:
+    pattern: "_reboot/_staging/handoffs/<handoff_id>/<handoff_id>_BUILDER_HANDOFF.md"
+    results: "_reboot/_staging/handoffs/<handoff_id>/<handoff_id>_RESULTS.md"
+    handoff_ids:
+      new_component: "H-<N>"
+      followup: "H-<N><letter>"
+      cleanup: "CLEANUP-<N>"
+
+  required_sections:
+    - section: 1
+      name: "Mission"
+      content: "One paragraph: what the agent is building and why. Include package ID(s)."
+    - section: 2
+      name: "Critical Constraints"
+      content: "Numbered list of non-negotiable rules"
+      mandatory_constraints:
+        - "ALL work in _reboot/_staging/"
+        - "DTT: Design → Test → Then implement"
+        - "Package everything with manifest.json"
+        - "End-to-end verification"
+        - "No hardcoding"
+        - "No file replacement"
+        - "Correct tar format"
+        - "Results file"
+        - "Full regression test"
+        - "Baseline snapshot"
+    - section: 3
+      name: "Architecture / Design"
+      content: "What to build — diagrams, data flows, component relationships"
+    - section: 4
+      name: "Implementation Steps"
+      content: "Numbered, ordered steps with file paths and function signatures"
+    - section: 5
+      name: "Package Plan"
+      content: "Package ID, layer, spec_id, framework_id, assets, dependencies"
+    - section: 6
+      name: "Test Plan"
+      content: "Every test method with name, description, expected behavior"
+      minimum_tests:
+        small: "10+ (1-2 source files)"
+        medium: "25+ (3-5 source files)"
+        large: "40+ (6+ source files)"
+    - section: 7
+      name: "Existing Code to Reference"
+      content: "Table of files agent should read before building"
+    - section: 8
+      name: "End-to-End Verification"
+      content: "Exact copy-paste commands with expected output"
+    - section: 9
+      name: "Files Summary"
+      content: "Table of every file created or modified"
+    - section: 10
+      name: "Design Principles"
+      content: "Non-negotiable design rules for this component (4-6 items)"
+
+# ═══════════════════════════════════════════
+# SECTION 4: AGENT PROMPT STRUCTURE
+# How an agent is initialized
+# ═══════════════════════════════════════════
+
+agent_prompt:
+  structure:
+    - element: "Identity line"
+      format: "**Agent: [HANDOFF_ID]** — [one-line mission]"
+      note: "First output. Identifies agent in user terminal."
+    - element: "Specification pointer"
+      format: "Read your specification: <path>"
+    - element: "Mandatory rules"
+      count: 10
+      content: "Non-negotiable constraints (staging path, DTT, tar format, hashes, etc.)"
+    - element: "13-question gate"
+      content: "Questions 1-3: scope. 4-6: technical. 7-8: packaging. 9: tests. 10: integration. 11-13: adversarial (mandatory)."
+    - element: "STOP instruction"
+      content: "Do NOT proceed until user approval"
+
+  thirteen_question_gate:
+    purpose: "Checkpoint — proves agent understanding before implementation"
+    question_categories:
+      scope: [1, 2, 3]
+      technical: [4, 5, 6]
+      packaging: [7, 8]
+      testing: [9]
+      integration: [10]
+    adversarial_sets:
+      selection_rule: "HO2 picks the set matching system maturity. Semantic Audit is universal."
+
+      genesis:
+        active_when: "No kernel tools, no gates, no governance pipeline, no packages"
+        # TODO: Switch to infrastructure set once HO1 kernel is built and governance pipeline is operational
+        # TRIGGER: First handoff where builder can run gate_check.py and produce SHA256 hashes
+        questions:
+          - name: "The Dependency Trap"
+            question: "What does your deliverable depend on that doesn't exist yet? How do you handle that absence without inventing infrastructure?"
+          - name: "The Scope Creep Check"
+            question: "What is the closest thing to 'building infrastructure' in your plan, and why is it actually in scope?"
+          - name: "The Semantic Audit"
+            question: "Identify one ambiguous word in my plan and redefine it precisely."
+
+      infrastructure:
+        active_when: "Kernel tools exist (compute_sha256, pack), gates running, governed pipeline operational"
+        questions:
+          - name: "The Failure Mode"
+            question: "Which specific file/hash in my scope is the most likely culprit if a gate check fails?"
+          - name: "The Shortcut Check"
+            question: "Is there a Kernel tool I'm tempted to skip in favor of a shell command?"
+          - name: "The Semantic Audit"
+            question: "Identify one ambiguous word in my plan and redefine it precisely."
+
+    behavior:
+      must_do: "Answer all 13 questions (10 verification + 3 adversarial), then STOP and WAIT"
+      must_not: "Start creating directories, writing tests, making plans"
+      user_responses: ["Correct and proceed", "Follow-up questions", "Redirect approach", "Greenlight: 'Go ahead'"]
+
+# ═══════════════════════════════════════════
+# SECTION 5: BUILD PHASES (DTT)
+# Design → Test → Then implement
+# ═══════════════════════════════════════════
+
+build_phases:
+  phase_1_understand:
+    name: "Understand"
+    steps:
+      - "Read handoff spec"
+      - "Read referenced code (Section 7 of spec)"
+      - "Answer 13-question gate"
+      - "STOP. Wait for approval."
+
+  phase_2_build:
+    name: "Build (Red-Green-Refactor)"
+    method: "Per-behavior TDD cycles, NOT all-tests-then-all-code"
+    cycle:
+      red:
+        action: "Write test(s) for one behavior"
+        requirement: "Test MUST fail before implementation"
+      green:
+        action: "Write minimum code to pass the test"
+        requirement: "Not elegant, not complete — just enough to go green"
+      refactor:
+        action: "Clean up code, tests stay green"
+        requirement: "Run tests after every change"
+    mock_boundary:
+      unit_tests: "Mocks allowed — isolate unit under test"
+      integration_tests: "NO mocks — wire real components"
+      e2e_smoke: "NO mocks — real Kitchener loop"
+      warning: "The pattern that ships bugs: HO2 mocks HO1, HO1 mocks Gateway, Gateway mocks Provider. All 487 tests pass. User types 'hello' and gets an error."
+
+  phase_3_govern:
+    name: "Govern"
+    steps:
+      - action: "Compute SHA256 for all modified files"
+        note: "Hashes must be sha256:<64hex> format (71 chars)"
+      - action: "Update manifest.json"
+      - action: "Rebuild package archive using deterministic archiving (no shell tar)"
+
+  phase_4_verify:
+    name: "Verify"
+    steps:
+      - action: "Run full regression"
+        command: "python3 -m pytest _reboot/_staging/ -v"
+      - action: "E2E smoke test (MANDATORY for dispatch-path packages)"
+        command: "Run the E2E verification command from Section 8 of your handoff spec"
+        note: "NOT optional. The handoff spec provides the exact command."
+
+  phase_5_report:
+    name: "Report"
+    steps:
+      - "Write RESULTS file following full template"
+      - "STOP. Report completion."
+
+# ═══════════════════════════════════════════
+# SECTION 6: RESULTS FILE STRUCTURE
+# What an agent produces when done
+# ═══════════════════════════════════════════
+
+results_file:
+  location: "_reboot/_staging/handoffs/<handoff_id>/<handoff_id>_RESULTS.md"
+  required_sections:
+    - name: "Status"
+      values: ["PASS", "FAIL", "PARTIAL"]
+    - name: "Files Created"
+      format: "path (SHA256: hash)"
+    - name: "Files Modified"
+      format: "path (SHA256 before: x, after: y)"
+    - name: "Archives Built"
+      format: "archive.tar.gz (SHA256: hash)"
+    - name: "Test Results — THIS PACKAGE"
+      fields: ["total", "passed", "failed", "skipped", "command"]
+    - name: "Full Regression Test — ALL STAGED"
+      fields: ["total", "passed", "failed", "skipped", "command", "new_failures"]
+      note: "MANDATORY — run ALL staged tests, not just yours"
+    - name: "Baseline Snapshot"
+      fields: ["packages_installed", "total_tests"]
+      purpose: "Starting point for next agent's validation"
+    - name: "Clean-Room Verification"
+      fields: ["packages_installed", "install_order", "all_tests_pass"]
+    - name: "Issues Encountered"
+      content: "Problems, workarounds, deviations from spec"
+    - name: "Notes for Reviewer"
+      content: "Design decisions made outside spec"
+
+# ═══════════════════════════════════════════
+# SECTION 7: REVIEWER CHECKLIST
+# How results get validated
+# ═══════════════════════════════════════════
+
+reviewer_checklist:
+  items:
+    - "RESULTS file exists at correct location"
+    - "RESULTS file has ALL required sections"
+    - "Clean-Room Verification shows package count, install order, all tests PASS"
+    - "Baseline Snapshot shows package count, total tests"
+    - "Full regression was run (ALL staged packages, not just this one)"
+    - "No new test failures introduced"
+    - "Manifest hashes use sha256:<64hex> format"
+    - "RESULTS file naming follows convention"
+
+  validation_flow:
+    - "Compare agent's baseline snapshot against previous agent's baseline"
+    - "Verify no regressions between baselines"
+    - "Spot-check SHA256 hashes (extract archive, hash file, compare)"
+
+# ═══════════════════════════════════════════
+# SECTION 8: LEXICON OF PRECISION
+# Anti-hallucination terminological constraints
+# ═══════════════════════════════════════════
+
+lexicon_of_precision:
+  purpose: "Vague narrative claims are a failure of the Control Plane protocol"
+  forbidden_terms:
+    - forbidden: "I updated all files"
+      required: "I modified <N> files (see SHA256 list below)."
+    - forbidden: "We log everything"
+      required: "I implemented logging for <specific state transitions>."
+    - forbidden: "It's fully tested"
+      required: "The pytest result for <Package Name> shows <N> Passes / 0 Fails."
+    - forbidden: "The code is optimized"
+      required: "The logic was refactored to reduce <Specific Metric>."
+    - forbidden: "Integrated successfully"
+      required: "All tests pass and no undeclared files exist in the package."
+  enforcement: "If an agent uses a forbidden term, HO2 Critic triggers immediate REJECTION."
+
+# ═══════════════════════════════════════════
+# SECTION 9: BUILD PROCESS ↔ RUNTIME PARALLEL
+# Why this process IS a DoPeJar framework
+# ═══════════════════════════════════════════
+
+runtime_parallel:
+  description: "The build process maps 1:1 to DoPeJar's runtime dispatch"
+  mapping:
+    - build: "HO2 (Claude) writes a builder handoff spec"
+      runtime: "HO2 plans a work order chain"
+    - build: "Handoff includes scope, constraints, budget, test plan"
+      runtime: "Work order includes wo_type, constraints, token_budget, prompt_contract_id"
+    - build: "Builder agent answers 13-question gate"
+      runtime: "HO2 validates WO at planning time (schema, budget, contract)"
+    - build: "DTT: Design → Test → Then implement"
+      runtime: "HO1 loads prompt contract → validates I/O → executes"
+    - build: "Builder produces results file with SHA256 hashes"
+      runtime: "HO1 returns structured output_result with cost accounting"
+    - build: "Reviewer validates results against spec"
+      runtime: "HO2 runs quality gate (accept/reject)"
+    - build: "Full regression: all staged packages"
+      runtime: "Ledger invariants: every WO has matching terminal state"
+    - build: "Baseline snapshot for next builder"
+      runtime: "Session budget tracking, rollup at session level"
+    - build: "Handoff registry (NOT_DISPATCHED → VALIDATED)"
+      runtime: "Work order lifecycle (planned → completed)"
+  implication: "The handoff docs are the evolution record of a framework being designed through practice. This process WILL become a first-class DoPeJar framework."
+
+# ═══════════════════════════════════════════
+# SECTION 10: PROMPT ROUTING
+# Maps handoff type → prompt contract
+# ═══════════════════════════════════════════
+
+prompt_routing:
+  description: "HO2 (or human) identifies the handoff type, looks up the route, and generates the prompt from the matching contract"
+  selection_rule: "Match handoff type → pick prompt contract → fill template variables → dispatch"
+
+  routes:
+    - type: "build"
+      prompt_contract: "handoffs/BUILDER_PROMPT_CONTRACT.md"
+      version: "1.2.0"
+      when: "New package, follow-up fix, cleanup, or upgrade"
+      status: "ACTIVE"
+
+    - type: "review"
+      prompt_contract: "handoffs/REVIEWER_PROMPT_CONTRACT.md"
+      version: null
+      when: "Validating a completed handoff — checking results file, hashes, gates, regressions"
+      status: "NOT YET CREATED"
+
+    - type: "integration"
+      prompt_contract: "handoffs/INTEGRATION_PROMPT_CONTRACT.md"
+      version: null
+      when: "Wiring packages into the system after a parallel wave — entrypoint, registries, bootstrap rebuild, E2E"
+      status: "NOT YET CREATED"
+
+    - type: "conformance"
+      prompt_contract: "handoffs/CONFORMANCE_PROMPT_CONTRACT.md"
+      version: null
+      when: "Checking built code against design intent — invariants, gaps, drift detection"
+      status: "NOT YET CREATED"
+
+  runtime_parallel:
+    current: "Human reads this table, picks the contract, fills variables, pastes prompt"
+    next: "HO2 agent reads this table programmatically and selects the contract"
+    target: "ContractLoader maps wo_type → prompt_contract_id automatically"

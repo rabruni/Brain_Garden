@@ -14,12 +14,32 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-HOT_ROOT = SCRIPT_DIR.parent
-CP_ROOT = HOT_ROOT.parent
-sys.path.insert(0, str(HOT_ROOT))
+# Dual-context path detection: installed root vs staging packages
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
+_INSTALLED = (_HOT / "kernel" / "ledger_client.py").exists()
 
-# Discover all framework manifests
+if _INSTALLED:
+    # Installed layout — all packages merged under HOT/
+    HOT_ROOT = _HOT
+    CP_ROOT = _HOT.parent
+    _paths = [_HOT / "kernel", _HOT, _HOT / "scripts"]
+else:
+    # Staging layout — sibling packages under _staging/
+    _STAGING = _HERE.parents[2]
+    HOT_ROOT = _HOT
+    CP_ROOT = _STAGING.parent
+    _paths = [
+        _STAGING / "PKG-KERNEL-001" / "HOT" / "kernel",
+        _STAGING / "PKG-KERNEL-001" / "HOT",
+    ]
+
+for _p in _paths:
+    _s = str(_p)
+    if _s not in sys.path:
+        sys.path.insert(0, _s)
+
+# Discover all framework manifests — only meaningful in installed root
 FMWK_DIRS = sorted(HOT_ROOT.glob("FMWK-*/manifest.yaml"))
 
 # Expected framework->spec wiring after kernel-core strip
@@ -29,6 +49,7 @@ EXPECTED_WIRING = {
                   "SPEC-REG-001", "SPEC-VER-001"],
     "FMWK-001": ["SPEC-SEC-001"],
     "FMWK-002": ["SPEC-LEDGER-001"],
+    "FMWK-005": [],
     "FMWK-007": ["SPEC-PKG-001"],
 }
 
@@ -67,6 +88,7 @@ def _parse_yaml_simple(path: Path) -> dict:
     return data
 
 
+@pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
 class TestRemovedFrameworks:
     """Dead frameworks must be deleted."""
 
@@ -75,24 +97,20 @@ class TestRemovedFrameworks:
         fmwk_003 = HOT_ROOT / "FMWK-003_Package_Standard"
         assert not fmwk_003.exists(), "FMWK-003 is orphaned (0 specs) — must be deleted"
 
-    def test_fmwk_004_removed(self):
-        """FMWK-004 (0 specs) must be deleted."""
-        fmwk_004 = HOT_ROOT / "FMWK-004_Prompt_Governance"
-        assert not fmwk_004.exists(), "FMWK-004 is orphaned (0 specs) — must be deleted"
-
     def test_fmwk_100_removed(self):
         """FMWK-100 (all 11 specs dead) must be deleted."""
         fmwk_100 = HOT_ROOT / "FMWK-100_Agent_Development"
         assert not fmwk_100.exists(), "FMWK-100 is dead (all specs removed) — must be deleted"
 
-    def test_exactly_four_frameworks(self):
-        """Exactly 4 framework dirs should exist."""
+    def test_exactly_five_frameworks(self):
+        """Exactly 5 framework dirs should exist."""
         fmwk_dirs = sorted(HOT_ROOT.glob("FMWK-*/"))
         fmwk_ids = [d.name.split("_")[0] for d in fmwk_dirs]
-        assert fmwk_ids == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-007"], \
-            f"Expected exactly 4 frameworks, got: {fmwk_ids}"
+        assert fmwk_ids == ["FMWK-000", "FMWK-001", "FMWK-002", "FMWK-005", "FMWK-007"], \
+            f"Expected exactly 5 frameworks, got: {fmwk_ids}"
 
 
+@pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
 class TestFrameworkManifestStructure:
     """Every active framework must have complete manifest fields."""
 
@@ -129,6 +147,7 @@ class TestFrameworkManifestStructure:
         assert "required_gates" in data, f"{path}: missing required_gates"
 
 
+@pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
 class TestExpectedSpecsMatch:
     """expected_specs must match actual spec->framework references."""
 

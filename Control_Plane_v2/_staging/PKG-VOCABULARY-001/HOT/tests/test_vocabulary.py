@@ -13,17 +13,37 @@ Tests verify:
 import json
 import os
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-HOT_ROOT = SCRIPT_DIR.parent
-CP_ROOT = HOT_ROOT.parent
+# Dual-context path detection: installed root vs staging packages
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
+_INSTALLED = (_HOT / "kernel" / "ledger_client.py").exists()
 
-# Import gate_check from HOT/scripts
-import sys
-sys.path.insert(0, str(HOT_ROOT))
+if _INSTALLED:
+    # Installed layout — all packages merged under HOT/
+    HOT_ROOT = _HOT
+    CP_ROOT = _HOT.parent
+    _paths = [_HOT / "kernel", _HOT, _HOT / "scripts"]
+else:
+    # Staging layout — sibling packages under _staging/
+    _STAGING = _HERE.parents[2]
+    HOT_ROOT = _HOT
+    CP_ROOT = _STAGING.parent
+    _paths = [
+        _STAGING / "PKG-KERNEL-001" / "HOT" / "kernel",
+        _STAGING / "PKG-KERNEL-001" / "HOT",
+        _STAGING / "PKG-VOCABULARY-001" / "HOT",
+    ]
+
+for _p in _paths:
+    _s = str(_p)
+    if _s not in sys.path:
+        sys.path.insert(0, _s)
+
 from scripts.gate_check import check_g1_chain, GateResult
 
 
@@ -93,6 +113,7 @@ class TestG1ChainValidation:
             f"Expected FMWK_NOT_FOUND error, got: {result.errors}"
         )
 
+    @pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
     def test_g1_passes_with_real_registries(self):
         """G1 must PASS against the real plane with L0 packages (warnings only)."""
         result = check_g1_chain(CP_ROOT)
@@ -162,6 +183,7 @@ class TestG1ChainValidation:
 class TestG1RegistrySources:
     """G1 must read the correct registries, not the wrong ones."""
 
+    @pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
     def test_g1_reads_specs_registry(self):
         """G1 must load specs_registry.csv and report how many specs were loaded."""
         result = check_g1_chain(CP_ROOT)
@@ -173,6 +195,7 @@ class TestG1RegistrySources:
             f"G1 must load specs from specs_registry.csv (expected >=11, got {specs_loaded})"
         )
 
+    @pytest.mark.skipif(not _INSTALLED, reason="requires installed/merged root")
     def test_g1_reads_frameworks_registry(self):
         """G1 must load frameworks_registry.csv and report how many frameworks were loaded."""
         result = check_g1_chain(CP_ROOT)

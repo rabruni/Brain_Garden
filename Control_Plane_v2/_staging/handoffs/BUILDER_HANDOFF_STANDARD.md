@@ -211,8 +211,13 @@ Read your specification, answer the 10 questions below, then STOP and WAIT for a
 1. ALL work goes in `Control_Plane_v2/_staging/`. NEVER write to the conflated repo tree.
 2. DTT: Design → Test → Then implement. Write tests FIRST.
 3. Tar archive format: `tar czf ... -C dir $(ls dir)` — NEVER `tar czf ... -C dir .`
-4. End-to-end verification: [specific to handoff]
-5. When finished, write your results to `Control_Plane_v2/_staging/RESULTS_<id>.md` following the results file format in BUILDER_HANDOFF_STANDARD.md.
+4. Hash format: All SHA256 hashes in manifest.json MUST use `sha256:<64hex>` format (71 chars total). Bare hex will fail G0A.
+5. Clean-room verification: Extract CP_BOOTSTRAP.tar.gz to temp dir → run install.sh → install YOUR package on top → ALL gates must pass. This is NOT optional.
+6. Full regression: Run ALL staged package tests (not just yours). Report total count, pass/fail, and whether you introduced new failures.
+7. Results file: Write `Control_Plane_v2/_staging/RESULTS_<id>.md` following the FULL template in BUILDER_HANDOFF_STANDARD.md. MUST include: Clean-Room Verification section, Baseline Snapshot section, Full Regression section. Missing sections = incomplete handoff.
+8. Registry updates: If your package introduces new frameworks, specs, or modifies governance chain, update the corresponding registry CSVs (specs_registry.csv, frameworks_registry.csv).
+9. CP_BOOTSTRAP rebuild: If your package is added to the bootstrap archive, rebuild CP_BOOTSTRAP.tar.gz and report the new member count and SHA256.
+10. Built-in tools: Use `hashing.py:compute_sha256()` for all SHA256 hashes and `packages.py:pack()` for all archives. NEVER use raw hashlib or shell tar. See "Required Kernel Tools" in BUILDER_HANDOFF_STANDARD.md.
 
 **Before writing ANY code, answer these 10 questions to confirm your understanding:**
 
@@ -256,8 +261,99 @@ Every agent prompt MUST include 10 verification questions:
 - Questions 7-8: Packaging and archives (tar format, manifest hashes, dependencies)
 - Question 9: Test count or verification criteria
 - Question 10: Integration concern (how does this connect to existing components)
+Bonus questions (Advesarial) 
+#### 11. THE ADVERSARIAL SIMULATION (PRE-FLIGHT)
+Before executing the first command, the builder must answer these three Bonus "Pressure Tests":
+1. **The Failure Mode:** "If this build fails at Gate G3 (Package Integrity), which specific file/hash in my current scope is the most likely culprit?"
+2. **The Shortcut Check:** "Is there a Kernel tool (e.g., `hashing.py`) I am tempted to skip in favor of a standard shell command? (If yes, explain why you will NOT do that)."
+3. **The Semantic Audit:** "Identify one word in my current plan that is 'ambiguous' according to the Lexicon of Precision and redefine it now."
 
 Include expected answers after the prompt (visible to the reviewer, not to the agent).
+
+---
+
+## Three Adversaries (Reversed Cadence)
+
+Every significant design decision in a handoff document SHOULD include a **three-adversary analysis**. This is the project's standard adversarial review pattern, used throughout the design process to stress-test choices before committing to them.
+
+The three adversaries speak in reversed cadence — they don't just object, they build on each other:
+
+### Adversary 1: Hurdles (Pragmatic)
+
+"What's actually hard about this? What breaks? What's missing?"
+
+Focus on:
+- Implementation blockers (dependencies, missing infrastructure, Layer 0 changes needed)
+- Operational risk (what if this fails at runtime?)
+- Existing code that has to change (blast radius)
+- Things we're assuming exist but don't
+
+### Adversary 2: Not Enough (Strategic)
+
+"What happens if we DON'T do this, or do too little? What's permanently lost?"
+
+Focus on:
+- Append-only consequences — data written without structure is permanently impoverished
+- Missing capabilities that downstream systems need (e.g., graph edges for attention)
+- Design debt that compounds (each WO written without relational fields is a missed connection)
+- The cost of adding this later vs. now
+
+### Adversary 3: Too Much (Restraint)
+
+"What happens if we over-build? What's wasted? What constrains future flexibility?"
+
+Focus on:
+- Premature abstraction (building for 0 consumers)
+- Scope creep (adding fields/features that no current code reads)
+- Opportunity cost (time spent here vs. building the actual system)
+- Over-specification (locking in schemas before patterns emerge)
+
+### How to Use
+
+In the **Architecture / Design** section (or **Design Principles** section) of a handoff, include a brief adversarial analysis for key design choices:
+
+```markdown
+### Adversarial Analysis: [Design Choice]
+
+**Hurdles**: [1-3 sentences]
+**Not Enough**: [1-3 sentences]
+**Too Much**: [1-3 sentences]
+**Synthesis**: [The decision, informed by all three]
+```
+
+The synthesis is where the actual decision lives. The adversaries inform it; they don't make it.
+
+**When to use**: Any design choice that affects data formats (especially append-only), architecture boundaries, or schema definitions. Not needed for straightforward implementation steps.
+
+---
+
+## Required Kernel Tools
+
+### Mandatory Tools
+
+Agents MUST use these built-in kernel functions. Rolling your own implementation is forbidden.
+
+| Tool | Location | What It Produces | Why |
+|------|----------|-----------------|-----|
+| `compute_sha256(path)` | `HOT/kernel/hashing.py` | `sha256:<64hex>` (71 chars) | Canonical hash format. Raw `hashlib` produces bare hex → fails G0A. |
+| `pack(src, dest)` | `HOT/kernel/packages.py` | Deterministic `.tar.gz` | I4-DETERMINISTIC: mtime=0, uid=0, sorted entries, PAX format. Shell `tar` produces non-deterministic metadata → different hash each build. |
+| `sha256_file(path)` | `HOT/kernel/packages.py` | Raw hex string | Internal use only. For manifests, use `compute_sha256()`. |
+
+### Governance Pipeline
+
+The install chain agents must verify against:
+
+1. **`install.sh`** — bootstrap orchestrator (calls everything below)
+2. **`resolve_install_order.py`** — auto-discovers packages, topo sort by dependency
+3. **`HOT/scripts/package_install.py`** — 17-step governed install (G0A, G1, ownership, ledger, receipts)
+4. **`HOT/scripts/gate_check.py --all --enforce`** — post-install gate verification
+
+### What NOT To Do Manually
+
+- Don't compute hashes with `hashlib` directly (misses `sha256:` prefix)
+- Don't create tar archives with shell `tar` (non-deterministic metadata)
+- Don't copy files to install root manually (bypasses gates, ledger, ownership)
+- Don't edit installed registries directly (edit source in PKG-KERNEL-001, repackage, reinstall)
 
 ---
 
@@ -281,7 +377,7 @@ If the package introduces a NEW framework (e.g., FMWK-003), ship the framework m
 
 Three tiers: **HOT** (executive/kernel) > **HO2** (session/admin) > **HO1** (stateless/fast).
 
-HO3 does not exist. It was a prior agent mistake. If you see HO3 anywhere, flag it.
+HO3 IS the correct name for the executive/governance tier. HOT and HO3 are synonyms — both refer to the same tier. HOT = HO-Three (shorthand).
 
 Currently all packages target `plane_id: "hot"`. Multi-tier deployment is a future capability.
 
@@ -339,12 +435,55 @@ Every time a handoff is dispatched to an agent, the reviewer MUST add a row:
 
 ---
 
+## Reviewer Checklist
+
+**Before marking any handoff as VALIDATED, the reviewer MUST verify ALL of these:**
+
+- [ ] RESULTS file exists at `_staging/RESULTS_<id>.md` (NOT inside a package directory)
+- [ ] RESULTS file has ALL required sections: Files Created, Test Results, Full Regression, Gate Check, Clean-Room Verification, Baseline Snapshot
+- [ ] Clean-Room Verification section shows: package count, install order, all gates PASS
+- [ ] Baseline Snapshot section shows: package count, file_ownership rows, total test count, all gate results
+- [ ] Full regression test was run (ALL staged packages, not just this one)
+- [ ] No new gate failures introduced (compare against previous baseline)
+- [ ] Manifest hashes use `sha256:<64hex>` format (not bare hex)
+- [ ] If package added to bootstrap: CP_BOOTSTRAP.tar.gz was rebuilt and SHA256 reported
+- [ ] If new frameworks/specs introduced: registry CSVs updated
+- [ ] RESULTS file location matches naming convention (`RESULTS_HANDOFF_N.md`)
+
+**This checklist exists because Phase 2 handoffs (H-13 through H-17) were accepted without these checks, resulting in: 4 missing RESULTS files, no clean-room verification, no registry updates, stale CP_BOOTSTRAP, and broken entrypoint wiring. The standard had the right requirements. The review process didn't enforce them.**
+
+---
+
+## Multi-Package Builds (Parallel Waves)
+
+When building multiple packages across parallel waves:
+
+### During Each Wave
+1. Each package in the wave gets its own RESULTS file following the full template
+2. Reviewer validates each RESULTS file against the Reviewer Checklist above
+3. Clean-room verification runs for EACH wave (not deferred to the end)
+
+### After the Final Wave: Integration Handoff (MANDATORY)
+When a set of packages constitutes a system change (new dispatch loop, new tier, etc.), an **Integration Handoff** is required after all code packages are built. This is a separate handoff spec that:
+
+1. **Wires new packages into the entrypoint** (main.py or equivalent)
+2. **Updates all registries** (specs_registry.csv, frameworks_registry.csv)
+3. **Resolves package lifecycle** (mark superseded packages, update dependencies)
+4. **Rebuilds CP_BOOTSTRAP.tar.gz** with the full package set
+5. **Runs clean-room install** of the complete system (extract → install → all gates pass)
+6. **Runs E2E smoke test** (not just unit tests — verify the integrated system works end-to-end)
+7. **Writes RESULTS file** with full system baseline snapshot
+
+**The integration handoff is where component packages become a working system.** Without it, you have tested parts but no tested whole.
+
+---
+
 ## Common Mistakes
 
 1. **Wrong staging path.** `Control_Plane_v2/_staging/`, NOT `CP_2.1/_staging/`.
 2. **Tar `./` prefix.** NEVER `tar czf ... -C dir .` — always `tar czf ... -C dir $(ls dir)`.
 3. **Missing PKG-TOKEN-BUDGETER-001 dependency.** Router depends on budgeter.
-4. **HO3 references.** HO3 is dead. Flag and remove.
+4. **Tier naming.** HOT and HO3 are synonyms. Use HOT in filesystem paths, HO3 in architectural discussion. Both are valid.
 5. **Hardcoded thresholds.** Every number must come from config. No magic constants.
 6. **File replacement.** Packages never overwrite another package's files. Use state-gating.
 7. **Forgetting results file.** Agent MUST write RESULTS_<id>.md when finished.
@@ -352,3 +491,9 @@ Every time a handoff is dispatched to an agent, the reviewer MUST add a row:
 9. **Proceeding without approval.** After the 10-question verification, STOP and WAIT. Do NOT start building until the user says go.
 10. **Only testing own package.** Run ALL staged tests, not just yours. Cross-package regressions are real.
 11. **Missing baseline snapshot.** Results file MUST include package count, file_ownership rows, total test count, and all gate results. Without this, the next agent starts blind.
+12. **Bare hex hashes.** Manifest SHA256 must be `sha256:<64hex>` (71 chars). Bare hex fails G0A gate. Every bootstrap-era package got this right; Phase 2 agents didn't because their prompts didn't specify the format.
+13. **Non-standard manifest format.** Manifests MUST use `"assets"` array (not `"files"` dict), `"dependencies"` (not `"depends_on"`), and include `schema_version`, `spec_id`, `framework_id`. Copy the format from PKG-KERNEL-001/manifest.json.
+14. **RESULTS file in wrong location.** RESULTS files go in `_staging/RESULTS_<id>.md` or `_staging/handoffs/RESULTS_<id>.md`. NOT inside the package directory.
+15. **Missing integration handoff.** Building 6 packages without a system integration step leaves tested components with no tested whole. Always plan the integration handoff before starting parallel builds.
+16. **Skipping reviewer checklist.** Autonomous 10Q gate review is fine for speed. Skipping RESULTS file validation is not. Every handoff must be checked against the Reviewer Checklist before VALIDATED.
+17. **Bypassing kernel tools.** Use `hashing.py:compute_sha256()` for hashes and `packages.py:pack()` for archives. Manual hashlib produces bare hex (fails G0A). Shell tar produces non-deterministic archives (different hash each build). The kernel provides these tools for a reason — use them.

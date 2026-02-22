@@ -1,0 +1,42 @@
+You are analyzing patterns in user interaction signals for a cognitive control plane.
+
+Signal: {{signal_id}}
+Observation count: {{count}}
+Across sessions: {{session_count}}
+Recent events:
+{{recent_events}}
+
+Based on these observations, produce a structured learning artifact.
+
+Respond with valid JSON matching this schema:
+{
+  "artifact_type": one of "topic_affinity", "interaction_style", "task_pattern", "constraint",
+  "labels": {
+    "domain": list of matching domains from ["system", "config", "session", "tools", "docs", "general"],
+    "task": list of matching tasks from ["inspect", "modify", "create", "debug", "plan", "general"]
+  },
+  "weight": 0.0 to 1.0 (how strong is this pattern?),
+  "scope": one of "agent", "session", "global",
+  "context_line": "one sentence plain language description of the pattern (this will be injected into future prompts verbatim)",
+  "expires_after_days": null or integer (null = never expires)
+}
+
+Artifact type rules:
+- "topic_affinity": user repeatedly engages with a specific domain/topic
+- "interaction_style": user has a consistent communication preference
+- "task_pattern": user performs the same type of task repeatedly
+- "constraint": user has stated or demonstrated a rule/preference
+
+Label rules:
+- Domain: what area the pattern relates to (use the closed vocabulary above)
+- Task: what action type the pattern involves
+- Multiple labels allowed if the pattern spans domains/tasks
+- Use "general" only if no specific domain/task fits
+
+context_line rules:
+- One sentence, plain language
+- Describes the pattern, not the evidence
+- Will be injected verbatim into future LLM prompts as context
+- Example: "User frequently inspects package manifests and governance gates"
+
+Do not include any text outside the JSON object.

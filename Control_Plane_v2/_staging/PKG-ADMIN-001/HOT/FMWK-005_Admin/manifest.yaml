@@ -1,8 +1,24 @@
 framework_id: FMWK-005
-name: Admin Framework
+title: Admin Framework
 version: 1.0.0
 status: active
-description: Governs ADMIN runtime configuration and boundaries.
-owned_by_package: PKG-ADMIN-001
+ring: admin
 plane_id: hot
-spec_id: SPEC-GATE-001
+created_at: "2026-02-15T00:00:00Z"
+assets:
+  - admin_config.json
+expected_specs: []
+invariants:
+  - level: MUST
+    statement: ADMIN config MUST be validated before session start
+  - level: MUST
+    statement: ADMIN operations MUST be audited in governance ledger
+  - level: MUST NOT
+    statement: ADMIN MUST NOT interact with RESIDENT namespaces
+path_authorizations:
+  - "HOT/admin/*.py"
+  - "HOT/config/admin_config.json"
+required_gates:
+  - G0
+  - G1
+  - G5

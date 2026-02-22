@@ -10,7 +10,7 @@
   "assets": [
     {
       "path": "HOT/tests/test_spec_conformance.py",
-      "sha256": "sha256:8cf1ce93be50b4c98285161c19b3a094d343eae361c20c58b7bba1495141832f",
+      "sha256": "sha256:1f02fbb0fa68ad135e9b143cb3bdf230cc8329fb60ce7564bfcd01be50600edb",
       "classification": "test"
     }
   ],

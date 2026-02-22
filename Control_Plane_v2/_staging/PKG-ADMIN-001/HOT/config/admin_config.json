@@ -1,7 +1,8 @@
 {
   "agent_id": "admin-001",
   "agent_class": "ADMIN",
-  "framework_id": "FMWK-005",
+  "tool_profile": "development",
+  "framework_id": "FMWK-000",
   "tier": "hot",
   "system_prompt": "You are ADMIN, the governance interface for the Control Plane. Be precise, cite evidence, and prefer governed tools for system facts.",
   "attention": {
@@ -50,7 +51,7 @@
     },
     {
       "tool_id": "query_ledger",
-      "description": "Query ledger entries",
+      "description": "Query ledger entries from governance, ho2m, or ho1m",
       "handler": "tools.query_ledger",
       "parameters": {
         "type": "object",
@@ -61,6 +62,41 @@
           "max_entries": {
             "type": "integer",
             "default": 10
+          },
+          "ledger": {
+            "type": "string",
+            "enum": [
+              "governance",
+              "ho2m",
+              "ho1m"
+            ],
+            "default": "governance",
+            "description": "Which ledger to query"
+          }
+        }
+      }
+    },
+    {
+      "tool_id": "list_files",
+      "description": "List files and directories under a relative path",
+      "handler": "tools.list_files",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "default": ".",
+            "description": "Relative path from plane root"
+          },
+          "max_depth": {
+            "type": "integer",
+            "default": 3,
+            "description": "Max directory depth (1-5)"
+          },
+          "glob": {
+            "type": "string",
+            "default": "*",
+            "description": "Filename pattern"
           }
         }
       }
@@ -73,12 +109,261 @@
         "type": "object",
         "properties": {}
       }
+    },
+    {
+      "tool_id": "list_sessions",
+      "description": "List sessions with timestamps, turn counts, and message previews",
+      "handler": "tools.list_sessions",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "default": 20
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0
+          }
+        }
+      }
+    },
+    {
+      "tool_id": "session_overview",
+      "description": "Return a human-readable session summary and diagnostics",
+      "handler": "tools.session_overview",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "description": "Session ID to summarize"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 20
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "required": [
+          "session_id"
+        ]
+      }
+    },
+    {
+      "tool_id": "reconstruct_session",
+      "description": "Reconstruct a chronological session timeline across ledgers",
+      "handler": "tools.reconstruct_session",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 100
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0
+          },
+          "max_bytes": {
+            "type": "integer",
+            "default": 500000
+          },
+          "verbosity": {
+            "type": "string",
+            "enum": [
+              "compact",
+              "full"
+            ],
+            "default": "full"
+          },
+          "include_prompts": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_tool_payloads": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "session_id"
+        ]
+      }
+    },
+    {
+      "tool_id": "query_ledger_full",
+      "description": "Query ledger entries with full metadata and pagination",
+      "handler": "tools.query_ledger_full",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ledger": {
+            "type": "string",
+            "enum": [
+              "governance",
+              "ho2m",
+              "ho1m"
+            ],
+            "default": "governance"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "max_entries": {
+            "type": "integer",
+            "default": 200
+          },
+          "limit": {
+            "type": "integer",
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0
+          }
+        }
+      }
+    },
+    {
+      "tool_id": "grep_jsonl",
+      "description": "Run server-side regex filtering against a ledger JSONL file",
+      "handler": "tools.grep_jsonl",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ledger": {
+            "type": "string",
+            "enum": [
+              "governance",
+              "ho2m",
+              "ho1m"
+            ]
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        "required": [
+          "ledger",
+          "pattern"
+        ]
+      }
+    },
+    {
+      "tool_id": "trace_prompt_journey",
+      "description": "Reconstruct full prompt journey stages from ledgers: planned/dispatched, prompts sent, LLM responses, tool calls, and gate decision.",
+      "handler": "tools.trace_prompt_journey",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "description": "Session ID to trace"
+          },
+          "wo_id": {
+            "type": "string",
+            "description": "Optional WO filter"
+          },
+          "turn_number": {
+            "type": "integer",
+            "description": "Optional turn number filter"
+          },
+          "include_prompts": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_tool_payloads": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_responses": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_evidence_ids": {
+            "type": "boolean",
+            "default": true
+          },
+          "limit": {
+            "type": "integer",
+            "default": 200
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0
+          },
+          "max_bytes": {
+            "type": "integer",
+            "default": 500000
+          }
+        },
+        "required": [
+          "session_id"
+        ]
+      }
+    },
+    {
+      "tool_id": "show_runtime_config",
+      "description": "Show effective runtime/provider/budget/tool configuration",
+      "handler": "tools.show_runtime_config",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "tool_id": "list_tuning_files",
+      "description": "List canonical files used for ADMIN runtime tuning",
+      "handler": "tools.list_tuning_files",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
     }
   ],
+  "router": {
+    "llm_timeout_ms": 60000,
+    "llm_max_retries": 2,
+    "llm_retry_backoff_ms": 250
+  },
   "budget": {
     "session_token_limit": 200000,
+    "classify_budget": 2000,
+    "synthesize_budget": 100000,
+    "projection_budget": 10000,
+    "consolidation_budget": 4000,
+    "ho3_bias_budget": 2000,
+    "followup_min_remaining": 500,
+    "budget_mode": "warn",
     "turn_limit": 50,
     "timeout_seconds": 7200
+  },
+  "projection": {
+    "mode": "shadow",
+    "intent_header_budget": 500,
+    "wo_status_budget": 2000
+  },
+  "ho3": {
+    "enabled": true,
+    "memory_dir": "HOT/memory",
+    "gate_count_threshold": 5,
+    "gate_session_threshold": 3,
+    "gate_window_hours": 168
   },
   "permissions": {
     "read": [

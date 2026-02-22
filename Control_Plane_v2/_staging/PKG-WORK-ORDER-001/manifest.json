@@ -1,0 +1,38 @@
+{
+  "package_id": "PKG-WORK-ORDER-001",
+  "version": "1.0.0",
+  "schema_version": "1.2",
+  "title": "Work Order - Cognitive Dispatch Atom",
+  "description": "WorkOrder dataclass, state machine, WO-specific ledger helpers, and cognitive dispatch schema",
+  "spec_id": "SPEC-GATE-001",
+  "framework_id": "FMWK-000",
+  "plane_id": "hot",
+  "layer": 3,
+  "dependencies": [
+    "PKG-KERNEL-001",
+    "PKG-FRAMEWORK-WIRING-001",
+    "PKG-PHASE2-SCHEMAS-001"
+  ],
+  "assets": [
+    {
+      "path": "HOT/kernel/work_order.py",
+      "sha256": "sha256:7844f430d9a83d1365081c469f6eaf20fbf3fec6207d636cdedfa49f90684ba4",
+      "classification": "source"
+    },
+    {
+      "path": "HOT/kernel/wo_ledger.py",
+      "sha256": "sha256:0c790f54d8dc0a3c9f8dd2eae56e704a8f1c182220438fb333bc6bcfdcda408b",
+      "classification": "source"
+    },
+    {
+      "path": "HOT/schemas/cognitive_work_order.schema.json",
+      "sha256": "sha256:5af807555afa5a6ee13e322ecbdec59c8258e806c8078c57f19c6f99d2145224",
+      "classification": "schema"
+    },
+    {
+      "path": "HOT/tests/test_work_order.py",
+      "sha256": "sha256:e53c18f8e0a8c473f6029863963ac0c5c5e32d2e19db74fa3d6b3698b2c40813",
+      "classification": "test"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+framework_id: FMWK-011
+title: Prompt Contracts
+version: "1.0.0"
+status: draft
+ring: kernel
+plane_id: hot
+created_at: "2026-02-14T00:00:00Z"
+assets:
+  - prompt_contracts.md
+expected_specs:
+  - SPEC-PRC-001
+invariants:
+  - level: MUST
+    statement: Every LLM exchange MUST reference a valid prompt contract
+  - level: MUST
+    statement: Every contract MUST conform to prompt_contract.schema.json
+  - level: MUST
+    statement: Every contract MUST specify boundary constraints (max_tokens, temperature)
+  - level: MUST
+    statement: contract_id MUST match pattern ^PRC-[A-Z]+-[0-9]+$
+  - level: MUST
+    statement: version MUST follow semver (^\d+\.\d+\.\d+$)
+  - level: MUST
+    statement: Output validation MUST follow dual validation (syntactic then semantic, both must pass)
+  - level: MUST
+    statement: All LLM calls MUST route through the LLM Gateway (no direct calls)
+  - level: MUST NOT
+    statement: Active contract versions MUST NOT be mutated — create a new version instead
+  - level: MUST
+    statement: additionalProperties default MUST be true — strict contracts opt in to false
+  - level: MUST
+    statement: Input schema validation MUST occur before the LLM call fires
+  - level: MUST
+    statement: Every contract loading failure MUST be logged to HO1m
+path_authorizations:
+  - "HOT/schemas/prompt_contract.schema.json"
+  - "HOT/kernel/prompt_router.py"
+  - "HO1/kernel/ho1_executor.py"
+  - "HO1/contracts/"
+  - "HO1/ledger/worker.jsonl"
+required_gates:
+  - G0
+  - G1
+  - G2
+  - G6

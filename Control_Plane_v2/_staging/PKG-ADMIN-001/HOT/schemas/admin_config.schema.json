@@ -40,7 +40,39 @@
         }
       }
     },
-    "budget": {"type": "object"},
+    "budget": {
+      "type": "object",
+      "properties": {
+        "session_token_limit": {"type": "integer"},
+        "classify_budget": {"type": "integer"},
+        "synthesize_budget": {"type": "integer"},
+        "projection_budget": {"type": "integer"},
+        "consolidation_budget": {"type": "integer"},
+        "ho3_bias_budget": {"type": "integer"},
+        "followup_min_remaining": {"type": "integer"},
+        "budget_mode": {"type": "string", "enum": ["enforce", "warn", "off"]},
+        "turn_limit": {"type": "integer"},
+        "timeout_seconds": {"type": "integer"}
+      }
+    },
+    "projection": {
+      "type": "object",
+      "properties": {
+        "mode": {"type": "string", "enum": ["shadow", "active", "off"]},
+        "intent_header_budget": {"type": "integer"},
+        "wo_status_budget": {"type": "integer"}
+      }
+    },
+    "ho3": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "memory_dir": {"type": "string"},
+        "gate_count_threshold": {"type": "integer", "minimum": 1},
+        "gate_session_threshold": {"type": "integer", "minimum": 1},
+        "gate_window_hours": {"type": "integer", "minimum": 1}
+      }
+    },
     "permissions": {"type": "object"}
   }
 }

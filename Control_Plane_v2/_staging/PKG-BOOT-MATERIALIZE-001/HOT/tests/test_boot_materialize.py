@@ -11,15 +11,26 @@ from pathlib import Path
 import pytest
 
 
-STAGING_ROOT = Path(__file__).resolve().parents[3]
-LAYOUT_SOURCE = STAGING_ROOT / "PKG-LAYOUT-002" / "HOT" / "config" / "layout.json"
+# Dual-context path detection: installed root vs staging packages
+_HERE = Path(__file__).resolve().parent
+_HOT = _HERE.parent
 
-for p in [
-    STAGING_ROOT / "PKG-BOOT-MATERIALIZE-001" / "HOT" / "scripts",
-    STAGING_ROOT / "PKG-LAYOUT-002" / "HOT" / "scripts",
-    STAGING_ROOT / "PKG-KERNEL-001" / "HOT",
-    STAGING_ROOT / "PKG-KERNEL-001" / "HOT" / "kernel",
-]:
+if (_HOT / "kernel" / "ledger_client.py").exists():
+    # Installed layout — all packages merged under HOT/
+    LAYOUT_SOURCE = _HOT / "config" / "layout.json"
+    _paths = [_HOT / "scripts", _HOT, _HOT / "kernel"]
+else:
+    # Staging layout — sibling packages under _staging/
+    _STAGING_ROOT = _HERE.parents[2]
+    LAYOUT_SOURCE = _STAGING_ROOT / "PKG-LAYOUT-002" / "HOT" / "config" / "layout.json"
+    _paths = [
+        _STAGING_ROOT / "PKG-BOOT-MATERIALIZE-001" / "HOT" / "scripts",
+        _STAGING_ROOT / "PKG-LAYOUT-002" / "HOT" / "scripts",
+        _STAGING_ROOT / "PKG-KERNEL-001" / "HOT",
+        _STAGING_ROOT / "PKG-KERNEL-001" / "HOT" / "kernel",
+    ]
+
+for p in _paths:
     s = str(p)
     if s not in sys.path:
         sys.path.insert(0, s)

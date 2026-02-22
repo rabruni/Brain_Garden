@@ -1,0 +1,48 @@
+framework_id: FMWK-010
+title: Cognitive Stack — Shared Code, Isolated State
+version: "1.0.0"
+status: draft
+ring: kernel
+plane_id: hot
+created_at: "2026-02-14T00:00:00Z"
+updated_at: "2026-02-14T00:00:00Z"
+design_authority: "_staging/architecture/KERNEL_PHASE_2_v2.md"
+assets:
+  - cognitive_stack.md
+expected_specs:
+  - SPEC-CS-001
+invariants:
+  - level: MUST
+    statement: Every agent class MUST instantiate its own HO2 + HO1 cognitive processes (Invariant #7)
+  - level: MUST
+    statement: All stacks MUST share HO3 governance, KERNEL.syntactic, KERNEL.semantic, and Meta Learning Ledger
+  - level: MUST
+    statement: Each stack MUST isolate HO2m session state, HO1m execution traces, attention templates, framework configuration, and work order context
+  - level: MUST
+    statement: Stack instantiation MUST follow the factory pattern — generic code instantiated with per-agent config
+  - level: MUST
+    statement: Attention templates MUST be bound to stacks via the applies_to selector in attention_template.schema.json
+  - level: MUST
+    statement: Per-stack state MUST be stored in agent-class-scoped directories within tier paths
+  - level: MUST NOT
+    statement: No stack MUST NOT read another stack's isolated state (except KERNEL.semantic meta agent)
+  - level: MUST NOT
+    statement: Cognitive processes MUST NOT carry internal state between sessions (Invariant #3)
+  - level: MUST NOT
+    statement: A shared HO2 or HO1 instance MUST NOT serve multiple agent classes
+  - level: MUST
+    statement: Stack lifecycle MUST follow creation, active, teardown, recovery phases with append-only ledger persistence
+path_authorizations:
+  - "HO2/ledger/ADMIN/"
+  - "HO2/ledger/RESIDENT_*/"
+  - "HO1/ledger/ADMIN/"
+  - "HO1/ledger/RESIDENT_*/"
+  - "HO2/kernel/ho2_supervisor.py"
+  - "HO1/kernel/ho1_executor.py"
+  - "HOT/schemas/attention_template.schema.json"
+  - "HOT/config/layout.json"
+required_gates:
+  - G0
+  - G1
+  - G2
+  - G6
